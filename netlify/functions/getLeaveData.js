@@ -11,11 +11,17 @@ export async function handler(event, context) {
     'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, must-revalidate' // <-- PERBAIKAN CACHE
+    'Cache-Control': 'no-cache, must-revalidate' // Memaksa data baru
   };
 
   try {
-    // 3. Ambil data cuti yang aktif HARI INI
+    // ===================================
+    // ===  PERBAIKAN ZONA WAKTU (WIT) ===
+    // ===================================
+    // Tentukan "hari ini" berdasarkan zona waktu WIT (Asia/Jayapura)
+    const todayWIT = sql`(NOW() AT TIME ZONE 'Asia/Jayapura')::date`;
+
+    // 3. Ambil data cuti yang aktif HARI INI (berdasarkan WIT)
     const leaveData = await sql`
         SELECT 
             t1.start_date,
@@ -26,8 +32,10 @@ export async function handler(event, context) {
         JOIN 
             doctors t2 ON t1.doctor_id = t2.id
         WHERE 
-            CURRENT_DATE <= t1.end_date AND CURRENT_DATE >= t1.start_date
+            -- Gunakan tanggal WIT untuk perbandingan
+            ${todayWIT} <= t1.end_date AND ${todayWIT} >= t1.start_date
     `;
+    // ===================================
 
     // 4. Ubah format data agar sesuai dengan format script.js (dd-MM-yyyy)
     const formattedLeaveData = leaveData.map(leave => ({

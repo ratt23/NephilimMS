@@ -1,12 +1,24 @@
-# netlify.toml
+# Konfigurasi Build (Bangun)
 [build]
-  command = "npm run build"    # Perintah untuk build React app
-  publish = "dist"             # Folder output hasil build Vite
-  functions = "netlify/functions" # Folder tempat API kita akan disimpan
-
-[dev]
-  command = "npm run dev"      # Perintah untuk Vite dev server
-  targetPort = 5173            # Port default Vite
-  port = 8888                  # Port untuk Netlify Dev
+  # Perintah untuk build frontend (React + Vite)
+  command = "npm run build"
+  
+  # Folder output hasil build Vite
   publish = "dist"
+  
+  # Folder tempat semua Netlify Functions Anda disimpan
+  functions = "netlify/functions"
+
+# Konfigurasi Server Development (netlify dev)
+[dev]
+  # Perintah untuk menjalankan server Vite lokal
+  command = "npm run dev"
+  
+  # Port default Vite
+  targetPort = 5173
+  
+  # Port yang akan Anda buka di browser (http://localhost:8888)
+  port = 8888
+  
+  # Framework yang digunakan (memberi tahu Netlify ini adalah Vite)
   framework = "vite"

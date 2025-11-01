@@ -5,12 +5,13 @@ const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
 
 export async function handler(event, context) {
   /**
-   * 2. Header CORS
+   * 2. Header CORS & Cache-Control
    */
   const headers = {
-    'Access-Control-Allow-Origin': '*', // <-- GANTI DENGAN URL PUBLIK ANDA SAAT DEPLOY
+    'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, must-revalidate' // <-- PERBAIKAN CACHE
   };
 
   try {
@@ -25,8 +26,6 @@ export async function handler(event, context) {
         JOIN 
             doctors t2 ON t1.doctor_id = t2.id
         WHERE 
-            -- Ambil cuti yang tanggal selesainya hari ini atau di masa depan
-            -- DAN tanggal mulainya hari ini atau di masa lalu
             CURRENT_DATE <= t1.end_date AND CURRENT_DATE >= t1.start_date
     `;
 

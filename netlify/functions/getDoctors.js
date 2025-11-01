@@ -6,7 +6,6 @@ const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
 /**
  * Helper untuk membuat key dari nama spesialisasi
  * (cth: "Spesialis Anak" -> "anak")
- * Pastikan logika ini SAMA PERSIS dengan yang ada di script.js publik Anda.
  */
 function createKey(name) {
     if (typeof name !== 'string') return ''; // Safety check
@@ -21,14 +20,14 @@ function createKey(name) {
 
 export async function handler(event, context) {
   /**
-   * 2. Header CORS (Cross-Origin Resource Sharing)
-   * Ini adalah bagian PENTING untuk mengizinkan domain publik Anda
-   * mengakses API ini.
+   * 2. Header CORS & Cache-Control
+   * Mengizinkan domain publik dan memaksa data baru.
    */
   const headers = {
-    'Access-Control-Allow-Origin': '*', // <-- GANTI DENGAN URL PUBLIK ANDA SAAT DEPLOY
+    'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, must-revalidate' // <-- PERBAIKAN CACHE
   };
 
   try {
@@ -51,7 +50,7 @@ export async function handler(event, context) {
       // Masukkan data dokter
       doctorsData[specialtyKey].doctors.push({
         name: doc.name,
-        image: doc.image_url,
+        image_url: doc.image_url, // Pastikan mengirim image_url
         schedule: doc.schedule 
       });
     }

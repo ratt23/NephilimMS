@@ -1,0 +1,12 @@
+# netlify.toml
+[build]
+  command = "npm run build"    # Perintah untuk build React app
+  publish = "dist"             # Folder output hasil build Vite
+  functions = "netlify/functions" # Folder tempat API kita akan disimpan
+
+[dev]
+  command = "npm run dev"      # Perintah untuk Vite dev server
+  targetPort = 5173            # Port default Vite
+  port = 8888                  # Port untuk Netlify Dev
+  publish = "dist"
+  framework = "vite"

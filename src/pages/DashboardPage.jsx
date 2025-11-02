@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DoctorManager from '../components/DoctorManager.jsx';
 import LeaveManager from '../components/LeaveManager.jsx';
-import SstvManager from '../components/SstvManager.jsx'; // <-- 1. IMPOR KOMPONEN BARU
+import SstvManager from '../components/SstvManager.jsx';
+import PromoManager from '../components/PromoManager.jsx'; // <-- 1. IMPOR BARU
 
 // Komponen Tab
 const TabButton = ({ isActive, onClick, children }) => (
@@ -20,7 +21,7 @@ const TabButton = ({ isActive, onClick, children }) => (
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('doctors'); // State untuk tab
+  const [activeTab, setActiveTab] = useState('doctors'); 
 
   const handleLogout = async () => {
     try {
@@ -47,7 +48,7 @@ export default function DashboardPage() {
       </header>
       
       {/* Navigasi Tab */}
-      <nav className="flex space-x-2 mb-0">
+      <nav className="flex flex-wrap space-x-2 mb-0">
         <TabButton
           isActive={activeTab === 'doctors'}
           onClick={() => setActiveTab('doctors')}
@@ -60,12 +61,18 @@ export default function DashboardPage() {
         >
           Manajemen Cuti
         </TabButton>
-        {/* <-- 2. TAMBAHKAN TOMBOL TAB BARU --> */}
         <TabButton
           isActive={activeTab === 'sstv'}
           onClick={() => setActiveTab('sstv')}
         >
           Manajemen Slideshow
+        </TabButton>
+        {/* <-- 2. TOMBOL TAB BARU --> */}
+        <TabButton
+          isActive={activeTab === 'promos'}
+          onClick={() => setActiveTab('promos')}
+        >
+          Manajemen Promo
         </TabButton>
       </nav>
 
@@ -73,8 +80,9 @@ export default function DashboardPage() {
       <main className="mt-0">
         {activeTab === 'doctors' && <DoctorManager />}
         {activeTab === 'leaves' && <LeaveManager />}
-        {/* <-- 3. RENDER KOMPONEN BARU --> */}
         {activeTab === 'sstv' && <SstvManager />}
+        {/* <-- 3. RENDER KOMPONEN BARU --> */}
+        {activeTab === 'promos' && <PromoManager />}
       </main>
     </div>
   );

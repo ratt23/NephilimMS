@@ -29,9 +29,6 @@ export async function handler(event, context) {
   };
 
   try {
-    // ===================================
-    // ===       PERBAIKAN KUERI       ===
-    // ===================================
     // 3. Ambil data dokter, GABUNGKAN (LEFT JOIN) dengan tabel sstv_images
     const doctors = await sql`
         SELECT 
@@ -48,7 +45,6 @@ export async function handler(event, context) {
         ORDER BY 
             d.name
     `;
-    // ===================================
 
     // 4. Ubah data "flat" menjadi format JSON yang dikelompokkan
     const doctorsData = {};

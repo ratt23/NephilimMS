@@ -16,12 +16,12 @@ export async function handler(event, context) {
 
   try {
     // ===================================
-    // ===  PERBAIKAN ZONA WAKTU (WIT) ===
+    // ===  PERBAIKAN LOGIKA CUTI (WIT) ===
     // ===================================
     // Tentukan "hari ini" berdasarkan zona waktu WIT (Asia/Jayapura)
     const todayWIT = sql`(NOW() AT TIME ZONE 'Asia/Jayapura')::date`;
 
-    // 3. Ambil data cuti yang aktif HARI INI (berdasarkan WIT)
+    // 3. Ambil data cuti yang belum selesai
     const leaveData = await sql`
         SELECT 
             t1.start_date,
@@ -32,8 +32,10 @@ export async function handler(event, context) {
         JOIN 
             doctors t2 ON t1.doctor_id = t2.id
         WHERE 
-            -- Gunakan tanggal WIT untuk perbandingan
-            ${todayWIT} <= t1.end_date AND ${todayWIT} >= t1.start_date
+            -- Tampilkan semua cuti yang tanggal selesainya hari ini ATAU di masa depan
+            t1.end_date >= ${todayWIT}
+        ORDER BY
+            t1.start_date ASC -- Urutkan dari yang paling dekat
     `;
     // ===================================
 

@@ -1,8 +1,8 @@
-// src/pages/DashboardPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DoctorManager from '../components/DoctorManager.jsx'; // Impor manager dokter
-import LeaveManager from '../components/LeaveManager.jsx';  // Impor manager cuti
+import DoctorManager from '../components/DoctorManager.jsx';
+import LeaveManager from '../components/LeaveManager.jsx';
+import SstvManager from '../components/SstvManager.jsx'; // <-- 1. IMPOR KOMPONEN BARU
 
 // Komponen Tab
 const TabButton = ({ isActive, onClick, children }) => (
@@ -60,12 +60,21 @@ export default function DashboardPage() {
         >
           Manajemen Cuti
         </TabButton>
+        {/* <-- 2. TAMBAHKAN TOMBOL TAB BARU --> */}
+        <TabButton
+          isActive={activeTab === 'sstv'}
+          onClick={() => setActiveTab('sstv')}
+        >
+          Manajemen Slideshow
+        </TabButton>
       </nav>
 
       {/* Konten Tab */}
       <main className="mt-0">
         {activeTab === 'doctors' && <DoctorManager />}
         {activeTab === 'leaves' && <LeaveManager />}
+        {/* <-- 3. RENDER KOMPONEN BARU --> */}
+        {activeTab === 'sstv' && <SstvManager />}
       </main>
     </div>
   );

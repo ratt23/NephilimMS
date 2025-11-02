@@ -5,7 +5,6 @@ const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
 
 /**
  * Helper untuk membuat key dari nama spesialisasi
- * (cth: "Spesialis Anak" -> "anak")
  */
 function createKey(name) {
     if (typeof name !== 'string') return ''; // Safety check
@@ -21,18 +20,35 @@ function createKey(name) {
 export async function handler(event, context) {
   /**
    * 2. Header CORS & Cache-Control
-   * Mengizinkan domain publik dan memaksa data baru.
    */
   const headers = {
     'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, must-revalidate' // <-- PERBAIKAN CACHE
+    'Cache-Control': 'no-cache, must-revalidate' // Memaksa data baru
   };
 
   try {
-    // 3. Ambil data dari database
-    const doctors = await sql`SELECT * FROM doctors ORDER BY name`;
+    // ===================================
+    // ===       PERBAIKAN KUERI       ===
+    // ===================================
+    // 3. Ambil data dokter, GABUNGKAN (LEFT JOIN) dengan tabel sstv_images
+    const doctors = await sql`
+        SELECT 
+            d.id, 
+            d.name, 
+            d.specialty, 
+            d.schedule, 
+            d.image_url, 
+            s.image_url AS image_url_sstv 
+        FROM 
+            doctors d
+        LEFT JOIN 
+            sstv_images s ON d.id = s.doctor_id
+        ORDER BY 
+            d.name
+    `;
+    // ===================================
 
     // 4. Ubah data "flat" menjadi format JSON yang dikelompokkan
     const doctorsData = {};
@@ -47,15 +63,16 @@ export async function handler(event, context) {
         };
       }
       
-      // Masukkan data dokter
+      // 5. Masukkan data dokter (sekarang termasuk image_url_sstv)
       doctorsData[specialtyKey].doctors.push({
         name: doc.name,
-        image_url: doc.image_url, // Pastikan mengirim image_url
+        image_url: doc.image_url, // Foto untuk web publik
+        image_url_sstv: doc.image_url_sstv, // Foto untuk SSTV
         schedule: doc.schedule 
       });
     }
 
-    // 5. Kirim data
+    // 6. Kirim data
     return {
       statusCode: 200,
       headers: headers,
@@ -66,7 +83,7 @@ export async function handler(event, context) {
     console.error("getDoctors Error:", error);
     return { 
       statusCode: 500, 
-      headers: headers, // Kirim header bahkan saat error
+      headers: headers, 
       body: JSON.stringify({ error: 'Gagal mengambil data dokter' }) 
     };
   }

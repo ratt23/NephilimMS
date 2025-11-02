@@ -1,4 +1,3 @@
-// netlify/functions/api.js
 import postgres from 'postgres';
 import { parse } from 'cookie';
 
@@ -23,6 +22,8 @@ export async function handler(event, context) {
   const path = event.path.replace('/.netlify/functions/api', '');
 
   try {
+    // --- (Semua route /api/doctors, /api/specialties, /api/leaves Anda tetap sama) ---
+    
     // --- ROUTE: GET /api/doctors (Pagination & Search) ---
     if (method === 'GET' && path === '/doctors') {
       const { page = 1, limit = 30, search = '' } = event.queryStringParameters;
@@ -38,13 +39,13 @@ export async function handler(event, context) {
       return { statusCode: 200, body: JSON.stringify({ doctors, total }) };
     }
     
-    // --- ROUTE BARU: GET /api/doctors/all (Untuk dropdown form cuti) ---
+    // --- ROUTE: GET /api/doctors/all (Untuk dropdown form cuti) ---
     if (method === 'GET' && path === '/doctors/all') {
-        const doctors = await sql`SELECT id, name FROM doctors ORDER BY name`;
+        const doctors = await sql`SELECT id, name, specialty FROM doctors ORDER BY name`; // <-- Diperbarui untuk SstvManager
         return { statusCode: 200, body: JSON.stringify(doctors) };
     }
 
-    // --- ROUTE: POST /api/doctors (Tetap sama) ---
+    // --- ROUTE: POST /api/doctors ---
     if (method === 'POST' && path === '/doctors') {
       const { name, specialty, image_url, schedule } = JSON.parse(event.body);
       if (!name || !specialty) { return { statusCode: 400, body: JSON.stringify({ message: 'Nama dan Spesialisasi wajib diisi.' }) }; }
@@ -56,7 +57,7 @@ export async function handler(event, context) {
       return { statusCode: 201, body: JSON.stringify(newDoctor) };
     }
 
-    // --- ROUTE: PUT /api/doctors (Tetap sama) ---
+    // --- ROUTE: PUT /api/doctors ---
     if (method === 'PUT' && path === '/doctors') {
       const { id } = event.queryStringParameters;
       if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID dokter dibutuhkan' }) };
@@ -68,7 +69,7 @@ export async function handler(event, context) {
       return { statusCode: 200, body: JSON.stringify(updatedDoctor) };
     }
 
-    // --- ROUTE: DELETE /api/doctors (Tetap sama) ---
+    // --- ROUTE: DELETE /api/doctors ---
     if (method === 'DELETE' && path === '/doctors') {
       const { id } = event.queryStringParameters;
       if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID dokter dibutuhkan' }) };
@@ -76,24 +77,16 @@ export async function handler(event, context) {
       return { statusCode: 200, body: JSON.stringify({ message: 'Dokter berhasil dihapus' }) };
     }
 
-    // ===================================
-    // === ROUTE BARU UNTUK AUTOCOMPLETE ===
-    // ===================================
+    // --- ROUTE: GET /api/specialties (Untuk autocomplete) ---
     if (method === 'GET' && path === '/specialties') {
       const specialties = await sql`
         SELECT DISTINCT specialty FROM doctors ORDER BY specialty
       `;
-      // Kita ubah dari [{specialty: 'Anak'}, {specialty: 'THT'}] 
-      // menjadi ['Anak', 'THT']
       const specialtyList = specialties.map(s => s.specialty);
       return { statusCode: 200, body: JSON.stringify(specialtyList) };
     }
 
-    // ===================================
-    // === ROUTE BARU UNTUK DATA CUTI ===
-    // ===================================
-
-    // --- ROUTE BARU: GET /api/leaves (Mengambil semua data cuti) ---
+    // --- ROUTE: GET /api/leaves ---
     if (method === 'GET' && path === '/leaves') {
       const leaves = await sql`
         SELECT t1.id, t1.start_date, t1.end_date, t2.name AS doctor_name
@@ -104,7 +97,7 @@ export async function handler(event, context) {
       return { statusCode: 200, body: JSON.stringify(leaves) };
     }
 
-    // --- ROUTE BARU: POST /api/leaves (Membuat data cuti baru) ---
+    // --- ROUTE: POST /api/leaves ---
     if (method === 'POST' && path === '/leaves') {
       const { doctor_id, start_date, end_date } = JSON.parse(event.body);
       if (!doctor_id || !start_date || !end_date) {
@@ -118,12 +111,46 @@ export async function handler(event, context) {
       return { statusCode: 201, body: JSON.stringify(newLeave) };
     }
     
-    // --- ROUTE BARU: DELETE /api/leaves (Menghapus data cuti) ---
+    // --- ROUTE: DELETE /api/leaves ---
     if (method === 'DELETE' && path === '/leaves') {
         const { id } = event.queryStringParameters;
         if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID cuti dibutuhkan' }) };
         await sql`DELETE FROM leave_data WHERE id = ${id}`;
         return { statusCode: 200, body: JSON.stringify({ message: 'Data cuti berhasil dihapus' }) };
+    }
+
+    // ===================================
+    // === ROUTE BARU UNTUK FOTO SSTV ===
+    // ===================================
+
+    // --- ROUTE BARU: GET /api/sstv_images (Mengambil semua foto sstv) ---
+    if (method === 'GET' && path === '/sstv_images') {
+      const images = await sql`SELECT * FROM sstv_images`;
+      // Ubah array [ {doctor_id: 1, ...} ] menjadi objek { 1: ... } agar mudah diakses
+      const imageMap = images.reduce((acc, img) => {
+        acc[img.doctor_id] = img.image_url;
+        return acc;
+      }, {});
+      return { statusCode: 200, body: JSON.stringify(imageMap) };
+    }
+
+    // --- ROUTE BARU: POST /api/sstv_images (Menyimpan/Update foto sstv) ---
+    if (method === 'POST' && path === '/sstv_images') {
+      const { doctor_id, image_url } = JSON.parse(event.body);
+      if (!doctor_id || !image_url) {
+        return { statusCode: 400, body: JSON.stringify({ message: 'ID Dokter dan URL wajib diisi.' }) };
+      }
+      
+      // Gunakan "UPSERT": Update jika ada, Insert jika belum ada.
+      const [result] = await sql`
+        INSERT INTO sstv_images (doctor_id, image_url)
+        VALUES (${doctor_id}, ${image_url})
+        ON CONFLICT (doctor_id) 
+        DO UPDATE SET image_url = EXCLUDED.image_url
+        RETURNING *
+      `;
+      
+      return { statusCode: 201, body: JSON.stringify(result) };
     }
 
     // --- Fallback ---

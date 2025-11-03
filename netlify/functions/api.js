@@ -180,9 +180,14 @@ export async function handler(event, context) {
         return { statusCode: 400, body: JSON.stringify({ message: 'URL Gambar wajib diisi.' }) };
       }
       
+      // ===================================
+      // ===       PERBAIKAN BUG INI       ===
+      // ===================================
       // Ambil sort_order tertinggi + 1
-      const [maxOrder] = await sql`SELECT MAX(sort_order) as max FROM promo_images`;
-      const newOrder = (maxOrder.max || 0) + 1;
+      const [maxOrderResult] = await sql`SELECT MAX(sort_order) as max FROM promo_images`;
+      // Handle kasus jika maxOrderResult.max adalah null (saat tabel kosong)
+      const newOrder = (maxOrderResult.max ? parseInt(maxOrderResult.max, 10) : 0) + 1;
+      // ===================================
 
       const [newPromo] = await sql`
         INSERT INTO promo_images (image_url, alt_text, sort_order)
@@ -210,13 +215,12 @@ export async function handler(event, context) {
 
     // --- POST /api/promos/reorder (Untuk drag-and-drop) ---
     if (method === 'POST' && path === '/promos/reorder') {
-        const { orderedIds } = JSON.parse(event.body); // Ekspektasi: [5, 2, 10, 1]
+        const { orderedIds } = JSON.parse(event.body);
         
         if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
             return { statusCode: 400, body: JSON.stringify({ message: 'Data urutan (orderedIds) dibutuhkan.' }) };
         }
 
-        // Kueri SQL untuk meng-update semua urutan sekaligus
         await sql.begin(async sql => {
             await sql`
                 UPDATE promo_images AS p

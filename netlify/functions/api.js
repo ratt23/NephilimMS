@@ -1,10 +1,7 @@
 // netlify/functions/api.js
 import postgres from 'postgres';
 import { parse } from 'cookie';
-<<<<<<< HEAD
 import { sendLeaveNotification, sendNotification } from './utils/notificationSender.js';
-=======
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
 
 // 1. KONEKSI KE DATABASE
 const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
@@ -49,19 +46,11 @@ export async function handler(event, context) {
       `;
       return { statusCode: 200, body: JSON.stringify({ doctors, total }) };
     }
-<<<<<<< HEAD
 
     // --- GET /api/doctors/all (Untuk dropdown form cuti) ---
     if (method === 'GET' && path === '/doctors/all') {
       const doctors = await sql`SELECT id, name, specialty FROM doctors ORDER BY name`;
       return { statusCode: 200, body: JSON.stringify(doctors) };
-=======
-    
-    // --- GET /api/doctors/all (Untuk dropdown form cuti) ---
-    if (method === 'GET' && path === '/doctors/all') {
-        const doctors = await sql`SELECT id, name, specialty FROM doctors ORDER BY name`;
-        return { statusCode: 200, body: JSON.stringify(doctors) };
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
     }
 
     // --- POST /api/doctors (Buat dokter baru) ---
@@ -126,17 +115,13 @@ export async function handler(event, context) {
       if (!doctor_id || !start_date || !end_date) {
         return { statusCode: 400, body: JSON.stringify({ message: 'Semua field wajib diisi.' }) };
       }
-<<<<<<< HEAD
       const [doctor] = await sql`SELECT name FROM doctors WHERE id = ${doctor_id}`;
 
-=======
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
       const [newLeave] = await sql`
         INSERT INTO leave_data (doctor_id, start_date, end_date)
         VALUES (${doctor_id}, ${start_date}, ${end_date})
         RETURNING id, start_date, end_date
       `;
-<<<<<<< HEAD
 
       // Kirim Notifikasi jika sukses (Fire & Forget)
       if (newLeave) {
@@ -178,20 +163,6 @@ export async function handler(event, context) {
 
 
     // ===================================
-=======
-      return { statusCode: 201, body: JSON.stringify(newLeave) };
-    }
-    
-    // --- DELETE /api/leaves ---
-    if (method === 'DELETE' && path === '/leaves') {
-        const { id } = event.queryStringParameters;
-        if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID cuti dibutuhkan' }) };
-        await sql`DELETE FROM leave_data WHERE id = ${id}`;
-        return { statusCode: 200, body: JSON.stringify({ message: 'Data cuti berhasil dihapus' }) };
-    }
-
-    // ===================================
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
     // === RUTE MANAJEMEN FOTO SSTV
     // ===================================
 
@@ -240,11 +211,7 @@ export async function handler(event, context) {
       if (!image_url) {
         return { statusCode: 400, body: JSON.stringify({ message: 'URL Gambar wajib diisi.' }) };
       }
-<<<<<<< HEAD
 
-=======
-      
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
       // ===================================
       // ===       PERBAIKAN BUG INI       ===
       // ===================================
@@ -264,36 +231,22 @@ export async function handler(event, context) {
 
     // --- PUT /api/promos (Untuk edit alt_text) ---
     if (method === 'PUT' && path === '/promos') {
-<<<<<<< HEAD
       const { id } = event.queryStringParameters;
       if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID Promo dibutuhkan' }) };
 
       const { alt_text } = JSON.parse(event.body);
 
       const [updatedPromo] = await sql`
-=======
-        const { id } = event.queryStringParameters;
-        if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID Promo dibutuhkan' }) };
-
-        const { alt_text } = JSON.parse(event.body);
-        
-        const [updatedPromo] = await sql`
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
             UPDATE promo_images
             SET alt_text = ${alt_text}
             WHERE id = ${id}
             RETURNING *
         `;
-<<<<<<< HEAD
       return { statusCode: 200, body: JSON.stringify(updatedPromo) };
-=======
-        return { statusCode: 200, body: JSON.stringify(updatedPromo) };
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
     }
 
     // --- POST /api/promos/reorder (Untuk drag-and-drop) ---
     if (method === 'POST' && path === '/promos/reorder') {
-<<<<<<< HEAD
       const { orderedIds } = JSON.parse(event.body);
 
       if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
@@ -302,16 +255,6 @@ export async function handler(event, context) {
 
       await sql.begin(async sql => {
         await sql`
-=======
-        const { orderedIds } = JSON.parse(event.body);
-        
-        if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
-            return { statusCode: 400, body: JSON.stringify({ message: 'Data urutan (orderedIds) dibutuhkan.' }) };
-        }
-
-        await sql.begin(async sql => {
-            await sql`
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
                 UPDATE promo_images AS p
                 SET sort_order = temp.new_order
                 FROM (
@@ -322,30 +265,17 @@ export async function handler(event, context) {
                 ) AS temp
                 WHERE p.id = temp.id
             `;
-<<<<<<< HEAD
       });
 
       return { statusCode: 200, body: JSON.stringify({ message: 'Urutan berhasil disimpan' }) };
-=======
-        });
-        
-        return { statusCode: 200, body: JSON.stringify({ message: 'Urutan berhasil disimpan' }) };
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
     }
 
     // --- DELETE /api/promos ---
     if (method === 'DELETE' && path === '/promos') {
-<<<<<<< HEAD
       const { id } = event.queryStringParameters;
       if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID Promo dibutuhkan' }) };
       await sql`DELETE FROM promo_images WHERE id = ${id}`;
       return { statusCode: 200, body: JSON.stringify({ message: 'Promo berhasil dihapus' }) };
-=======
-        const { id } = event.queryStringParameters;
-        if (!id) return { statusCode: 400, body: JSON.stringify({ message: 'ID Promo dibutuhkan' }) };
-        await sql`DELETE FROM promo_images WHERE id = ${id}`;
-        return { statusCode: 200, body: JSON.stringify({ message: 'Promo berhasil dihapus' }) };
->>>>>>> 7b187e37ba53bdb5b31500fd0af74e2a4fe43b3f
     }
 
 

@@ -46,15 +46,25 @@ export const sendNotification = (heading, content, data = {}) => {
   });
 };
 
-export const sendLeaveNotification = (doctorName, leaveDate) => {
+export const sendLeaveNotification = (doctorName, startDate, endDate) => {
   const heading = "📅 INFO CUTI DOKTER:";
 
-  // Format date simple
-  const dateObj = new Date(leaveDate);
-  const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  const formatDate = (dateVal) => {
+    const d = new Date(dateVal);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
 
-  // Removed explicit 'dr.' prefix because doctorName usually includes it.
-  const content = `- ${doctorName} (s.d ${dateStr})`;
+  const startStr = formatDate(startDate);
+  const endStr = formatDate(endDate);
+
+  let dateDisplay = "";
+  if (startStr === endStr) {
+    dateDisplay = `(${startStr})`;
+  } else {
+    dateDisplay = `(${startStr} s/d ${endStr})`;
+  }
+
+  const content = `- ${doctorName} ${dateDisplay}`;
 
   return sendNotification(heading, content);
 };

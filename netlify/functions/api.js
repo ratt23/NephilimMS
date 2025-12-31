@@ -126,7 +126,7 @@ export async function handler(event, context) {
       // Kirim Notifikasi jika sukses (Fire & Forget)
       if (newLeave) {
         const doctorName = doctor?.name || 'Dokter';
-        sendLeaveNotification(doctorName, newLeave.start_date)
+        sendLeaveNotification(doctorName, newLeave.start_date, newLeave.end_date)
           .then(() => console.log('Notif sent!'))
           .catch(err => console.error('Notif failed', err));
       }

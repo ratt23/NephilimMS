@@ -51,7 +51,9 @@ export const sendLeaveNotification = (doctorName, startDate, endDate) => {
 
   const formatDate = (dateVal) => {
     const d = new Date(dateVal);
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    // User requested "dd-mm-yyyy", but keeping "Des" is friendlier. 
+    // using "day month year" format (e.g. 31 Des 2025)
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const startStr = formatDate(startDate);

@@ -1,13 +1,23 @@
 import https from 'https';
 
-export const sendNotification = (heading, content, data = {}) => {
+export const sendNotification = (heading, content, data = {}, overrideConfig = {}) => {
   return new Promise((resolve, reject) => {
+    // Priority: Override -> Env Var
+    const apiKey = overrideConfig.apiKey || process.env.ONESIGNAL_API_KEY;
+    const appId = overrideConfig.appId || process.env.ONESIGNAL_APP_ID;
+
+    if (!apiKey || !appId) {
+      console.error("OneSignal Credentials missing (Check .env or Settings)");
+      reject(new Error("OneSignal Credentials missing"));
+      return;
+    }
+
     const headers = {
       "Content-Type": "application/json; charset=utf-8",
-      "Authorization": `Basic ${process.env.ONESIGNAL_API_KEY}`
+      "Authorization": `Basic ${apiKey}`
     };
     const body = {
-      app_id: process.env.ONESIGNAL_APP_ID,
+      app_id: appId,
       headings: { "en": heading },
       contents: { "en": content },
       included_segments: ["All"],
@@ -46,14 +56,23 @@ export const sendNotification = (heading, content, data = {}) => {
   });
 };
 
-export const sendLeaveNotification = (doctorName, startDate, endDate) => {
-  const heading = "📅 INFO CUTI DOKTER:";
+export const sendLeaveNotification = (doctorName, startDate, endDate, overrideConfig = {}) => {
+  // Check if leave is already expired
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+
+  if (end < today) {
+    console.log("Notification skipped: Leave period has already ended.");
+    return Promise.resolve({ skipped: true, reason: "Expired" });
+  }
+
+  const heading = "📅 DOCTOR LEAVE INFO";
 
   const formatDate = (dateVal) => {
     const d = new Date(dateVal);
-    // User requested "dd-mm-yyyy", but keeping "Des" is friendlier. 
-    // using "day month year" format (e.g. 31 Des 2025)
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    // Use en-GB to match "12 Jan 2024" format used in LeaveManager
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const startStr = formatDate(startDate);
@@ -63,10 +82,10 @@ export const sendLeaveNotification = (doctorName, startDate, endDate) => {
   if (startStr === endStr) {
     dateDisplay = `(${startStr})`;
   } else {
-    dateDisplay = `(${startStr} s/d ${endStr})`;
+    dateDisplay = `(${startStr} - ${endStr})`;
   }
 
-  const content = `- ${doctorName} ${dateDisplay}`;
+  const content = `${doctorName} is on leave ${dateDisplay}`;
 
-  return sendNotification(heading, content);
+  return sendNotification(heading, content, {}, overrideConfig);
 };

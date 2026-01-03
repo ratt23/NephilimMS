@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import LoadingSpinner from './LoadingSpinner';
 
-// Fungsi helper API
+// Helper API function
 async function fetchApi(url, options = {}) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -10,7 +11,7 @@ async function fetchApi(url, options = {}) {
   return response.json();
 }
 
-// Komponen untuk satu baris dokter
+// Component for a single doctor row
 function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
@@ -23,7 +24,7 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
     const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!CLOUD_NAME || !UPLOAD_PRESET) {
-      setUploadError("Kredensial Cloudinary belum diatur.");
+      setUploadError("Cloudinary credentials missing.");
       return;
     }
 
@@ -36,7 +37,7 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
     formDataApi.append('cloud_name', CLOUD_NAME);
 
     try {
-      // 1. Upload ke Cloudinary
+      // 1. Upload to Cloudinary
       const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
         method: 'POST',
         body: formDataApi,
@@ -46,7 +47,7 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
 
       const secureUrl = data.secure_url;
 
-      // 2. Simpan URL ke database kita via API
+      // 2. Save URL to our database via API
       await fetchApi('/.netlify/functions/api/sstv_images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,7 +57,7 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
         })
       });
 
-      // 3. Beri tahu parent component untuk refresh UI
+      // 3. Notify parent component to refresh UI
       onUploadSuccess(doctor.id, secureUrl);
 
     } catch (err) {
@@ -67,34 +68,36 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
   };
 
   return (
-    <tr className="divide-x divide-gray-200">
-      <td className="p-3 text-sm font-medium text-gray-900">{doctor.name}</td>
-      <td className="p-3 text-sm text-gray-700">{doctor.specialty}</td>
-      <td className="p-3 text-center">
+    <tr className="hover:bg-blue-50 transition-colors group border-b border-gray-100">
+      <td className="p-3 text-sm font-semibold text-gray-800 border-l border-r border-gray-100">{doctor.name}</td>
+      <td className="p-3 text-sm text-gray-600 border-r border-gray-100">{doctor.specialty}</td>
+      <td className="p-3 text-center border-r border-gray-100 bg-gray-50">
         {currentImageUrl ? (
-          <img src={currentImageUrl} alt="Preview" className="w-24 h-24 object-cover rounded border mx-auto" />
+          <img src={currentImageUrl} alt="Preview" className="w-20 h-20 object-cover rounded border border-gray-300 mx-auto shadow-sm" />
         ) : (
-          <span className="text-xs text-gray-400">Belum ada foto</span>
+          <span className="text-xs text-gray-400 italic">No image yet</span>
         )}
       </td>
-      <td className="p-3 text-sm text-center">
-        <label className="cursor-pointer rounded-md border border-gray-400 p-2 text-sm text-gray-700 hover:bg-gray-50">
-          {isUploading ? "Mengupload..." : (currentImageUrl ? "Ganti" : "Upload")}
-          <input
-            type="file"
-            onChange={handleImageUpload}
-            className="hidden"
-            accept="image/png, image/jpeg, image/webp"
-            disabled={isUploading}
-          />
-        </label>
-        {uploadError && <p className="text-red-600 text-xs mt-1">{uploadError}</p>}
+      <td className="p-3 text-sm text-center border-r border-gray-100">
+        <div className="flex flex-col items-center">
+          <label className={`cursor-pointer inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded shadow-sm text-white ${currentImageUrl ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
+            {isUploading ? "Uploading..." : (currentImageUrl ? "Change Photo" : "Upload Photo")}
+            <input
+              type="file"
+              onChange={handleImageUpload}
+              className="hidden"
+              accept="image/png, image/jpeg, image/webp"
+              disabled={isUploading}
+            />
+          </label>
+          {uploadError && <p className="text-red-600 text-[10px] mt-1">{uploadError}</p>}
+        </div>
       </td>
     </tr>
   );
 }
 
-// Komponen Utama
+// Main Component
 export default function SstvManager() {
   const [allDoctors, setAllDoctors] = useState([]);
   const [sstvImages, setSstvImages] = useState({});
@@ -105,9 +108,9 @@ export default function SstvManager() {
     try {
       setIsLoading(true);
       setError(null);
-      // Ambil semua dokter dan map gambar sstv
+      // Fetch all doctors and sstv map
       const [doctorsData, imagesData] = await Promise.all([
-        fetchApi('/.netlify/functions/api/doctors/all'), 
+        fetchApi('/.netlify/functions/api/doctors/all'),
         fetchApi('/.netlify/functions/api/sstv_images')
       ]);
       setAllDoctors(doctorsData);
@@ -123,7 +126,7 @@ export default function SstvManager() {
     fetchData();
   }, [fetchData]);
 
-  // Fungsi untuk update state secara lokal setelah upload
+  // Function to update state locally after upload
   const handleUploadSuccess = (doctorId, imageUrl) => {
     setSstvImages(prev => ({
       ...prev,
@@ -131,36 +134,46 @@ export default function SstvManager() {
     }));
   };
 
-  if (isLoading) return <p>Memuat data...</p>;
-  if (error) return <p className="text-red-600">Error: {error}</p>;
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <p className="p-6 text-red-600">Error: {error}</p>;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Manajemen Foto Slideshow (SSTV)</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Upload foto yang akan ditampilkan di TV Slideshow. Foto ini terpisah dari foto di website publik.
-      </p>
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr className="divide-x divide-gray-200">
-              <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Dokter</th>
-              <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase">Spesialisasi</th>
-              <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase">Preview Foto SSTV</th>
-              <th className="p-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {allDoctors.map((doctor) => (
-              <DoctorSstvRow
-                key={doctor.id}
-                doctor={doctor}
-                currentImageUrl={sstvImages[doctor.id]}
-                onUploadSuccess={handleUploadSuccess}
-              />
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-6 animate-fade-in font-sans">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-none">
+        {/* TOOLBAR */}
+        <div className="bg-white p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <span>Slideshow Manager (SSTV)</span>
+            <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{allDoctors.length}</span>
+          </h2>
+        </div>
+
+        <div className="bg-blue-50 border-b border-blue-100 p-4 text-sm text-blue-800">
+          <p>Upload photos here to be displayed on the TV Slideshow. These photos are separate from the public website profile photos.</p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-[#f0f2f5]">
+              <tr>
+                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Doctor Name</th>
+                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Specialty</th>
+                <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">SSTV Preview</th>
+                <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {allDoctors.map((doctor) => (
+                <DoctorSstvRow
+                  key={doctor.id}
+                  doctor={doctor}
+                  currentImageUrl={sstvImages[doctor.id]}
+                  onUploadSuccess={handleUploadSuccess}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

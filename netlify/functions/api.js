@@ -348,6 +348,42 @@ export async function handler(event, context) {
       return { statusCode: 200, headers, body: JSON.stringify({ message: 'Settings updated' }) };
     }
 
+    // ===================================
+    // ===   RUTE POPUP AD   ===
+    // ===================================
+
+    // --- GET /api/popup-ad ---
+    if (method === 'GET' && path === '/popup-ad') {
+      const settings = await sql`SELECT * FROM app_settings WHERE setting_key IN ('popup_ad_image', 'popup_ad_active')`;
+      const result = {
+        image_url: settings.find(s => s.setting_key === 'popup_ad_image')?.setting_value || '',
+        active: settings.find(s => s.setting_key === 'popup_ad_active')?.is_enabled ?? false
+      };
+      return { statusCode: 200, headers, body: JSON.stringify(result) };
+    }
+
+    // --- POST /api/popup-ad ---
+    if (method === 'POST' && path === '/popup-ad') {
+      const { image_url, active } = JSON.parse(event.body);
+
+      await sql.begin(async sql => {
+        // Update Image URL
+        await sql`
+            INSERT INTO app_settings (setting_key, setting_value, is_enabled, updated_at)
+            VALUES ('popup_ad_image', ${image_url}, true, NOW())
+            ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()
+          `;
+        // Update Active Status (is_enabled column acts as the boolean toggle here, setting_value can be ignored or string 'true'/'false')
+        await sql`
+             INSERT INTO app_settings (setting_key, setting_value, is_enabled, updated_at)
+             VALUES ('popup_ad_active', ${active ? 'true' : 'false'}, ${active}, NOW())
+             ON CONFLICT (setting_key) DO UPDATE SET is_enabled = EXCLUDED.is_enabled, setting_value = EXCLUDED.setting_value, updated_at = NOW()
+          `;
+      });
+
+      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Popup Ad updated successfully' }) };
+    }
+
     // --- Fallback ---
     return { statusCode: 404, headers, body: JSON.stringify({ message: 'Endpoint tidak ditemukan' }) };
 

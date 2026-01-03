@@ -8,6 +8,7 @@ import PushNotificationManager from '../components/PushNotificationManager.jsx';
 import SettingsManager from '../components/SettingsManager.jsx';
 import PostManager from '../components/PostManager.jsx';
 import AdSenseManager from '../components/AdSenseManager.jsx';
+import PopUpAdsManager from '../components/PopUpAdsManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -99,6 +100,7 @@ export default function DashboardPage() {
     { id: 'sstv', label: 'Slideshow', icon: IconImage },
     { id: 'promos', label: 'Promos', icon: IconTag },
     { id: 'ads', label: 'AdSense', icon: IconDollarSign },
+    { id: 'popup', label: 'Pop Up Ads', icon: IconImage },
     { id: 'notifications', label: 'Push Notif', icon: IconBell },
     { id: 'settings', label: 'Settings', icon: IconSettings },
   ];
@@ -134,6 +136,11 @@ export default function DashboardPage() {
                 onClick={() => handleTabChange('ads')}
                 icon={IconDollarSign}
                 label="Manage Ads"
+              />
+              <QuickIcon
+                onClick={() => handleTabChange('popup')}
+                icon={IconImage}
+                label="Manage Popup"
               />
               <QuickIcon
                 onClick={() => handleTabChange('sstv')}
@@ -184,6 +191,8 @@ export default function DashboardPage() {
         return <PostManager />;
       case 'ads':
         return <AdSenseManager />;
+      case 'popup':
+        return <PopUpAdsManager />;
       case 'sstv':
         return <SstvManager />;
       case 'promos':

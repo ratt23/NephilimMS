@@ -34,7 +34,7 @@ export async function handler(event, context) {
   }
 
   // --- PUBLIC ROUTES ---
-  const PUBLIC_READ_PATHS = ['/posts', '/doctors', '/leaves', '/sstv_images', '/promos', '/doctors/all', '/specialties', '/settings'];
+  const PUBLIC_READ_PATHS = ['/posts', '/doctors', '/leaves', '/sstv_images', '/promos', '/doctors/all', '/specialties', '/settings', '/popup-ad'];
   // Added /settings to public read if the external site needs to know where to place ads (or maybe keep it private if it contains secrets? usually ad codes are public anyway)
   // Let's keep /settings public READ for the external site to fetch ad codes.
 

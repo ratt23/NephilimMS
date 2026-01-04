@@ -47,7 +47,7 @@ export default function LoginPage() {
             <img src="/CMS.png" alt="CMS Logo" className="h-8 w-8" />
             <div className="flex flex-col leading-tight text-left">
               <span>CatMS</span>
-              <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Empowering Healthcare</span>
+              <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Custom CMS</span>
             </div>
           </div>
           <p className="text-blue-100 text-sm mt-2">Administrator Access</p>

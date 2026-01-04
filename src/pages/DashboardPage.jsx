@@ -9,6 +9,7 @@ import SettingsManager from '../components/SettingsManager.jsx';
 import PostManager from '../components/PostManager.jsx';
 import AdSenseManager from '../components/AdSenseManager.jsx';
 import PopUpAdsManager from '../components/PopUpAdsManager.jsx';
+import SiteMenuManager from '../components/SiteMenuManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -47,6 +48,9 @@ const IconFileText = () => (
 );
 const IconDollarSign = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+);
+const IconList = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
 );
 
 
@@ -101,6 +105,7 @@ export default function DashboardPage() {
     { id: 'promos', label: 'Promos', icon: IconTag },
     { id: 'ads', label: 'AdSense', icon: IconDollarSign },
     { id: 'popup', label: 'Pop Up Ads', icon: IconImage },
+    { id: 'site_menu', label: 'Menu Manager', icon: IconList },
     { id: 'notifications', label: 'Push Notif', icon: IconBell },
     { id: 'settings', label: 'Settings', icon: IconSettings },
   ];
@@ -141,6 +146,11 @@ export default function DashboardPage() {
                 onClick={() => handleTabChange('popup')}
                 icon={IconImage}
                 label="Manage Popup"
+              />
+              <QuickIcon
+                onClick={() => handleTabChange('site_menu')}
+                icon={IconList}
+                label="Manage Site Menu"
               />
               <QuickIcon
                 onClick={() => handleTabChange('sstv')}
@@ -193,6 +203,8 @@ export default function DashboardPage() {
         return <AdSenseManager />;
       case 'popup':
         return <PopUpAdsManager />;
+      case 'site_menu':
+        return <SiteMenuManager />;
       case 'sstv':
         return <SstvManager />;
       case 'promos':
@@ -223,7 +235,7 @@ export default function DashboardPage() {
             <img src="/CMS.png" alt="CMS Logo" className="h-8 w-8" />
             <div className="flex flex-col leading-tight">
               <span>CatMS</span>
-              <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Empowering Healthcare</span>
+              <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Custom CMS</span>
             </div>
           </div>
         </div>

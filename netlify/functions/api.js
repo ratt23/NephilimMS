@@ -437,6 +437,124 @@ export async function handler(event, context) {
       return { statusCode: 200, headers, body: JSON.stringify({ message: 'Popup Ad updated successfully' }) };
     }
 
+    // ===================================
+    // ===   RUTE MCU PACKAGES   ===
+    // ===================================
+
+    // --- GET /api/mcu-packages (PUBLIC - for client website) ---
+    if (method === 'GET' && path === '/mcu-packages') {
+      const packages = await sql`
+        SELECT * FROM mcu_packages 
+        WHERE is_enabled = true 
+        ORDER BY display_order ASC, id ASC
+      `;
+      return { statusCode: 200, headers, body: JSON.stringify(packages) };
+    }
+
+    // --- GET /api/mcu-packages/all (ADMIN - get all including disabled) ---
+    if (method === 'GET' && path === '/mcu-packages/all') {
+      const authError = checkAuth(event);
+      if (authError) return authError;
+
+      const packages = await sql`
+        SELECT * FROM mcu_packages 
+        ORDER BY display_order ASC, id ASC
+      `;
+      return { statusCode: 200, headers, body: JSON.stringify(packages) };
+    }
+
+    // --- GET /api/mcu-packages/:id (AD MIN - get single package) ---
+    const mcuGetMatch = path.match(/^\/mcu-packages\/(\d+)$/);
+    if (method === 'GET' && mcuGetMatch) {
+      const authError = checkAuth(event);
+      if (authError) return authError;
+
+      const id = parseInt(mcuGetMatch[1]);
+      const [pkg] = await sql`SELECT * FROM mcu_packages WHERE id = ${id}`;
+
+      if (!pkg) {
+        return { statusCode: 404, headers, body: JSON.stringify({ message: 'Package not found' }) };
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify(pkg) };
+    }
+
+    // --- POST /api/mcu-packages (ADMIN - create new package) ---
+    if (method === 'POST' && path === '/mcu-packages') {
+      const authError = checkAuth(event);
+      if (authError) return authError;
+
+      const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order } = JSON.parse(event.body);
+
+      // Validation
+      if (!package_id || !name || !price || !items) {
+        return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing required fields' }) };
+      }
+
+      const [newPkg] = await sql`
+        INSERT INTO mcu_packages (
+          package_id, name, price, base_price, image_url, 
+          is_pelaut, is_recommended, items, addons, display_order
+        ) VALUES (
+          ${package_id}, ${name}, ${price}, ${base_price || null}, ${image_url || null},
+          ${is_pelaut || false}, ${is_recommended || false}, ${JSON.stringify(items)}, 
+          ${addons ? JSON.stringify(addons) : null}, ${display_order || 0}
+        )
+        RETURNING *
+      `;
+
+      return { statusCode: 201, headers, body: JSON.stringify(newPkg) };
+    }
+
+    // --- PUT /api/mcu-packages/:id (ADMIN - update package) ---
+    const mcuPutMatch = path.match(/^\/mcu-packages\/(\d+)$/);
+    if (method === 'PUT' && mcuPutMatch) {
+      const authError = checkAuth(event);
+      if (authError) return authError;
+
+      const id = parseInt(mcuPutMatch[1]);
+      const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, is_enabled, display_order } = JSON.parse(event.body);
+
+      const [updated] = await sql`
+        UPDATE mcu_packages 
+        SET 
+          package_id = ${package_id},
+          name = ${name},
+          price = ${price},
+          base_price = ${base_price || null},
+          image_url = ${image_url || null},
+          is_pelaut = ${is_pelaut || false},
+          is_recommended = ${is_recommended || false},
+          items = ${JSON.stringify(items)},
+          addons = ${addons ? JSON.stringify(addons) : null},
+          is_enabled = ${is_enabled !== undefined ? is_enabled : true},
+          display_order = ${display_order || 0},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `;
+
+      if (!updated) {
+        return { statusCode: 404, headers, body: JSON.stringify({ message: 'Package not found' }) };
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify(updated) };
+    }
+
+    // --- DELETE /api/mcu-packages/:id (ADMIN - soft delete by disabling) ---
+    const mcuDeleteMatch = path.match(/^\/mcu-packages\/(\d+)$/);
+    if (method === 'DELETE' && mcuDeleteMatch) {
+      const authError = checkAuth(event);
+      if (authError) return authError;
+
+      const id = parseInt(mcuDeleteMatch[1]);
+
+      // Soft delete (disable instead of hard delete)
+      await sql`UPDATE mcu_packages SET is_enabled = false WHERE id = ${id}`;
+
+      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Package disabled successfully' }) };
+    }
+
     // --- Fallback ---
     return { statusCode: 404, headers, body: JSON.stringify({ message: 'Endpoint tidak ditemukan' }) };
 

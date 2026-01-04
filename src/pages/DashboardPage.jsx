@@ -10,6 +10,7 @@ import PostManager from '../components/PostManager.jsx';
 import AdSenseManager from '../components/AdSenseManager.jsx';
 import PopUpAdsManager from '../components/PopUpAdsManager.jsx';
 import SiteMenuManager from '../components/SiteMenuManager.jsx';
+import McuManager from '../components/McuManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -103,6 +104,7 @@ export default function DashboardPage() {
     { id: 'posts', label: 'News / Blog', icon: IconFileText },
     { id: 'sstv', label: 'Slideshow', icon: IconImage },
     { id: 'promos', label: 'Promos', icon: IconTag },
+    { id: 'mcu', label: 'MCU Packages', icon: IconFileText },
     { id: 'ads', label: 'AdSense', icon: IconDollarSign },
     { id: 'popup', label: 'Pop Up Ads', icon: IconImage },
     { id: 'site_menu', label: 'Menu Manager', icon: IconList },
@@ -209,6 +211,8 @@ export default function DashboardPage() {
         return <SstvManager />;
       case 'promos':
         return <PromoManager />;
+      case 'mcu':
+        return <McuManager />;
       case 'notifications':
         return <PushNotificationManager />;
       case 'settings':

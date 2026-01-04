@@ -1,8 +1,8 @@
 // Migration script to create mcu_packages table and seed with existing data
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 
 export const handler = async () => {
-    const sql = neon(process.env.NEON_DATABASE_URL);
+    const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
 
     try {
         console.log('Creating mcu_packages table...');

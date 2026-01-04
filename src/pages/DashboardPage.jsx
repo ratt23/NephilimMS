@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DoctorManager from '../components/DoctorManager.jsx';
 import LeaveManager from '../components/LeaveManager.jsx';
@@ -11,6 +11,8 @@ import AdSenseManager from '../components/AdSenseManager.jsx';
 import PopUpAdsManager from '../components/PopUpAdsManager.jsx';
 import SiteMenuManager from '../components/SiteMenuManager.jsx';
 import McuManager from '../components/McuManager.jsx';
+import VisitorChart from '../components/VisitorChart.jsx';
+import ChangelogManager from '../components/ChangelogManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -43,7 +45,6 @@ const IconX = () => (
 const IconSettings = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
 );
-// New Icon for News
 const IconFileText = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></svg>
 );
@@ -53,23 +54,108 @@ const IconDollarSign = () => (
 const IconList = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
 );
+const IconChevronDown = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+);
+const IconTv = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="15" x="2" y="7" rx="2" ry="2" /><polyline points="17 2 12 7 7 2" /></svg>
+);
 
+
+// --- Menu Configuration ---
+const MENU_GROUPS = [
+  {
+    title: 'Overview',
+    id: 'overview',
+    items: [
+      { id: 'dashboard', label: 'Control Panel', icon: IconGrid },
+    ]
+  },
+  {
+    title: 'Medical Data',
+    id: 'medical',
+    items: [
+      { id: 'doctors', label: 'Doctors', icon: IconUsers },
+      { id: 'leaves', label: 'Leaves', icon: IconCalendar },
+      { id: 'mcu', label: 'MCU Packages', icon: IconFileText },
+    ]
+  },
+  {
+    title: 'Content & Media',
+    id: 'content',
+    items: [
+      { id: 'sstv', label: 'Slideshow / TV', icon: IconTv },
+      { id: 'posts', label: 'News / Blog', icon: IconFileText },
+      { id: 'promos', label: 'Promos', icon: IconTag },
+    ]
+  },
+  {
+    title: 'Marketing',
+    id: 'marketing',
+    items: [
+      { id: 'ads', label: 'AdSense', icon: IconDollarSign },
+      { id: 'popup', label: 'Pop Up Ads', icon: IconImage },
+      { id: 'notifications', label: 'Push Notif', icon: IconBell },
+    ]
+  },
+  {
+    title: 'System',
+    id: 'system',
+    items: [
+      { id: 'site_menu', label: 'Menu Manager', icon: IconList },
+      { id: 'settings', label: 'Settings', icon: IconSettings },
+      { id: 'changelog', label: 'Changelog', icon: IconFileText },
+    ]
+  }
+];
 
 // --- Layout Components ---
 
 const SidebarItem = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-colors
+    className={`w-full flex items-center space-x-3 px-10 py-2.5 text-sm font-medium transition-colors border-l-4
       ${active
-        ? 'bg-[#1a3e6e] text-white border-l-4 border-blue-400'
-        : 'text-gray-300 hover:bg-[#15345d] hover:text-white border-l-4 border-transparent'
+        ? 'bg-[#1a3e6e] text-white border-blue-400'
+        : 'text-gray-400 hover:text-white border-transparent'
       } `}
   >
     <Icon />
     <span>{label}</span>
   </button>
 );
+
+const SidebarGroup = ({ group, activeTab, toggleGroup, isExpanded, onTabChange }) => {
+  // Check if any child is active to auto-highlight group parent style if needed
+  const hasActiveChild = group.items.some(item => item.id === activeTab);
+
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => toggleGroup(group.id)}
+        className={`w-full flex items-center justify-between px-6 py-3 text-xs font-bold uppercase tracking-wider transition-colors
+                    ${hasActiveChild || isExpanded ? 'text-white bg-[#181b1f]' : 'text-gray-500 hover:bg-[#1a1d21]'}
+                `}
+      >
+        <span>{group.title}</span>
+        <IconChevronDown className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="bg-[#1f2329] py-1">
+          {group.items.map(item => (
+            <SidebarItem
+              key={item.id}
+              label={item.label}
+              icon={item.icon}
+              active={activeTab === item.id}
+              onClick={() => onTabChange(item.id)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const QuickIcon = ({ onClick, icon: Icon, label, colorClass = "text-blue-600 bg-blue-50 hover:bg-blue-100" }) => (
   <button
@@ -86,7 +172,29 @@ const QuickIcon = ({ onClick, icon: Icon, label, colorClass = "text-blue-600 bg-
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard'); // Default to Control Panel
+  const [expandedGroups, setExpandedGroups] = useState({
+    overview: true, // Default open
+    medical: true,
+    content: false,
+    marketing: false,
+    system: false
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Auto-expand group if active tab changes
+  useEffect(() => {
+    const parentGroup = MENU_GROUPS.find(g => g.items.some(i => i.id === activeTab));
+    if (parentGroup) {
+      setExpandedGroups(prev => ({ ...prev, [parentGroup.id]: true }));
+    }
+  }, [activeTab]);
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
   const handleLogout = async () => {
     try {
@@ -97,24 +205,11 @@ export default function DashboardPage() {
     navigate('/login');
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Control Panel', icon: IconGrid },
-    { id: 'doctors', label: 'Doctors', icon: IconUsers },
-    { id: 'leaves', label: 'Leaves', icon: IconCalendar },
-    { id: 'posts', label: 'News / Blog', icon: IconFileText },
-    { id: 'sstv', label: 'Slideshow', icon: IconImage },
-    { id: 'promos', label: 'Promos', icon: IconTag },
-    { id: 'mcu', label: 'MCU Packages', icon: IconFileText },
-    { id: 'ads', label: 'AdSense', icon: IconDollarSign },
-    { id: 'popup', label: 'Pop Up Ads', icon: IconImage },
-    { id: 'site_menu', label: 'Menu Manager', icon: IconList },
-    { id: 'notifications', label: 'Push Notif', icon: IconBell },
-    { id: 'settings', label: 'Settings', icon: IconSettings },
-  ];
-
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    setIsMobileMenuOpen(false); // Close mobile menu on usage
+    if (window.innerWidth < 768) {
+      setIsMobileMenuOpen(false); // Close mobile menu on usage only on mobile
+    }
   };
 
   const renderContent = () => {
@@ -123,62 +218,14 @@ export default function DashboardPage() {
         return (
           <div className="p-6">
             <h2 className="text-2xl font-light text-gray-800 mb-6 border-b pb-2">Control Panel</h2>
+            <VisitorChart />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              <QuickIcon
-                onClick={() => handleTabChange('doctors')}
-                icon={IconUsers}
-                label="Manage Doctors"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('leaves')}
-                icon={IconCalendar}
-                label="Manage Leaves"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('posts')}
-                icon={IconFileText}
-                label="Manage News"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('ads')}
-                icon={IconDollarSign}
-                label="Manage Ads"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('popup')}
-                icon={IconImage}
-                label="Manage Popup"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('site_menu')}
-                icon={IconList}
-                label="Manage Site Menu"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('sstv')}
-                icon={IconImage}
-                label="Manage Slideshow"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('promos')}
-                icon={IconTag}
-                label="Manage Promos"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('mcu')}
-                icon={IconFileText}
-                label="MCU Packages"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('notifications')}
-                icon={IconBell}
-                label="Push Notifications"
-              />
-              <QuickIcon
-                onClick={() => handleTabChange('settings')}
-                icon={IconSettings}
-                label="System Settings"
-              />
+              <QuickIcon onClick={() => handleTabChange('doctors')} icon={IconUsers} label="Manage Doctors" />
+              <QuickIcon onClick={() => handleTabChange('leaves')} icon={IconCalendar} label="Manage Leaves" />
+              <QuickIcon onClick={() => handleTabChange('posts')} icon={IconFileText} label="Manage News" />
+              <QuickIcon onClick={() => handleTabChange('sstv')} icon={IconTv} label="Slideshow Manager" />
+              <QuickIcon onClick={() => handleTabChange('mcu')} icon={IconFileText} label="MCU Packages" />
+              <QuickIcon onClick={() => handleTabChange('settings')} icon={IconSettings} label="System Settings" />
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -200,37 +247,26 @@ export default function DashboardPage() {
             </div>
           </div>
         );
-      case 'doctors':
-        return <DoctorManager />;
-      case 'leaves':
-        return <LeaveManager />;
-      case 'posts':
-        return <PostManager />;
-      case 'ads':
-        return <AdSenseManager />;
-      case 'popup':
-        return <PopUpAdsManager />;
-      case 'site_menu':
-        return <SiteMenuManager />;
-      case 'sstv':
-        return <SstvManager />;
-      case 'promos':
-        return <PromoManager />;
-      case 'mcu':
-        return <McuManager />;
-      case 'notifications':
-        return <PushNotificationManager />;
-      case 'settings':
-        return <SettingsManager />;
-      default:
-        return <div>Select an item from the menu</div>;
+      case 'doctors': return <DoctorManager />;
+      case 'leaves': return <LeaveManager />;
+      case 'posts': return <PostManager />;
+      case 'ads': return <AdSenseManager />;
+      case 'popup': return <PopUpAdsManager />;
+      case 'site_menu': return <SiteMenuManager />;
+      case 'sstv': return <SstvManager />;
+      case 'promos': return <PromoManager />;
+      case 'mcu': return <McuManager />;
+      case 'notifications': return <PushNotificationManager />;
+      case 'settings': return <SettingsManager />;
+      case 'changelog': return <ChangelogManager />;
+      default: return <div>Select an item from the menu</div>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] flex flex-col font-sans">
-      {/* Top Header */}
-      <header className="h-14 bg-[#1a3e6e] text-white flex items-center justify-between px-4 shadow-md z-20 relative">
+    <div className="min-h-screen bg-[#f0f2f5] font-sans">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#1a3e6e] text-white flex items-center justify-between px-4 shadow-md z-50">
         <div className="flex items-center space-x-3">
           {/* Mobile Hamburger / X Toggle */}
           <button
@@ -259,57 +295,71 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 relative">
+      {/* Main Layout Container */}
+      <div className="flex pt-14 min-h-screen">
+
         {/* Backdrop for mobile */}
         {isMobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
         )}
 
-        {/* Sidebar - Responsive */}
+        {/* Sidebar - Fixed */}
         <aside
           className={`
                 bg-[#23282d] text-white flex-col shadow-inner
-                fixed inset-y-0 left-0 w-64 z-30
+                fixed top-14 bottom-0 left-0 w-64 z-40 overflow-y-auto
                 transform transition-transform duration-300 ease-in-out
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-                md:translate-x-0 md:static md:min-h-full
+                md:translate-x-0
             `}
-          // Mobile: Fixed top-14 (header height)
-          // Desktop: standard flow
-          style={isMobileMenuOpen ? { top: '3.5rem' } : {}}
         >
-          <div className="py-4 px-6 bg-[#181b1f] text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Main Menu
+          <div className="py-4 px-6 bg-[#181b1f] text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-700">
+            Main Navigation
           </div>
-          <nav className="flex-1">
-            <ul className="space-y-1 py-2">
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <SidebarItem
-                    label={item.label}
-                    icon={item.icon}
-                    active={activeTab === item.id}
-                    onClick={() => handleTabChange(item.id)}
-                  />
-                </li>
-              ))}
-            </ul>
+          <nav className="flex-1 overflow-y-auto custom-scrollbar pb-20">
+            {MENU_GROUPS.map(group => (
+              <SidebarGroup
+                key={group.id}
+                group={group}
+                activeTab={activeTab}
+                isExpanded={expandedGroups[group.id]}
+                toggleGroup={toggleGroup}
+                onTabChange={handleTabChange}
+              />
+            ))}
           </nav>
-          <div className="p-4 text-xs text-gray-500 text-center border-t border-gray-700 mt-auto">
+          <div className="p-4 text-xs text-gray-500 text-center border-t border-gray-700 mt-auto bg-[#23282d]">
             &copy; {new Date().getFullYear()} CatMS
           </div>
         </aside>
 
-        {/* content area */}
-        <main className="flex-1 p-4 md:p-8 w-full min-w-0">
-          <div className="bg-white rounded shadow-sm min-h-[500px] border border-gray-200 p-1">
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 md:p-8 w-full min-w-0 md:ml-64 bg-[#f0f2f5]">
+          <div className="bg-white rounded shadow-sm min-h-[500px] border border-gray-200 p-1 mb-16">
             <div key={activeTab} className="animate-fade-in h-full">
               {renderContent()}
             </div>
           </div>
+
+          {/* Dashboard Footer */}
+          <footer className="fixed bottom-0 left-0 right-0 md:left-64 bg-[#0f1d3d] text-white py-2 px-4 z-50 border-t border-blue-800 shadow-[0_-2px_10px_rgba(0,0,0,0.2)]">
+            <div className="flex justify-between items-center flex-wrap gap-2 text-xs">
+              <div className="opacity-90">
+                <span>&copy; {new Date().getFullYear()} <b>CatMS</b> - Custom CMS</span>
+              </div>
+              <div className="flex items-center gap-3 bg-[#1a2d52] px-4 py-1.5 rounded-full border border-blue-700/50">
+                <span className="text-[11px]">Designed & Developed by <b className="text-blue-300">Marcomm SHAB</b></span>
+                <a href="https://www.linkedin.com/in/raditya-putra-titapasanea-a250a616a/" target="_blank" rel="noopener noreferrer" className="text-white flex items-center transition-transform hover:text-[#0077B5] hover:scale-125">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

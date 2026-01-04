@@ -3,8 +3,6 @@ import LoadingSpinner from './LoadingSpinner';
 
 // --- LIVE PREVIEW MOCK COMPONENT ---
 // Replicates the simplified look of shab.web.id based on the analysis
-// --- LIVE PREVIEW MOCK COMPONENT ---
-// Replicates the simplified look of shab.web.id based on the analysis
 // Helper for the slider animation in preview
 const HeaderSliderPreview = ({ slides }) => {
     const [index, setIndex] = useState(0);
@@ -158,7 +156,7 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
                             <div className="text-xs font-bold text-gray-800 mb-2">Beri Ulasan Kami!</div>
                             <div className="flex justify-center space-x-1 mb-2">
                                 {[1, 2, 3, 4, 5].map(s => (
-                                    <svg key={s} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    <svg key={s} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.603 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                                 ))}
                             </div>
                             <div className="h-6 bg-blue-600 rounded text-white text-[10px] flex items-center justify-center font-bold">RATE NOW</div>
@@ -177,6 +175,36 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
     );
 };
 
+// Accordion Section Component (Reused)
+const AccordionSection = ({ title, children, defaultOpen = false }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className="bg-white border border-gray-200 shadow-sm rounded-md overflow-hidden mb-4 transition-all duration-200 hover:shadow-md">
+            <button
+                type="button" // Important in form
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+            >
+                <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+                        {title}
+                    </h2>
+                </div>
+                <div className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+            </button>
+
+            <div className={`transition-all duration-300 ease-in-out origin-top ${isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                <div className="p-4 bg-white">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function SettingsManager() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false); // Can be boolean or string ID of active upload
@@ -186,6 +214,12 @@ export default function SettingsManager() {
         oneSignalApiKey: '',
 
         // Site Identity
+        hospital_name: 'Siloam Hospitals Ambon',
+        hospital_short_name: 'Siloam Ambon',
+        hospital_tagline: 'Emergency & Contact Center',
+        hospital_phone: '1-500-911',
+        hospital_address: 'Jl. Sultan Hasanudin, Tantui, Ambon',
+        hospital_email: 'info@siloamhospitals.com',
         site_logo_url: '',
         site_theme_color: '#01007f', // Default shab.web.id color
 
@@ -237,6 +271,15 @@ export default function SettingsManager() {
                 setConfig({
                     oneSignalAppId: data['oneSignalAppId']?.value || '',
                     oneSignalApiKey: data['oneSignalApiKey']?.value || '',
+
+                    // Identity Mapping
+                    hospital_name: data['hospital_name']?.value || 'Siloam Hospitals Ambon',
+                    hospital_short_name: data['hospital_short_name']?.value || 'Siloam Ambon',
+                    hospital_tagline: data['hospital_tagline']?.value || 'Emergency & Contact Center',
+                    hospital_phone: data['hospital_phone']?.value || '1-500-911',
+                    hospital_address: data['hospital_address']?.value || 'Jl. Sultan Hasanudin, Tantui, Ambon',
+                    hospital_email: data['hospital_email']?.value || 'info@siloamhospitals.com',
+
                     site_logo_url: data['site_logo_url']?.value || 'https://shab.web.id/asset/logo/logo.png',
                     site_theme_color: data['site_theme_color']?.value || '#01007f',
                     header_slides: data['header_slides']?.value ? JSON.parse(data['header_slides']?.value) : [
@@ -352,10 +395,7 @@ export default function SettingsManager() {
             site_theme_color: { value: config.site_theme_color, enabled: true },
             feature_polyclinic_today: { value: String(config.feature_polyclinic_today), enabled: true },
             feature_doctor_leave: { value: String(config.feature_doctor_leave), enabled: true },
-            site_theme_color: { value: config.site_theme_color, enabled: true },
             header_slides: { value: JSON.stringify(config.header_slides), enabled: true },
-            feature_polyclinic_today: { value: String(config.feature_polyclinic_today), enabled: true },
-            feature_doctor_leave: { value: String(config.feature_doctor_leave), enabled: true },
             feature_google_review: { value: String(config.feature_google_review), enabled: true },
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
             cors_allowed_origins: { value: config.cors_allowed_origins, enabled: true }
@@ -401,18 +441,88 @@ export default function SettingsManager() {
                             </div>
                         )}
 
-                        <form onSubmit={handleSave} className="space-y-8">
+                        <form onSubmit={handleSave} className="space-y-4"> {/* Space y reduced, handle spacing in Accordion */}
 
                             {/* SECTION 1: VISUAL IDENTITY */}
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-2 opacity-10">
-                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" /></svg>
-                                </div>
-                                <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2 uppercase text-xs tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    Site Identity (White Label)
-                                </h3>
+                            <AccordionSection title="Site Identity (White Label)" defaultOpen={true}>
                                 <div className="grid grid-cols-1 gap-6">
+                                    {/* Identity Basics */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Hospital Full Name</label>
+                                            <input
+                                                type="text"
+                                                name="hospital_name"
+                                                value={config.hospital_name}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-gray-800"
+                                                placeholder="e.g. Siloam Hospitals Ambon"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Short Display Name</label>
+                                            <input
+                                                type="text"
+                                                name="hospital_short_name"
+                                                value={config.hospital_short_name}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                                placeholder="e.g. Siloam Ambon"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Tagline / Slogan</label>
+                                        <input
+                                            type="text"
+                                            name="hospital_tagline"
+                                            value={config.hospital_tagline}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm italic text-gray-500"
+                                            placeholder="e.g. Emergency & Contact Center"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Main Phone Number</label>
+                                            <input
+                                                type="text"
+                                                name="hospital_phone"
+                                                value={config.hospital_phone}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                                                placeholder="e.g. 1-500-911"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Contact Email</label>
+                                            <input
+                                                type="email"
+                                                name="hospital_email"
+                                                value={config.hospital_email}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                                                placeholder="info@hospital.com"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Physical Address</label>
+                                        <textarea
+                                            name="hospital_address"
+                                            value={config.hospital_address}
+                                            onChange={handleChange}
+                                            rows="2"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                            placeholder="Full hospital address"
+                                        />
+                                    </div>
+
+                                    <hr className="border-gray-100" />
+
                                     {/* Logo Upload */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Logo URL</label>
@@ -441,8 +551,7 @@ export default function SettingsManager() {
                                         <p className="text-xs text-gray-400 mt-1">Full URL to your site's logo (PNG/SVG recommended).</p>
                                     </div>
 
-                                    {/* Header Slider Upload Logic in Section 1.5, effectively Section 2 in previous context but Section 1.5 in file */}
-                                    {/* Moving on to Slider section */}
+                                    {/* Theme Color */}
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">Theme Color</label>
                                         <div className="flex items-center gap-3">
@@ -491,12 +600,10 @@ export default function SettingsManager() {
                                         <p className="text-xs text-gray-400 mt-1">Phone number without '+' (e.g., 6285158441599). Used for MCU package booking.</p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm relative">
-                                <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2 uppercase text-xs tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                                    Header Info Slider
-                                </h3>
+                            </AccordionSection>
+
+                            {/* SECTION: Header Info Slider */}
+                            <AccordionSection title="Header Info Slider">
                                 <div className="space-y-4">
                                     <p className="text-xs text-gray-500">Atur teks berjalan (slider) di bagian header kanan (misal: No Telp, Jadwal).</p>
                                     {config.header_slides.map((slide, idx) => (
@@ -574,15 +681,10 @@ export default function SettingsManager() {
                                         + Tambah Slide Baru
                                     </button>
                                 </div>
-                            </div>
+                            </AccordionSection>
 
-
-                            {/* SECTION 1.5: FEATURE TOGGLES */}
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2 uppercase text-xs tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                    Feature Management
-                                </h3>
+                            {/* SECTION: FEATURE TOGGLES */}
+                            <AccordionSection title="Feature Management">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between p-3 border border-gray-100 rounded hover:bg-gray-50 transition-colors">
                                         <div>
@@ -617,10 +719,45 @@ export default function SettingsManager() {
                                         </label>
                                     </div>
                                 </div>
-                            </div>
+                            </AccordionSection>
 
-                            {/* SECTION 2: TECHNICAL & SECURITY (Redesigned) */}
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
+                            {/* SECTION: TECHNICAL & SECURITY */}
+                            <AccordionSection title="Technical & Security (CORS)">
+                                {/* Database Connection - CRITICAL */}
+                                <div className="mb-8 pb-6 border-b border-gray-200">
+                                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4">
+                                        <div className="flex items-start gap-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-red-600 mt-0.5">
+                                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                                <line x1="12" x2="12" y1="9" y2="13" />
+                                                <line x1="12" x2="12.01" y1="17" y2="17" />
+                                            </svg>
+                                            <div className="flex-1">
+                                                <h4 className="text-red-800 font-bold text-sm mb-1">CRITICAL: Database Connection String</h4>
+                                                <p className="text-red-700 text-xs">
+                                                    Mengubah koneksi database akan memutus akses aplikasi ke data. Hanya ubah jika Anda migrasi database untuk white-labeling.
+                                                    <strong className="block mt-1">Pastikan koneksi baru sudah diverifikasi sebelum menyimpan!</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        Database Connection URL (Neon / PostgreSQL)
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="database_url"
+                                        value={config.database_url || ''}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border border-red-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all shadow-sm font-mono text-xs bg-red-50"
+                                        placeholder="postgres://user:password@host/database"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Format: <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px]">postgres://username:password@hostname.neon.tech/dbname?sslmode=require</code>
+                                    </p>
+                                </div>
+
                                 <h3 className="text-lg font-bold text-gray-800 mb-1">URL Dasar Aplikasi Client (CORS)</h3>
                                 <p className="text-gray-600 text-sm mb-4">
                                     Masukkan URL lengkap domain yang diizinkan mengakses API (misal: frontend React/Vue). Gunakan koma untuk lebih dari satu.
@@ -635,13 +772,6 @@ export default function SettingsManager() {
                                         className="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all shadow-sm"
                                         placeholder="https://shab.web.id, http://localhost:3000"
                                     />
-                                    <button
-                                        type="submit"
-                                        className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded flex items-center gap-2 transition-colors shadow-sm whitespace-nowrap"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-                                        Simpan URL
-                                    </button>
                                 </div>
 
                                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded flex items-start gap-3">
@@ -650,14 +780,10 @@ export default function SettingsManager() {
                                         Mengubah URL ini akan memengaruhi izin akses dari domain lain ke API ini (CORS policy). Pastikan URL ditulis dengan protokol (https://).
                                     </span>
                                 </div>
-                            </div>
+                            </AccordionSection>
 
-                            {/* SECTION 3: INTEGRATIONS */}
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2 uppercase text-xs tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                                    Integrations
-                                </h3>
+                            {/* SECTION: INTEGRATIONS */}
+                            <AccordionSection title="Integrations & API Keys">
                                 <div className="grid grid-cols-1 gap-6">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-700 mb-2">OneSignal App ID</label>
@@ -682,34 +808,21 @@ export default function SettingsManager() {
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            </AccordionSection>
 
-                            {/* SECTION 4: DOCTOR PRIORITY (Redesigned Friendly UI with Autocomplete) */}
-                            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-800 mb-4 border-b pb-2 uppercase text-xs tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                                    Doctor Display Priority
-                                </h3>
+                            {/* SECTION: DOCTOR PRIORITY */}
+                            <AccordionSection title="Doctor Display Priority">
                                 <p className="text-xs text-gray-500 mb-4">
                                     Atur urutan prioritas dokter. Pilih dari database untuk menghindari kesalahan penulisan.
                                 </p>
 
                                 <div className="space-y-6">
                                     {(config.doctor_priority && typeof config.doctor_priority === 'object' ? Object.entries(config.doctor_priority) : []).map(([specialty, doctors]) => {
-                                        // Filter doctors for this specialty from the global list
-                                        // Normalize specialty strings for comparison (lowercase, hyphens to spaces if needed)
-                                        // The DB specialty might be "Spesialis Anak", but key is "anak". Or key is "spesialis-anak".
-                                        // Let's rely on loose matching or just list all available doctors if strict match fails.
-
-                                        // Helper to find doctors matching this category key
-                                        // If key is 'anak', we look for specialties containing 'anak'
                                         const categoryKey = specialty.toLowerCase().replace(/-/g, ' ');
                                         const candidateDoctors = availableDoctors.filter(doc =>
-                                            // Check if doctor's specialty includes the category key (e.g. 'Spesialis Anak' includes 'anak')
                                             (doc.specialty || '').toLowerCase().includes(categoryKey) ||
-                                            // Or if category is just 'umum'
                                             (categoryKey === 'umum' && (doc.specialty || '').toLowerCase().includes('umum'))
-                                        ).filter(doc => !doctors.includes(doc.name)); // Exclude already added
+                                        ).filter(doc => !doctors.includes(doc.name));
 
                                         return (
                                             <div key={specialty} className="bg-gray-50 p-4 rounded border border-gray-200">
@@ -824,17 +937,7 @@ export default function SettingsManager() {
                                             }}
                                         >
                                             <option value="">+ Tambah Kategori Spesialis...</option>
-                                            {/* Unique Specialties from DB */}
                                             {[...new Set(availableDoctors.map(d => {
-                                                // Simplification: Try to extract singular word or normalized key, 
-                                                // but for now let's just use what's roughly in easier keys
-                                                // Or better: Let user pick from exact specialties in DB, then we normalize it
-                                                // Actually, user wants keys like 'anak', 'kandungan'. DB has 'Spesialis Anak'.
-                                                // Let's list the raw DB specialties, but save them as normalized?
-                                                // No, let's keep it simple. Let user select "Spesialis Anak", we save key as "spesialis-anak" or "anak"?
-                                                // The current keys are single words: 'anak', 'bedah'.
-                                                // DB likely has "Spesialis Bedah".
-                                                // Let's just strip "spesialis " prefix for the key suggestion.
                                                 const s = (d.specialty || '').toLowerCase().replace('spesialis ', '').trim();
                                                 return s;
                                             }))].filter(Boolean).filter(s => !config.doctor_priority || !config.doctor_priority[s]).sort().map(s => (
@@ -844,7 +947,7 @@ export default function SettingsManager() {
                                         </select>
                                     </div>
                                 </div>
-                            </div>
+                            </AccordionSection>
 
                             {/* General Save Button */}
                             <div className="flex justify-start pt-4">

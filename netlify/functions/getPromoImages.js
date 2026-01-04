@@ -12,14 +12,14 @@ export async function handler(event, context) {
 
   try {
     // --- PERUBAHAN DI SINI ---
-    // Mengurutkan berdasarkan ID secara DESCENDING (terbaru ke terlama)
-    const promos = await sql`SELECT id, image_url, alt_text FROM promo_images ORDER BY id DESC`;
-    
+    // Mengurutkan berdasarkan sort_order ASC (sesuai Promo Manager)
+    const promos = await sql`SELECT id, image_url, alt_text FROM promo_images ORDER BY sort_order ASC`;
+
     // Ubah format agar sesuai dengan yang diharapkan SSTV
     const formattedPromos = promos.map(p => ({
-        id: p.id,
-        imageUrl: p.image_url,
-        altText: p.alt_text || 'Promo'
+      id: p.id,
+      imageUrl: p.image_url,
+      altText: p.alt_text || 'Promo'
     }));
 
     return {
@@ -30,10 +30,10 @@ export async function handler(event, context) {
 
   } catch (error) {
     console.error("getPromoImages Error:", error);
-    return { 
-      statusCode: 500, 
+    return {
+      statusCode: 500,
       headers: headers,
-      body: JSON.stringify({ error: 'Gagal mengambil data promo' }) 
+      body: JSON.stringify({ error: 'Gagal mengambil data promo' })
     };
   }
 }

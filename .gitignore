@@ -26,5 +26,8 @@ dist-ssr
 # Local Netlify folder
 .netlify
 .env
-jadwaldokter-main/
-jadwaldokter/
+
+# IMPORTANT: Commented out to allow client deployment via Netlify
+# If deploying Client separately, uncomment these:
+# jadwaldokter-main/
+# jadwaldokter/

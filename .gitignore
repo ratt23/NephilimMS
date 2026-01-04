@@ -31,3 +31,6 @@ dist-ssr
 # If deploying Client separately, uncomment these:
 # jadwaldokter-main/
 # jadwaldokter/
+
+# Slideshow has its own repo (ratt23/sstv)
+slideshow/

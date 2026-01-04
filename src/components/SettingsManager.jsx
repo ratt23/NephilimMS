@@ -512,11 +512,11 @@ export default function SettingsManager() {
                                                 type="button"
                                                 onClick={() => {
                                                     const newSlides = config.header_slides.filter((_, i) => i !== idx);
-                                                    setConfig({ ...config, header_slides: newSlides });
+                                                    setConfig(prev => ({ ...prev, header_slides: newSlides }));
                                                 }}
                                                 className="text-red-500 hover:text-red-700 bg-white p-1 rounded border border-gray-200 h-fit"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2" /></svg>
                                             </button>
                                             {/* Slide Image Upload */}
                                             <label className="cursor-pointer bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded p-1 h-fit flex items-center justify-center">

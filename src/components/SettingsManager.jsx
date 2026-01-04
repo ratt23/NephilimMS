@@ -36,9 +36,9 @@ const HeaderSliderPreview = ({ slides }) => {
 
 const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", features = {}, headerSlides = [] }) => {
     // Default features to true if undefined
-    const showLeaves = features.show_leaves !== false; // Default true
-    const showPolyclinic = features.show_polyclinic !== false; // Default true
-    const showPopup = features.show_popup !== false; // Default true (VISUAL representation only)
+    const showLeaves = features.feature_doctor_leave !== false;
+    const showPolyclinic = features.feature_polyclinic_today !== false;
+    const showPopup = features.feature_google_review !== false;
     return (
         <div className="border border-gray-300 rounded-lg overflow-hidden shadow-lg bg-gray-100 max-w-sm mx-auto transform scale-95 origin-top">
             {/* Header Mock (RSU Siloam Style) */}
@@ -837,11 +837,11 @@ export default function SettingsManager() {
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* RIGHT COLUMN: LIVE PREVIEW */}
-            <div className="w-full lg:w-96 flex-shrink-0 space-y-4">
+            < div className="w-full lg:w-96 flex-shrink-0 space-y-4" >
                 <div className="bg-white border border-gray-200 shadow-sm p-4 sticky top-6">
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 text-center">
                         Live Preview (Mockup)
@@ -854,11 +854,7 @@ export default function SettingsManager() {
                         logoUrl={config.site_logo_url}
                         themeColor={config.site_theme_color}
                         headerSlides={config.header_slides}
-                        features={{
-                            show_polyclinic: config.feature_polyclinic_today,
-                            show_leaves: config.feature_doctor_leave,
-                            show_popup: config.feature_google_review
-                        }}
+                        features={config}
                     />
 
                     <div className="mt-6 border-t pt-4">
@@ -869,7 +865,7 @@ export default function SettingsManager() {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

@@ -23,7 +23,6 @@ npm install
 netlify dev
 ```
 
-Login: `admin123` (change in `.env`)
 
 ## 📖 Documentation
 

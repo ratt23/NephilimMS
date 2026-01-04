@@ -27,10 +27,9 @@ dist-ssr
 .netlify
 .env
 
-# IMPORTANT: Commented out to allow client deployment via Netlify
-# If deploying Client separately, uncomment these:
-# jadwaldokter-main/
-# jadwaldokter/
+# Client has separate repo (ratt23/jadwaldokter)
+jadwaldokter-main/
+jadwaldokter/
 
 # Slideshow has its own repo (ratt23/sstv)
 slideshow/

@@ -165,6 +165,11 @@ export default function DashboardPage() {
                 label="Manage Promos"
               />
               <QuickIcon
+                onClick={() => handleTabChange('mcu')}
+                icon={IconFileText}
+                label="MCU Packages"
+              />
+              <QuickIcon
                 onClick={() => handleTabChange('notifications')}
                 icon={IconBell}
                 label="Push Notifications"

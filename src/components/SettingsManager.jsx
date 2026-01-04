@@ -200,6 +200,10 @@ export default function SettingsManager() {
         // Doctor Priority
         doctor_priority: {},
 
+        // WhatsApp Contact
+        whatsapp_number: '6285158441599',
+        whatsapp_enabled: true,
+
         // Technical
         cors_allowed_origins: '*'
     });
@@ -459,6 +463,32 @@ export default function SettingsManager() {
                                             />
                                         </div>
                                         <p className="text-xs text-gray-400 mt-1">Primary color for buttons, headers, and highlights.</p>
+                                    </div>
+
+                                    {/* WhatsApp Contact */}
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">WhatsApp Contact (MCU Booking)</label>
+                                        <div className="space-y-3">
+                                            <input
+                                                type="tel"
+                                                name="whatsapp_number"
+                                                value={config.whatsapp_number}
+                                                onChange={handleChange}
+                                                placeholder="628XXXXXXXXXX"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                                            />
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    name="whatsapp_enabled"
+                                                    checked={config.whatsapp_enabled}
+                                                    onChange={(e) => setConfig({ ...config, whatsapp_enabled: e.target.checked })}
+                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700">Enable WhatsApp button on MCU form</span>
+                                            </label>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">Phone number without '+' (e.g., 6285158441599). Used for MCU package booking.</p>
                                     </div>
                                 </div>
                             </div>

@@ -130,7 +130,13 @@ export default function McuManager() {
                                     <td className="p-3">
                                         <div className="flex items-center gap-3">
                                             {pkg.image_url && (
-                                                <img src={pkg.image_url} alt={pkg.name} className="w-16 h-16 object-cover rounded border" />
+                                                pkg.image_url.startsWith('http') ? (
+                                                    <img src={pkg.image_url} alt={pkg.name} className="w-16 h-16 object-cover rounded border" />
+                                                ) : (
+                                                    <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-500">
+                                                        No Preview
+                                                    </div>
+                                                )
                                             )}
                                             <div>
                                                 <div className="font-semibold text-gray-800">{pkg.name}</div>
@@ -195,19 +201,413 @@ export default function McuManager() {
     );
 }
 
-// Placeholder for modal - will create next
+// Full-featured Modal Component
 function McuPackageModal({ package: pkg, onClose }) {
+    const [formData, setFormData] = useState({
+        package_id: '',
+        name: '',
+        price: 0,
+        base_price: null,
+        image_url: '',
+        is_pelaut: false,
+        is_recommended: false,
+        display_order: 0,
+        items: [],
+        addons: []
+    });
+    const [isUploading, setIsUploading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (pkg) {
+            // Parse JSONB fields if they come as strings from database
+            const parseJsonField = (field) => {
+                if (!field) return [];
+                if (Array.isArray(field)) return field;
+                if (typeof field === 'string') {
+                    try {
+                        return JSON.parse(field);
+                    } catch {
+                        return [];
+                    }
+                }
+                return [];
+            };
+
+            setFormData({
+                package_id: pkg.package_id || '',
+                name: pkg.name || '',
+                price: pkg.price || 0,
+                base_price: pkg.base_price || null,
+                image_url: pkg.image_url || '',
+                is_pelaut: pkg.is_pelaut || false,
+                is_recommended: pkg.is_recommended || false,
+                display_order: pkg.display_order || 0,
+                items: parseJsonField(pkg.items),
+                addons: parseJsonField(pkg.addons)
+            });
+        }
+    }, [pkg]);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+        const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+        if (!CLOUD_NAME || !UPLOAD_PRESET) {
+            alert("Cloudinary configuration missing in .env");
+            return;
+        }
+
+        setIsUploading(true);
+
+        const formDataApi = new FormData();
+        formDataApi.append('file', file);
+        formDataApi.append('upload_preset', UPLOAD_PRESET);
+        formDataApi.append('cloud_name', CLOUD_NAME);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formDataApi,
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                setFormData(prev => ({ ...prev, image_url: data.secure_url }));
+            } else {
+                throw new Error(data.error.message || 'Upload failed');
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Upload failed: " + err.message);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const addCategory = () => {
+        setFormData(prev => ({
+            ...prev,
+            items: [...prev.items, { category: '', items: [], hidden: false }]
+        }));
+    };
+
+    const updateCategory = (index, field, value) => {
+        const newItems = [...formData.items];
+        newItems[index][field] = value;
+        setFormData(prev => ({ ...prev, items: newItems }));
+    };
+
+    const removeCategory = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index)
+        }));
+    };
+
+    const addCategoryItem = (catIndex) => {
+        const newItems = [...formData.items];
+        newItems[catIndex].items.push('');
+        setFormData(prev => ({ ...prev, items: newItems }));
+    };
+
+    const updateCategoryItem = (catIndex, itemIndex, value) => {
+        const newItems = [...formData.items];
+        newItems[catIndex].items[itemIndex] = value;
+        setFormData(prev => ({ ...prev, items: newItems }));
+    };
+
+    const removeCategoryItem = (catIndex, itemIndex) => {
+        const newItems = [...formData.items];
+        newItems[catIndex].items = newItems[catIndex].items.filter((_, i) => i !== itemIndex);
+        setFormData(prev => ({ ...prev, items: newItems }));
+    };
+
+    const addAddon = () => {
+        setFormData(prev => ({
+            ...prev,
+            addons: [...(prev.addons || []), { id: '', label: '', price: 0 }]
+        }));
+    };
+
+    const updateAddon = (index, field, value) => {
+        const newAddons = [...(formData.addons || [])];
+        newAddons[index][field] = value;
+        setFormData(prev => ({ ...prev, addons: newAddons }));
+    };
+
+    const removeAddon = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            addons: (prev.addons || []).filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSave = async () => {
+        // Validation
+        if (!formData.package_id || !formData.name || !formData.price || formData.items.length === 0) {
+            alert('Please fill in all required fields (Package ID, Name, Price, and at least one category)');
+            return;
+        }
+
+        setSaving(true);
+
+        try {
+            const url = pkg
+                ? `/.netlify/functions/api/mcu-packages/${pkg.id}`
+                : '/.netlify/functions/api/mcu-packages';
+
+            const method = pkg ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || 'Failed to save package');
+            }
+
+            alert(pkg ? 'Package updated successfully!' : 'Package created successfully!');
+            onClose(true); // Refresh parent
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-                <h3 className="text-xl font-bold mb-4">{pkg ? 'Edit Package' : 'Add Package'}</h3>
-                <p className="text-gray-600 mb-4">Modal coming soon...</p>
-                <button
-                    onClick={() => onClose(false)}
-                    className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
-                >
-                    Close
-                </button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <h3 className="text-2xl font-bold mb-6">{pkg ? 'Edit Package' : 'Add New Package'}</h3>
+
+                <div className="space-y-6">
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Package ID *</label>
+                            <input
+                                type="text"
+                                value={formData.package_id}
+                                onChange={(e) => setFormData(prev => ({ ...prev, package_id: e.target.value }))}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                placeholder="e.g., executive"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Package Name *</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                placeholder="e.g., MCU Executive"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Price (Rp) *</label>
+                            <input
+                                type="number"
+                                value={formData.price}
+                                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Base Price (Optional)</label>
+                            <input
+                                type="number"
+                                value={formData.base_price || ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseInt(e.target.value) || null }))}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold mb-1">Display Order</label>
+                            <input
+                                type="number"
+                                value={formData.display_order}
+                                onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Image Upload */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-2">Package Image</label>
+                        {formData.image_url && (
+                            <img src={formData.image_url} alt="Preview" className="w-40 h-40 object-cover rounded border mb-2" />
+                        )}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        {isUploading && <p className="text-sm text-blue-600 mt-1">Uploading...</p>}
+                    </div>
+
+                    {/* Checkboxes */}
+                    <div className="flex gap-6">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={formData.is_pelaut}
+                                onChange={(e) => setFormData(prev => ({ ...prev, is_pelaut: e.target.checked }))}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm font-semibold">Is Pelaut Package</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={formData.is_recommended}
+                                onChange={(e) => setFormData(prev => ({ ...prev, is_recommended: e.target.checked }))}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm font-semibold">Recommended</span>
+                        </label>
+                    </div>
+
+                    {/* Items/Categories */}
+                    <div>
+                        <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-bold text-lg">Examination Items *</h4>
+                            <button
+                                onClick={addCategory}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                            >
+                                + Add Category
+                            </button>
+                        </div>
+
+                        {formData.items.map((cat, catIdx) => (
+                            <div key={catIdx} className="border border-gray-300 rounded p-4 mb-3 bg-gray-50">
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="text"
+                                        value={cat.category}
+                                        onChange={(e) => updateCategory(catIdx, 'category', e.target.value)}
+                                        placeholder="Category name (e.g., Pemeriksaan Fisik)"
+                                        className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm font-semibold"
+                                    />
+                                    <label className="flex items-center gap-1 text-xs">
+                                        <input
+                                            type="checkbox"
+                                            checked={cat.hidden || false}
+                                            onChange={(e) => updateCategory(catIdx, 'hidden', e.target.checked)}
+                                        />
+                                        Hidden
+                                    </label>
+                                    <button
+                                        onClick={() => removeCategory(catIdx)}
+                                        className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+
+                                {/* Category Items */}
+                                <div className="space-y-1 ml-4">
+                                    {(cat.items || []).map((item, itemIdx) => (
+                                        <div key={itemIdx} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={item}
+                                                onChange={(e) => updateCategoryItem(catIdx, itemIdx, e.target.value)}
+                                                placeholder="Item name"
+                                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                            />
+                                            <button
+                                                onClick={() => removeCategoryItem(catIdx, itemIdx)}
+                                                className="text-red-600 text-xs px-2"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => addCategoryItem(catIdx)}
+                                        className="text-blue-600 text-xs hover:underline"
+                                    >
+                                        + Add Item
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Addons */}
+                    <div>
+                        <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-bold text-lg">Add-ons (Optional)</h4>
+                            <button
+                                onClick={addAddon}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                            >
+                                + Add Add-on
+                            </button>
+                        </div>
+
+                        {(formData.addons || []).map((addon, idx) => (
+                            <div key={idx} className="flex gap-2 mb-2">
+                                <input
+                                    type="text"
+                                    value={addon.id}
+                                    onChange={(e) => updateAddon(idx, 'id', e.target.value)}
+                                    placeholder="ID (e.g., golongan_darah)"
+                                    className="w-1/3 border border-gray-300 rounded px-2 py-1 text-sm"
+                                />
+                                <input
+                                    type="text"
+                                    value={addon.label}
+                                    onChange={(e) => updateAddon(idx, 'label', e.target.value)}
+                                    placeholder="Label"
+                                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                />
+                                <input
+                                    type="number"
+                                    value={addon.price}
+                                    onChange={(e) => updateAddon(idx, 'price', parseInt(e.target.value) || 0)}
+                                    placeholder="Price"
+                                    className="w-1/4 border border-gray-300 rounded px-2 py-1 text-sm"
+                                />
+                                <button
+                                    onClick={() => removeAddon(idx)}
+                                    className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                        <button
+                            onClick={() => onClose(false)}
+                            disabled={saving}
+                            className="bg-gray-200 hover:bg-gray-300 px-6 py-2 rounded font-semibold"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold disabled:opacity-50"
+                        >
+                            {saving ? 'Saving...' : (pkg ? 'Update Package' : 'Create Package')}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

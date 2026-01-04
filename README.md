@@ -1,16 +1,35 @@
-# React + Vite
+# RSU Siloam Ambon - Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi dashboard untuk mengelola konten website RSU Siloam Ambon, termasuk jadwal dokter, artikel, slideshow, paket MCU, dan pengaturan website.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Doctor Management** - CRUD dokter dengan jadwal praktek & Cloudinary upload
+- **Leave Management** - Manajemen cuti dokter dengan notifikasi OneSignal  
+- **MCU Package Manager** - Kelola paket Medical Check-Up dengan items & add-ons
+- **News/Blog** - Sistem artikel dengan kategori dan tags
+- **Site Settings** - Logo, theme color, header slides, menu, feature toggles
+- **Promo & Ads** - Banner promo, pop-up ads, AdSense integration
+- **Push Notifications** - Manual & otomatis via OneSignal
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+React 18 + Vite | Tailwind CSS | Netlify Functions | Neon PostgreSQL | Cloudinary | OneSignal
 
-## Expanding the ESLint configuration
+## 📦 Quick Start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+netlify dev
+```
+
+Login: `admin123` (change in `.env`)
+
+## 📖 Documentation
+
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
+- API Docs: `/api` endpoints documented in code
+
+## 👥 Credits
+
+**Developer**: Marcomm SHAB | **Client**: RSU Siloam Ambon

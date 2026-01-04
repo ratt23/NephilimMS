@@ -34,7 +34,7 @@ export async function handler(event, context) {
   }
 
   // --- PUBLIC ROUTES ---
-  const PUBLIC_READ_PATHS = ['/posts', '/doctors', '/leaves', '/sstv_images', '/promos', '/doctors/all', '/specialties', '/settings', '/popup-ad'];
+  const PUBLIC_READ_PATHS = ['/posts', '/doctors', '/leaves', '/sstv_images', '/promos', '/doctors/all', '/specialties', '/settings', '/popup-ad', '/doctors/on-leave'];
   // Added /settings to public read if the external site needs to know where to place ads (or maybe keep it private if it contains secrets? usually ad codes are public anyway)
   // Let's keep /settings public READ for the external site to fetch ad codes.
 
@@ -66,6 +66,25 @@ export async function handler(event, context) {
     if (method === 'GET' && path === '/doctors/all') {
       const doctors = await sql`SELECT id, name, specialty FROM doctors ORDER BY name`;
       return { statusCode: 200, headers, body: JSON.stringify(doctors) };
+    }
+
+    // GET /api/doctors/on-leave - Public endpoint for doctors currently on leave
+    if (method === 'GET' && path === '/doctors/on-leave') {
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+      const result = await sql`
+        SELECT 
+          t2.name,
+          t2.specialty,
+          t1.start_date,
+          t1.end_date
+        FROM leave_data t1
+        JOIN doctors t2 ON t1.doctor_id = t2.id
+        WHERE t1.start_date <= ${today} AND t1.end_date >= ${today}
+        ORDER BY t1.start_date ASC
+      `;
+
+      return { statusCode: 200, headers, body: JSON.stringify(result) };
     }
 
     if (method === 'POST' && path === '/doctors') {

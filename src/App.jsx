@@ -29,13 +29,13 @@ function App() {
           }
         />
         {/* Redirect halaman utama ke dashboard jika sudah login, jika belum ke login */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <Navigate to="/dashboard" replace />
             </ProtectedRoute>
-          } 
+          }
         />
       </Routes>
     </BrowserRouter>

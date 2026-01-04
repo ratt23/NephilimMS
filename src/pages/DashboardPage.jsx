@@ -222,7 +222,7 @@ export default function DashboardPage() {
           <div className="font-bold text-xl tracking-wide flex items-center gap-2">
             <img src="/CMS.png" alt="CMS Logo" className="h-8 w-8" />
             <div className="flex flex-col leading-tight">
-              <span>GraphCMS</span>
+              <span>CatMS</span>
               <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Empowering Healthcare</span>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             </ul>
           </nav>
           <div className="p-4 text-xs text-gray-500 text-center border-t border-gray-700 mt-auto">
-            &copy; {new Date().getFullYear()} GraphCMS
+            &copy; {new Date().getFullYear()} CatMS
           </div>
         </aside>
 

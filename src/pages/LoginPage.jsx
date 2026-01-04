@@ -46,7 +46,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center gap-2 text-white font-bold text-xl tracking-wide">
             <img src="/CMS.png" alt="CMS Logo" className="h-8 w-8" />
             <div className="flex flex-col leading-tight text-left">
-              <span>GraphCMS</span>
+              <span>CatMS</span>
               <span className="text-[10px] uppercase font-normal text-blue-200 tracking-wider">Empowering Healthcare</span>
             </div>
           </div>

@@ -12,6 +12,7 @@ import PopUpAdsManager from '../components/PopUpAdsManager.jsx';
 import SiteMenuManager from '../components/SiteMenuManager.jsx';
 import McuManager from '../components/McuManager.jsx';
 import VisitorChart from '../components/VisitorChart.jsx';
+import AdvancedAnalytics from '../components/AdvancedAnalytics.jsx';
 import ChangelogManager from '../components/ChangelogManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
@@ -219,6 +220,9 @@ export default function DashboardPage() {
           <div className="p-6">
             <h2 className="text-2xl font-light text-gray-800 mb-6 border-b pb-2">Control Panel</h2>
             <VisitorChart />
+            <div className="mb-8">
+              <AdvancedAnalytics />
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <QuickIcon onClick={() => handleTabChange('doctors')} icon={IconUsers} label="Manage Doctors" />
               <QuickIcon onClick={() => handleTabChange('leaves')} icon={IconCalendar} label="Manage Leaves" />

@@ -383,7 +383,12 @@ export async function handler(event, context) {
         acc[item.setting_key] = { value: item.setting_value, enabled: item.is_enabled };
         return acc;
       }, {});
-      return { statusCode: 200, headers, body: JSON.stringify(settingsMap) };
+      // Add cache headers for settings (5 minutes)
+      const settingsHeaders = {
+        ...headers,
+        'Cache-Control': 'public, max-age=300, s-maxage=300'
+      };
+      return { statusCode: 200, headers: settingsHeaders, body: JSON.stringify(settingsMap) };
     }
 
     if (method === 'POST' && path === '/settings') {
@@ -412,7 +417,12 @@ export async function handler(event, context) {
         image_url: settings.find(s => s.setting_key === 'popup_ad_image')?.setting_value || '',
         active: settings.find(s => s.setting_key === 'popup_ad_active')?.is_enabled ?? false
       };
-      return { statusCode: 200, headers, body: JSON.stringify(result) };
+      // Add cache headers for popup ad (10 minutes)
+      const popupHeaders = {
+        ...headers,
+        'Cache-Control': 'public, max-age=600, s-maxage=600'
+      };
+      return { statusCode: 200, headers: popupHeaders, body: JSON.stringify(result) };
     }
 
     // --- POST /api/popup-ad ---

@@ -7,14 +7,14 @@ const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
  * Helper untuk membuat key dari nama spesialisasi
  */
 function createKey(name) {
-    if (typeof name !== 'string') return ''; // Safety check
-    return name.toLowerCase()
-        .replace(/spesialis|sub|dokter|gigi|&/g, '')
-        .replace(/,/g, '') // Hapus koma
-        .replace(/\(|\)/g, '') // Hapus kurung
-        .trim()
-        .replace(/\s+/g, '-') // Ganti spasi dengan strip
-        .replace(/[^a-z0-9-]/g, ''); // Hapus karakter non-alfanumerik
+  if (typeof name !== 'string') return ''; // Safety check
+  return name.toLowerCase()
+    .replace(/spesialis|sub|dokter|gigi|&/g, '')
+    .replace(/,/g, '') // Hapus koma
+    .replace(/\(|\)/g, '') // Hapus kurung
+    .trim()
+    .replace(/\s+/g, '-') // Ganti spasi dengan strip
+    .replace(/[^a-z0-9-]/g, ''); // Hapus karakter non-alfanumerik
 }
 
 export async function handler(event, context) {
@@ -25,7 +25,7 @@ export async function handler(event, context) {
     'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, must-revalidate' // Memaksa data baru
+    'Cache-Control': 'public, max-age=300, s-maxage=300' // Cache 5 menit (browser & CDN)
   };
 
   try {
@@ -58,13 +58,13 @@ export async function handler(event, context) {
           doctors: []
         };
       }
-      
+
       // 5. Masukkan data dokter (sekarang termasuk image_url_sstv)
       doctorsData[specialtyKey].doctors.push({
         name: doc.name,
         image_url: doc.image_url, // Foto untuk web publik
         image_url_sstv: doc.image_url_sstv, // Foto untuk SSTV
-        schedule: doc.schedule 
+        schedule: doc.schedule
       });
     }
 
@@ -77,10 +77,10 @@ export async function handler(event, context) {
 
   } catch (error) {
     console.error("getDoctors Error:", error);
-    return { 
-      statusCode: 500, 
-      headers: headers, 
-      body: JSON.stringify({ error: 'Gagal mengambil data dokter' }) 
+    return {
+      statusCode: 500,
+      headers: headers,
+      body: JSON.stringify({ error: 'Gagal mengambil data dokter' })
     };
   }
 }

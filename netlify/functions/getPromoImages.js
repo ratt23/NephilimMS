@@ -7,7 +7,7 @@ export async function handler(event, context) {
     'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, must-revalidate' // Selalu ambil data baru
+    'Cache-Control': 'public, max-age=600, s-maxage=600' // Cache 10 menit (browser & CDN)
   };
 
   try {

@@ -11,7 +11,7 @@ export async function handler(event, context) {
     'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, must-revalidate' // Memaksa data baru
+    'Cache-Control': 'public, max-age=600, s-maxage=600' // Cache 10 menit (browser & CDN)
   };
 
   try {
@@ -55,10 +55,10 @@ export async function handler(event, context) {
 
   } catch (error) {
     console.error("getLeaveData Error:", error);
-    return { 
-      statusCode: 500, 
+    return {
+      statusCode: 500,
       headers: headers,
-      body: JSON.stringify({ error: 'Gagal mengambil data cuti' }) 
+      body: JSON.stringify({ error: 'Gagal mengambil data cuti' })
     };
   }
 }

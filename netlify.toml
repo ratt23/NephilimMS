@@ -16,6 +16,17 @@
 #   status = 200
 #   force = true
 
+# Cloudinary Proxy Rewrite (Bypasses Lambda 6MB limit & Fixes CORS)
+[[redirects]]
+  from = "/cloudinary-proxy/*"
+  to = "https://res.cloudinary.com/:splat"
+  status = 200
+  force = true
+  [redirects.headers]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
 # Aturan Redirect untuk Single Page App (SPA)
 # Ini akan mengarahkan semua permintaan ke index.html
 [[redirects]]

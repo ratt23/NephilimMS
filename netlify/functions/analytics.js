@@ -138,7 +138,7 @@ export const handler = async (event) => {
             } else {
                 const limit = period === '30days' ? 30 : 7;
                 rows = await sql`
-                    SELECT to_char(date, 'Dy') as name,
+                    SELECT to_char(date, 'DD Mon') as name,
                            date as full_date,
                            visitors,
                            page_views
@@ -173,12 +173,38 @@ export const handler = async (event) => {
             body: JSON.stringify({ error: 'Invalid action' })
         };
 
+
     } catch (error) {
         console.error('Analytics error:', error);
+
+        // Check if error is related to missing tables
+        if (error.message && (error.message.includes('does not exist') || error.message.includes('relation'))) {
+            return {
+                statusCode: 200, // Return 200 with empty data instead of 500
+                headers,
+                body: JSON.stringify({
+                    stats: [],
+                    devices: [],
+                    browsers: [],
+                    sources: [],
+                    topPages: [],
+                    conversions: [],
+                    systemStatus: {
+                        online: false,
+                        error: 'Analytics tables not initialized',
+                        lastSync: new Date().toISOString()
+                    }
+                })
+            };
+        }
+
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: error.message })
+            body: JSON.stringify({
+                error: error.message || 'Internal server error',
+                details: error.toString()
+            })
         };
     }
 };

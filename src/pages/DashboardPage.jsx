@@ -14,6 +14,7 @@ import McuManager from '../components/McuManager.jsx';
 import VisitorChart from '../components/VisitorChart.jsx';
 import AdvancedAnalytics from '../components/AdvancedAnalytics.jsx';
 import ChangelogManager from '../components/ChangelogManager.jsx';
+import NewsletterManager from '../modules/newsletter/pages/NewsletterManager.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -61,6 +62,9 @@ const IconChevronDown = ({ className }) => (
 const IconTv = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="15" x="2" y="7" rx="2" ry="2" /><polyline points="17 2 12 7 7 2" /></svg>
 );
+const IconNewspaper = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /><path d="M18 14h-8" /><path d="M15 18h-5" /><path d="M10 6h8v4h-8V6Z" /></svg>
+);
 
 
 // --- Menu Configuration ---
@@ -87,6 +91,7 @@ const MENU_GROUPS = [
     items: [
       { id: 'sstv', label: 'Slideshow / TV', icon: IconTv },
       { id: 'posts', label: 'News / Blog', icon: IconFileText },
+      { id: 'newsletter', label: 'e-Newsletter', icon: IconNewspaper },
       { id: 'promos', label: 'Promos', icon: IconTag },
     ]
   },
@@ -254,6 +259,7 @@ export default function DashboardPage() {
       case 'doctors': return <DoctorManager />;
       case 'leaves': return <LeaveManager />;
       case 'posts': return <PostManager />;
+      case 'newsletter': return <NewsletterManager />;
       case 'ads': return <AdSenseManager />;
       case 'popup': return <PopUpAdsManager />;
       case 'site_menu': return <SiteMenuManager />;

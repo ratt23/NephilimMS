@@ -5,9 +5,16 @@
 
 [dev]
   command = "npm run dev"
-  targetPort = 5173
+  targetPort = 3001
   port = 8888
   framework = "vite"
+# R2 Proxy (Essential for Production to bypass KOMINFO block on r2.dev)
+# R2 Proxy removed from here (Will use public/_redirects for Prod to avoid breaking Dev)
+# [[redirects]]
+#   from = "/r2/*"
+#   to = "https://pub-5463019a13d74e8ea8f8da1d11b6c894.r2.dev/:splat"
+#   status = 200
+#   force = true
 
 # Aturan Redirect untuk Single Page App (SPA)
 # Ini akan mengarahkan semua permintaan ke index.html

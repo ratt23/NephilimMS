@@ -319,55 +319,78 @@ export default function SettingsManager() {
         setIsLoading(true);
         try {
             const res = await fetch('/.netlify/functions/api/settings');
-            if (res.ok) {
-                const data = await res.json();
-                // Map API response to state
-                setConfig({
-                    oneSignalAppId: data['oneSignalAppId']?.value || '',
-                    oneSignalApiKey: data['oneSignalApiKey']?.value || '',
 
-                    // Identity Mapping
-                    hospital_name: data['hospital_name']?.value || 'RSU Siloam Ambon',
-                    hospital_short_name: data['hospital_short_name']?.value || 'Siloam Ambon',
-                    hospital_tagline: data['hospital_tagline']?.value || 'Emergency & Contact Center',
-                    hospital_phone: data['hospital_phone']?.value || '1-500-911',
-                    hospital_address: data['hospital_address']?.value || 'Jl. Sultan Hasanudin, Tantui, Ambon',
-                    hospital_email: data['hospital_email']?.value || 'info@siloamhospitals.com',
-
-                    site_logo_url: data['site_logo_url']?.value || 'https://shab.web.id/asset/logo/logo.png',
-                    site_theme_color: data['site_theme_color']?.value || '#01007f',
-                    header_slides: data['header_slides']?.value ? JSON.parse(data['header_slides']?.value) : [
-                        { id: 1, title: 'Jadwal Poliklinik', subtitle: 'RSU Siloam Ambon', color: '#01007f' },
-                        { id: 2, title: '1-500-911', subtitle: '24/7 Emergency & Contact Center', color: '#D92D20' }
-                    ],
-                    feature_polyclinic_today: data['feature_polyclinic_today']?.value === 'false' ? false : true,
-                    feature_doctor_leave: data['feature_doctor_leave']?.value === 'false' ? false : true,
-                    feature_google_review: data['feature_google_review']?.value === 'false' ? false : true,
-                    doctor_priority: data['doctor_priority']?.value ? JSON.parse(data['doctor_priority']?.value) : {
-                        'anak': [],
-                        'kandungan': [],
-                        'bedah': ['dr. I Dewa Gede Sidan Agung Mahendra, Sp.B', 'dr. Ricky Masyudha, Sp.B', 'dr. Mo Tualeka, Sp.B', 'dr. Hery Siswanto, Sp.B, FICS FINACS'],
-                        'tht': ['dr. Chriscelia Valery So, Sp.THT-KL', 'Dr. Rodrigo Limmon, Sp.THT-KL, MARS', 'dr. Stanley Permana Setiawan, Sp.THT-KL'],
-                        'paru': ['dr. Rina Angriany, Sp.P', 'dr. Marisa Afifudin, Sp.P'],
-                        'mata': ['dr. I Wayan Ardy Paribrajaka, Sp.M', 'dr. Tjoa Debby Angela Tjoanda, Sp.M', 'dr. Daniel Siegers, Sp.M'],
-                        'penyakit-dalam': ['dr. I Made Kristya Permana, Sp.PD', 'dr. I Made Kristya Permana, Sp.PD', 'dr. Dian Qisthi, Sp.PD', 'dr. Jansye Cyntia Pentury, Sp.PD', 'dr. Alex Ranuseto, Sp.PD'],
-                        'umum': []
-                    },
-                    category_covers: data['category_covers']?.value ? JSON.parse(data['category_covers']?.value) : {
-                        'tarif-kamar': '/asset/categories/placeholder.svg',
-                        'fasilitas': '/asset/categories/placeholder.svg',
-                        'layanan-unggulan': '/asset/categories/placeholder.svg',
-                        'contact-person': '/asset/categories/placeholder.svg'
-                    },
-                    category_visibility: data['category_visibility']?.value ? JSON.parse(data['category_visibility']?.value) : {
-                        'tarif-kamar': true,
-                        'fasilitas': true,
-                        'layanan-unggulan': true,
-                        'contact-person': true
-                    },
-                    cors_allowed_origins: data['cors_allowed_origins']?.value || '*'
-                });
+            if (!res.ok) {
+                const text = await res.text();
+                console.error("Fetch settings failed:", res.status, text);
+                throw new Error(`Failed to fetch settings: ${res.status} ${res.statusText}`);
             }
+
+            const data = await res.json();
+
+            // Helper to safe parse JSON
+            const safeParse = (key, jsonString, fallback) => {
+                if (!jsonString) return fallback;
+                try {
+                    return JSON.parse(jsonString);
+                } catch (e) {
+                    console.error(`Failed to parse ${key}:`, e);
+                    return fallback;
+                }
+            };
+
+            // Map API response to state
+            setConfig({
+                oneSignalAppId: data['oneSignalAppId']?.value || '',
+                oneSignalApiKey: data['oneSignalApiKey']?.value || '',
+
+                // Identity Mapping
+                hospital_name: data['hospital_name']?.value || 'RSU Siloam Ambon',
+                hospital_short_name: data['hospital_short_name']?.value || 'Siloam Ambon',
+                hospital_tagline: data['hospital_tagline']?.value || 'Emergency & Contact Center',
+                hospital_phone: data['hospital_phone']?.value || '1-500-911',
+                hospital_address: data['hospital_address']?.value || 'Jl. Sultan Hasanudin, Tantui, Ambon',
+                hospital_email: data['hospital_email']?.value || 'info@siloamhospitals.com',
+
+                site_logo_url: data['site_logo_url']?.value || 'https://shab.web.id/asset/logo/logo.png',
+                site_theme_color: data['site_theme_color']?.value || '#01007f',
+
+                header_slides: safeParse('header_slides', data['header_slides']?.value, [
+                    { id: 1, title: 'Jadwal Poliklinik', subtitle: 'RSU Siloam Ambon', color: '#01007f' },
+                    { id: 2, title: '1-500-911', subtitle: '24/7 Emergency & Contact Center', color: '#D92D20' }
+                ]),
+
+                feature_polyclinic_today: data['feature_polyclinic_today']?.value === 'false' ? false : true,
+                feature_doctor_leave: data['feature_doctor_leave']?.value === 'false' ? false : true,
+                feature_google_review: data['feature_google_review']?.value === 'false' ? false : true,
+
+                doctor_priority: safeParse('doctor_priority', data['doctor_priority']?.value, {
+                    'anak': [],
+                    'kandungan': [],
+                    'bedah': ['dr. I Dewa Gede Sidan Agung Mahendra, Sp.B', 'dr. Ricky Masyudha, Sp.B', 'dr. Mo Tualeka, Sp.B', 'dr. Hery Siswanto, Sp.B, FICS FINACS'],
+                    'tht': ['dr. Chriscelia Valery So, Sp.THT-KL', 'Dr. Rodrigo Limmon, Sp.THT-KL, MARS', 'dr. Stanley Permana Setiawan, Sp.THT-KL'],
+                    'paru': ['dr. Rina Angriany, Sp.P', 'dr. Marisa Afifudin, Sp.P'],
+                    'mata': ['dr. I Wayan Ardy Paribrajaka, Sp.M', 'dr. Tjoa Debby Angela Tjoanda, Sp.M', 'dr. Daniel Siegers, Sp.M'],
+                    'penyakit-dalam': ['dr. I Made Kristya Permana, Sp.PD', 'dr. Dian Qisthi, Sp.PD', 'dr. Jansye Cyntia Pentury, Sp.PD', 'dr. Alex Ranuseto, Sp.PD', 'dr. Denny Jolanda, Sp.PD, Finasim'],
+                    'umum': []
+                }),
+
+                category_covers: safeParse('category_covers', data['category_covers']?.value, {
+                    'tarif-kamar': '/asset/categories/placeholder.svg',
+                    'fasilitas': '/asset/categories/placeholder.svg',
+                    'layanan-unggulan': '/asset/categories/placeholder.svg',
+                    'contact-person': '/asset/categories/placeholder.svg'
+                }),
+
+                category_visibility: safeParse('category_visibility', data['category_visibility']?.value, {
+                    'tarif-kamar': true,
+                    'fasilitas': true,
+                    'layanan-unggulan': true,
+                    'contact-person': true
+                }),
+
+                cors_allowed_origins: data['cors_allowed_origins']?.value || '*'
+            });
         } catch (err) {
             console.error("Failed to load settings", err);
         }

@@ -20,8 +20,11 @@ export async function handler(event, context) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-onesignal-app-id, x-onesignal-api-key',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Content-Type': 'application/json'
   };
+
+  console.log(`[API] ${event.httpMethod} ${event.path}`);
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
@@ -186,12 +189,19 @@ export async function handler(event, context) {
     // ==========================================
     if (path.startsWith('/settings')) {
       if ((path === '/settings' || path === '/settings/') && method === 'GET') {
-        const settings = await sql`SELECT * FROM app_settings`;
-        const map = settings.reduce((acc, item) => {
-          acc[item.setting_key] = { value: item.setting_value, enabled: item.is_enabled };
-          return acc;
-        }, {});
-        return { statusCode: 200, headers, body: JSON.stringify(map) };
+        try {
+          console.log('[API] Fetching settings...');
+          const settings = await sql`SELECT * FROM app_settings`;
+          console.log(`[API] Settings fetched: ${settings.length} rows`);
+          const map = settings.reduce((acc, item) => {
+            acc[item.setting_key] = { value: item.setting_value, enabled: item.is_enabled };
+            return acc;
+          }, {});
+          return { statusCode: 200, headers, body: JSON.stringify(map) };
+        } catch (err) {
+          console.error('[API] Error fetching settings:', err);
+          throw err; // Re-throw to main catch
+        }
       }
 
       if ((path === '/settings' || path === '/settings/') && method === 'POST') {

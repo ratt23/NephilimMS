@@ -53,17 +53,17 @@ export default function ECatalogItemsManager() {
             const data = await response.json();
 
             // Load category covers
-            const covers = data.find(s => s.key === 'category_covers');
+            const covers = data['category_covers'];
             if (covers && covers.value) {
                 setCategoryCovers(typeof covers.value === 'string' ? JSON.parse(covers.value) : covers.value);
             }
 
             // Load maintenance mode
-            const enabled = data.find(s => s.key === 'ecatalog_enabled');
+            const enabled = data['ecatalog_enabled'];
             setEcatalogEnabled(enabled ? enabled.value === 'true' || enabled.value === true : true);
 
             // Load category visibility
-            const visibility = data.find(s => s.key === 'category_visibility');
+            const visibility = data['category_visibility'];
             if (visibility && visibility.value) {
                 setCategoryVisibility(typeof visibility.value === 'string' ? JSON.parse(visibility.value) : visibility.value);
             }
@@ -85,8 +85,10 @@ export default function ECatalogItemsManager() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    key: 'category_covers',
-                    value: JSON.stringify(newCovers)
+                    category_covers: {
+                        value: JSON.stringify(newCovers),
+                        enabled: true
+                    }
                 })
             });
 
@@ -108,8 +110,10 @@ export default function ECatalogItemsManager() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    key: 'ecatalog_enabled',
-                    value: newValue.toString()
+                    ecatalog_enabled: {
+                        value: newValue.toString(),
+                        enabled: true
+                    }
                 })
             });
 
@@ -136,8 +140,10 @@ export default function ECatalogItemsManager() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    key: 'category_visibility',
-                    value: JSON.stringify(categoryVisibility)
+                    category_visibility: {
+                        value: JSON.stringify(categoryVisibility),
+                        enabled: true
+                    }
                 })
             });
             alert('Settings saved successfully!');

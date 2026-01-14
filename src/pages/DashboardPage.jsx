@@ -15,6 +15,8 @@ import VisitorChart from '../components/VisitorChart.jsx';
 import AdvancedAnalytics from '../components/AdvancedAnalytics.jsx';
 import ChangelogManager from '../components/ChangelogManager.jsx';
 import NewsletterManager from '../modules/newsletter/pages/NewsletterManager.jsx';
+import ECatalogItemsManager from '../components/ECatalogItemsManager.jsx';
+import TrafficReport from '../components/TrafficReport.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -65,6 +67,9 @@ const IconTv = () => (
 const IconNewspaper = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /><path d="M18 14h-8" /><path d="M15 18h-5" /><path d="M10 6h8v4h-8V6Z" /></svg>
 );
+const IconBarChart = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10" /><line x1="18" x2="18" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="16" /></svg>
+);
 
 
 // --- Menu Configuration ---
@@ -74,6 +79,7 @@ const MENU_GROUPS = [
     id: 'overview',
     items: [
       { id: 'dashboard', label: 'Control Panel', icon: IconGrid },
+      { id: 'traffic_report', label: 'Traffic Report', icon: IconBarChart },
     ]
   },
   {
@@ -92,6 +98,7 @@ const MENU_GROUPS = [
       { id: 'sstv', label: 'Slideshow / TV', icon: IconTv },
       { id: 'posts', label: 'News / Blog', icon: IconFileText },
       { id: 'newsletter', label: 'e-Newsletter', icon: IconNewspaper },
+      { id: 'ecatalog_items', label: 'E-Catalog', icon: IconGrid },
       { id: 'promos', label: 'Promos', icon: IconTag },
     ]
   },
@@ -114,6 +121,31 @@ const MENU_GROUPS = [
     ]
   }
 ];
+
+// --- Route Mapping for URL Navigation (Hash-based) ---
+const ROUTE_MAP = {
+  'dashboard': '#dashboard',
+  'traffic_report': '#trafficreport',
+  'doctors': '#doctors',
+  'leaves': '#leaves',
+  'mcu': '#mcu',
+  'sstv': '#slideshow',
+  'posts': '#posts',
+  'newsletter': '#newsletter',
+  'ecatalog_items': '#ecatalog',
+  'promos': '#promos',
+  'ads': '#adsense',
+  'popup': '#popup',
+  'notifications': '#notifications',
+  'site_menu': '#sitemenu',
+  'settings': '#settings',
+  'changelog': '#changelog'
+};
+
+// Reverse map: hash to menu ID
+const HASH_TO_MENU = Object.fromEntries(
+  Object.entries(ROUTE_MAP).map(([k, v]) => [v, k])
+);
 
 // --- Layout Components ---
 
@@ -177,7 +209,15 @@ const QuickIcon = ({ onClick, icon: Icon, label, colorClass = "text-blue-600 bg-
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard'); // Default to Control Panel
+
+  // Initialize activeTab from URL hash or default to dashboard
+  const getInitialTab = () => {
+    const hash = window.location.hash;
+    const menuId = HASH_TO_MENU[hash];
+    return menuId || 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [expandedGroups, setExpandedGroups] = useState({
     overview: true, // Default open
     medical: true,
@@ -195,6 +235,30 @@ export default function DashboardPage() {
     }
   }, [activeTab]);
 
+
+  // Sync hash with active tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const menuId = HASH_TO_MENU[hash];
+      if (menuId && menuId !== activeTab) {
+        setActiveTab(menuId);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [activeTab]);
+
+
+  // Handler to change tab and update hash
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const hash = ROUTE_MAP[tabId] || '#dashboard';
+    window.location.hash = hash;
+    setIsMobileMenuOpen(false); // Close mobile menu on tab change
+  };
+
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({
       ...prev,
@@ -209,13 +273,6 @@ export default function DashboardPage() {
       console.error('Gagal logout dari server', err);
     }
     navigate('/login');
-  };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    if (window.innerWidth < 768) {
-      setIsMobileMenuOpen(false); // Close mobile menu on usage only on mobile
-    }
   };
 
   const renderContent = () => {
@@ -260,6 +317,7 @@ export default function DashboardPage() {
       case 'leaves': return <LeaveManager />;
       case 'posts': return <PostManager />;
       case 'newsletter': return <NewsletterManager />;
+      case 'ecatalog_items': return <ECatalogItemsManager />;
       case 'ads': return <AdSenseManager />;
       case 'popup': return <PopUpAdsManager />;
       case 'site_menu': return <SiteMenuManager />;
@@ -269,6 +327,7 @@ export default function DashboardPage() {
       case 'notifications': return <PushNotificationManager />;
       case 'settings': return <SettingsManager />;
       case 'changelog': return <ChangelogManager />;
+      case 'traffic_report': return <TrafficReport />;
       default: return <div>Select an item from the menu</div>;
     }
   };

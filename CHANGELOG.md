@@ -17,10 +17,20 @@ All notable changes to the RSU Siloam Ambon Admin Dashboard.
 - **Branding**: Semua references diubah ke "RSU Siloam Ambon" (full name)
 - **Spacing**: Standardized content section spacing (200px margin-top, 20px gap dari header)
 - **UI Cleanup**: Removed redundant section titles (sudah ada di fixed header)
+- **Maintenance Mode**: Removed legacy "Status E-Catalog" toggle from Dashboard UI
+- **Image Handling**: Removed all hardcoded legacy image paths; now strictly uses placeholders or database values
 
 ### Fixed
 - **API Endpoint**: Fixed `/catalog/reorder` 404 error dengan memindahkan endpoint keluar dari catalog-items block
 - **Sort Order Query**: Added `ORDER BY sort_order ASC` ke catalog items query
+- **Image Sync**: Resolved issue where deleted legacy images were still referenced by database (reset DB to defaults)
+- **Item Images**: Reset legacy local image paths for Catalog Items (e.g. CT Scan) to placeholders
+- **Cover Upload**: Fixed `[object Object]` bug where Cloudinary response was not parsed correctly
+- **Upload UI**: Refactored to support **Multiple Simultaneous Uploads** (non-blocking UI)
+- **Placeholder Fallback**: Added robust `onError` handlers in both Client and Dashboard to ensure broken images fallback to `placeholder.svg`
+- **App Layout**: Fixed missing closing `</main>` tag in `App.jsx`
+- **ECatalog**: Fixed `ReferenceError: CATEGORIES` in `ECatalogItemsManager` by using state variable
+- **Settings**: Fixed `ReferenceError: Trash2` in `SettingsManager` by adding missing import
 
 ### API Changes
 - **New Endpoint**: `POST /.netlify/functions/api/catalog/reorder` untuk update item order

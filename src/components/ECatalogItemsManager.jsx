@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
     { id: 'tarif-kamar', label: 'Tarif Kamar' },
     { id: 'fasilitas', label: 'Fasilitas' },
     { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
@@ -30,7 +30,7 @@ export default function ECatalogItemsManager() {
     // Category Covers & Maintenance Mode
     const [categoryCovers, setCategoryCovers] = useState({});
     const [ecatalogEnabled, setEcatalogEnabled] = useState(true);
-    const [uploadingCover, setUploadingCover] = useState(false);
+    const [uploadingCovers, setUploadingCovers] = useState({}); // Track uploading state per category
     const [savingSettings, setSavingSettings] = useState(false);
 
     // Category Visibility
@@ -41,6 +41,9 @@ export default function ECatalogItemsManager() {
         'contact-person': true
     });
 
+    // Dynamic Categories
+    const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+
 
     useEffect(() => {
         loadItems();
@@ -49,33 +52,62 @@ export default function ECatalogItemsManager() {
 
     async function loadSettings() {
         try {
-            const response = await fetch('/.netlify/functions/api/settings');
-            const data = await response.json();
+            const res = await fetch('/.netlify/functions/api/settings');
+            const data = await res.json();
 
-            // Load category covers
-            const covers = data['category_covers'];
-            if (covers && covers.value) {
-                setCategoryCovers(typeof covers.value === 'string' ? JSON.parse(covers.value) : covers.value);
+            // Helper to get value
+            const getVal = (key) => data[key]?.value;
+
+            // Load Categories
+            const catVal = getVal('ecatalog_categories');
+            if (catVal) {
+                try {
+                    const parsedCats = JSON.parse(catVal);
+                    if (Array.isArray(parsedCats) && parsedCats.length > 0) {
+                        setCategories(parsedCats);
+
+                        // If current selected category is not in the new list, switch to the first one
+                        const currentExists = parsedCats.find(c => c.id === selectedCategory);
+                        if (!currentExists) {
+                            setSelectedCategory(parsedCats[0].id);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing categories", e);
+                }
             }
 
-            // Load maintenance mode
-            const enabled = data['ecatalog_enabled'];
-            setEcatalogEnabled(enabled ? enabled.value === 'true' || enabled.value === true : true);
-
-            // Load category visibility
-            const visibility = data['category_visibility'];
-            if (visibility && visibility.value) {
-                setCategoryVisibility(typeof visibility.value === 'string' ? JSON.parse(visibility.value) : visibility.value);
+            if (data['category_covers']?.value) {
+                try {
+                    setCategoryCovers(JSON.parse(data['category_covers'].value));
+                } catch (e) {
+                    console.error("Error parsing covers", e);
+                }
             }
-        } catch (err) {
-            console.error('Error loading settings:', err);
+
+            if (data['category_visibility']?.value) {
+                try {
+                    setCategoryVisibility(JSON.parse(data['category_visibility'].value));
+                } catch (e) {
+                    console.error("Error parsing visibility", e);
+                }
+            }
+
+            if (data['ecatalog_enabled']?.value === 'false') {
+                setEcatalogEnabled(false);
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
         }
     }
 
     async function handleCoverUpload(category, file) {
         try {
-            setUploadingCover(true);
-            const url = await uploadToCloudinary(file);
+            setUploadingCovers(prev => ({ ...prev, [category]: true }));
+            const uploadData = await uploadToCloudinary(file);
+
+            // Extract URL from response object
+            const url = uploadData.secure_url || uploadData;
 
             const newCovers = { ...categoryCovers, [category]: url };
             setCategoryCovers(newCovers);
@@ -95,9 +127,9 @@ export default function ECatalogItemsManager() {
             alert('Cover image berhasil diupdate!');
         } catch (err) {
             console.error('Error uploading cover:', err);
-            alert('Gagal mengupload cover image');
+            alert('Gagal mengupload cover image: ' + err.message);
         } finally {
-            setUploadingCover(false);
+            setUploadingCovers(prev => ({ ...prev, [category]: false }));
         }
     }
 
@@ -327,42 +359,36 @@ export default function ECatalogItemsManager() {
         }
     };
 
+    async function handleRemoveCover(category) {
+        if (!confirm('Hapus cover image ini dan kembalikan ke default?')) return;
+
+        try {
+            const newCovers = { ...categoryCovers };
+            delete newCovers[category];
+            setCategoryCovers(newCovers);
+
+            // Save to database
+            await fetch('/.netlify/functions/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category_covers: {
+                        value: JSON.stringify(newCovers),
+                        enabled: true
+                    }
+                })
+            });
+        } catch (err) {
+            console.error('Error removing cover:', err);
+            alert('Gagal menghapus cover');
+        }
+    }
+
     return (
         <div className="p-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-white mb-2">E-Catalog Management</h1>
-                <p className="text-gray-400">Kelola kategori cover, status, dan items E-Catalog</p>
-            </div>
-
-            {/* Maintenance Mode Toggle */}
-            <div className="bg-zinc-800 rounded-lg p-6 mb-6 border border-gray-700">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold text-white mb-1">Status E-Catalog</h3>
-                        <p className="text-sm text-gray-400">Aktif/Non-aktifkan E-Catalog untuk visitor</p>
-                    </div>
-                    <button
-                        onClick={toggleMaintenanceMode}
-                        disabled={savingSettings}
-                        className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors ${ecatalogEnabled ? 'bg-green-600' : 'bg-gray-600'
-                            } ${savingSettings ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                        <span
-                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${ecatalogEnabled ? 'translate-x-9' : 'translate-x-1'
-                                }`}
-                        />
-                    </button>
-                </div>
-                <div className="mt-3">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${ecatalogEnabled
-                        ? 'bg-green-900/30 text-green-400 border border-green-700'
-                        : 'bg-red-900/30 text-red-400 border border-red-700'
-                        }`}>
-                        <span className={`w-2 h-2 rounded-full ${ecatalogEnabled ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                        {ecatalogEnabled ? 'AKTIF - Visitor dapat mengakses' : 'NON-AKTIF - Sedang dalam perbaikan'}
-                    </span>
-                </div>
+                <p className="text-gray-400">Kelola kategori cover dan items E-Catalog</p>
             </div>
 
             {/* Category Covers Management */}
@@ -370,19 +396,32 @@ export default function ECatalogItemsManager() {
                 <h3 className="text-lg font-bold text-white mb-4">Category Cover Images</h3>
                 <p className="text-sm text-gray-400 mb-4">Upload gambar cover untuk setiap kategori</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {CATEGORIES.map(category => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {categories.map(category => (
                         <div key={category.id} className="bg-zinc-900 rounded-lg p-4 border border-gray-700">
                             <h4 className="text-white font-medium mb-3">{category.label}</h4>
 
                             {/* Preview */}
-                            <div className="aspect-video bg-gray-800 rounded-lg mb-3 overflow-hidden">
+                            <div className="aspect-video bg-gray-800 rounded-lg mb-3 overflow-hidden relative group">
                                 {categoryCovers[category.id] ? (
-                                    <img
-                                        src={categoryCovers[category.id]}
-                                        alt={category.label}
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <>
+                                        <img
+                                            src={categoryCovers[category.id]}
+                                            alt={category.label}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.target.onerror = null; // Prevent infinite loop
+                                                e.target.src = '/asset/categories/placeholder.svg';
+                                            }}
+                                        />
+                                        <button
+                                            onClick={() => handleRemoveCover(category.id)}
+                                            className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                            title="Hapus Cover"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-600">
                                         <ImageIcon size={32} />
@@ -391,17 +430,30 @@ export default function ECatalogItemsManager() {
                             </div>
 
                             {/* Upload Button */}
-                            <label className="block">
+                            <label className="block w-full">
                                 <input
                                     type="file"
-                                    accept="image/*"
-                                    onChange={(e) => e.target.files[0] && handleCoverUpload(category.id, e.target.files[0])}
                                     className="hidden"
-                                    disabled={uploadingCover}
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                            handleCoverUpload(category.id, e.target.files[0]);
+                                        }
+                                    }}
+                                    disabled={uploadingCovers[category.id]}
                                 />
-                                <div className="bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                                    <Upload size={16} />
-                                    {uploadingCover ? 'Uploading...' : 'Upload Cover'}
+                                <div className={`text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2 ${uploadingCovers[category.id] ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}>
+                                    {uploadingCovers[category.id] ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={16} />
+                                            Upload Cover
+                                        </>
+                                    )}
                                 </div>
                             </label>
                         </div>
@@ -415,7 +467,7 @@ export default function ECatalogItemsManager() {
                 <p className="text-sm text-gray-400 mb-4">Tampilkan atau sembunyikan kategori di eCatalog visitor</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {CATEGORIES.map(category => (
+                    {categories.map(category => (
                         <div key={category.id} className="bg-zinc-900 rounded-lg p-4 border border-gray-700 flex items-center justify-between">
                             <div>
                                 <h4 className="text-white font-medium">{category.label}</h4>
@@ -438,24 +490,38 @@ export default function ECatalogItemsManager() {
                         </div>
                     ))}
                 </div>
+
+                <div className="mt-4 flex justify-end">
+                    <button
+                        onClick={saveCategoryVisibility}
+                        disabled={savingSettings}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Save size={20} />
+                        {savingSettings ? 'Menyimpan...' : 'Simpan Visibility'}
+                    </button>
+                </div>
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex gap-2 mb-6 border-b border-gray-700">
-                {CATEGORIES.map(cat => (
+            {/* Categories Tabs */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                {categories.map(cat => (
                     <button
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-4 py-2 font-medium transition-colors border-b-2 ${selectedCategory === cat.id
-                            ? 'border-blue-500 text-blue-500'
-                            : 'border-transparent text-gray-400 hover:text-white'
+                        className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${selectedCategory === cat.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-zinc-800 text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600'
                             }`}
                     >
                         {cat.label}
+                        {/* Visibility Indicator */}
+                        {categoryVisibility[cat.id] === false && (
+                            <span className="w-2 h-2 rounded-full bg-red-500" title="Tersembunyi"></span>
+                        )}
                     </button>
                 ))}
             </div>
-
             {/* Add Button */}
             <div className="mb-6">
                 <button
@@ -567,7 +633,7 @@ export default function ECatalogItemsManager() {
                                     className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
                                     required
                                 >
-                                    {CATEGORIES.map(cat => (
+                                    {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>{cat.label}</option>
                                     ))}
                                 </select>
@@ -586,23 +652,27 @@ export default function ECatalogItemsManager() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Harga</label>
+                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">
+                                    {formData.category === 'contact-person' ? 'Nomor WhatsApp' : 'Harga'}
+                                </label>
                                 <input
                                     type="text"
                                     value={formData.price}
                                     onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
                                     className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
-                                    placeholder="Rp 600.000"
+                                    placeholder={formData.category === 'contact-person' ? '08123456789' : 'Rp 600.000'}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Deskripsi</label>
+                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">
+                                    {formData.category === 'contact-person' ? 'Jabatan / Role' : 'Deskripsi'}
+                                </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                     className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 h-12 text-xs"
-                                    placeholder="Singkat..."
+                                    placeholder={formData.category === 'contact-person' ? 'Contoh: Kepala Ruangan / Admin IGD' : 'Singkat...'}
                                 />
                             </div>
 

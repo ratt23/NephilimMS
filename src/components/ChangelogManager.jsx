@@ -17,6 +17,13 @@ const CHANGELOG_DATA = [
             { type: 'improvement', text: 'E-Catalog: Removed redundant section titles (already in header)' },
             { type: 'fix', text: 'API: Fixed /catalog/reorder 404 error' },
             { type: 'fix', text: 'Database: Added ORDER BY sort_order to catalog items query' },
+            { type: 'fix', text: 'Images: Fixed legacy image sync issue (DB reset & placeholder fallback)' },
+            { type: 'fix', text: 'Items: Reset legacy hardcoded item images (e.g. CT Scan)' },
+            { type: 'fix', text: 'Upload: Fixed multiple simultaneous uploads & object bug' },
+            { type: 'fix', text: 'App: Fixed missing closing main tag in eCatalog layout' },
+            { type: 'fix', text: 'ECatalog: Fixed CATEGORIES ReferenceError in Items Manager' },
+            { type: 'fix', text: 'Settings: Fixed missing Trash2 icon import' },
+            { type: 'improvement', text: 'UI: Removed legacy Maintenance Mode toggle' },
         ]
     },
     {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
+import { Plus, Trash2 } from 'lucide-react';
 
 // --- LIVE PREVIEW MOCK COMPONENT ---
 // Replicates the simplified look of shab.web.id based on the analysis
@@ -32,7 +33,7 @@ const HeaderSliderPreview = ({ slides }) => {
     );
 };
 
-const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", features = {}, headerSlides = [], categoryCovers = {} }) => {
+const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", features = {}, headerSlides = [], categoryCovers = {}, categories = [] }) => {
     // Default features to true if undefined
     const showLeaves = features.feature_doctor_leave !== false;
     const showPolyclinic = features.feature_polyclinic_today !== false;
@@ -41,8 +42,8 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
     const vis = features.category_visibility || {};
 
 
-    // eCatalog Categories Mock
-    const CATEGORIES = [
+    // eCatalog Categories Mock (Use props or fallback)
+    const PREVIEW_CATEGORIES = (categories && categories.length > 0) ? categories : [
         { id: 'tarif-kamar', label: 'Tarif Kamar' },
         { id: 'fasilitas', label: 'Fasilitas' },
         { id: 'layanan-unggulan', label: 'Layanan' },
@@ -153,7 +154,7 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
 
                 {/* eCatalog Preview (Accordion Mock) */}
                 <div className="space-y-1">
-                    {CATEGORIES.map(cat => {
+                    {PREVIEW_CATEGORIES.map(cat => {
                         // Check visibility
                         if (vis[cat.id] === false) return null;
 
@@ -243,6 +244,13 @@ const AccordionSection = ({ title, children, defaultOpen = false }) => {
     );
 };
 
+const DEFAULT_CATEGORIES = [
+    { id: 'tarif-kamar', label: 'Tarif Kamar' },
+    { id: 'fasilitas', label: 'Fasilitas' },
+    { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
+    { id: 'contact-person', label: 'Contact Person' }
+];
+
 export default function SettingsManager() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false); // Can be boolean or string ID of active upload
@@ -292,6 +300,9 @@ export default function SettingsManager() {
             'contact-person': true
         },
 
+        // Dynamic Menu Categories
+        ecatalog_categories: DEFAULT_CATEGORIES,
+
         // Technical
         cors_allowed_origins: '*'
     });
@@ -299,97 +310,61 @@ export default function SettingsManager() {
     const [availableDoctors, setAvailableDoctors] = useState([]); // List of all doctors from DB
 
     useEffect(() => {
-        fetchSettings();
-        fetchDoctors();
+        loadSettings();
     }, []);
 
-    const fetchDoctors = async () => {
-        try {
-            const res = await fetch('/.netlify/functions/api/doctors/all');
-            if (res.ok) {
-                const data = await res.json();
-                setAvailableDoctors(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch doctors list", err);
-        }
-    };
-
-    const fetchSettings = async () => {
+    const loadSettings = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch('/.netlify/functions/api/settings');
+            // Load settings
+            const response = await fetch('/.netlify/functions/api/settings');
+            const data = await response.json();
 
-            if (!res.ok) {
-                const text = await res.text();
-                console.error("Fetch settings failed:", res.status, text);
-                throw new Error(`Failed to fetch settings: ${res.status} ${res.statusText}`);
-            }
+            // Load doctors for priority
+            const doctorsRes = await fetch('/.netlify/functions/api/doctors/all'); // Changed from /doctors to /doctors/all based on original code
+            const doctorsData = await doctorsRes.json();
+            setAvailableDoctors(doctorsData);
 
-            const data = await res.json();
+            // Parse settings
+            const settings = {};
 
             // Helper to safe parse JSON
-            const safeParse = (key, jsonString, fallback) => {
-                if (!jsonString) return fallback;
+            const safeParse = (key, val, defaultVal) => {
+                if (!val) return defaultVal;
                 try {
-                    return JSON.parse(jsonString);
+                    return typeof val === 'string' ? JSON.parse(val) : val;
                 } catch (e) {
-                    console.error(`Failed to parse ${key}:`, e);
-                    return fallback;
+                    console.error(`Error parsing ${key}:`, e);
+                    return defaultVal;
                 }
             };
 
-            // Map API response to state
+            const getVal = (key) => data[key]?.value;
+
             setConfig({
-                oneSignalAppId: data['oneSignalAppId']?.value || '',
-                oneSignalApiKey: data['oneSignalApiKey']?.value || '',
-
-                // Identity Mapping
-                hospital_name: data['hospital_name']?.value || 'RSU Siloam Ambon',
-                hospital_short_name: data['hospital_short_name']?.value || 'Siloam Ambon',
-                hospital_tagline: data['hospital_tagline']?.value || 'Emergency & Contact Center',
-                hospital_phone: data['hospital_phone']?.value || '1-500-911',
-                hospital_address: data['hospital_address']?.value || 'Jl. Sultan Hasanudin, Tantui, Ambon',
-                hospital_email: data['hospital_email']?.value || 'info@siloamhospitals.com',
-
-                site_logo_url: data['site_logo_url']?.value || 'https://shab.web.id/asset/logo/logo.png',
-                site_theme_color: data['site_theme_color']?.value || '#01007f',
-
-                header_slides: safeParse('header_slides', data['header_slides']?.value, [
-                    { id: 1, title: 'Jadwal Poliklinik', subtitle: 'RSU Siloam Ambon', color: '#01007f' },
-                    { id: 2, title: '1-500-911', subtitle: '24/7 Emergency & Contact Center', color: '#D92D20' }
-                ]),
-
-                feature_polyclinic_today: data['feature_polyclinic_today']?.value === 'false' ? false : true,
-                feature_doctor_leave: data['feature_doctor_leave']?.value === 'false' ? false : true,
-                feature_google_review: data['feature_google_review']?.value === 'false' ? false : true,
-
-                doctor_priority: safeParse('doctor_priority', data['doctor_priority']?.value, {
-                    'anak': [],
-                    'kandungan': [],
-                    'bedah': ['dr. I Dewa Gede Sidan Agung Mahendra, Sp.B', 'dr. Ricky Masyudha, Sp.B', 'dr. Mo Tualeka, Sp.B', 'dr. Hery Siswanto, Sp.B, FICS FINACS'],
-                    'tht': ['dr. Chriscelia Valery So, Sp.THT-KL', 'Dr. Rodrigo Limmon, Sp.THT-KL, MARS', 'dr. Stanley Permana Setiawan, Sp.THT-KL'],
-                    'paru': ['dr. Rina Angriany, Sp.P', 'dr. Marisa Afifudin, Sp.P'],
-                    'mata': ['dr. I Wayan Ardy Paribrajaka, Sp.M', 'dr. Tjoa Debby Angela Tjoanda, Sp.M', 'dr. Daniel Siegers, Sp.M'],
-                    'penyakit-dalam': ['dr. I Made Kristya Permana, Sp.PD', 'dr. Dian Qisthi, Sp.PD', 'dr. Jansye Cyntia Pentury, Sp.PD', 'dr. Alex Ranuseto, Sp.PD', 'dr. Denny Jolanda, Sp.PD, Finasim'],
-                    'umum': []
-                }),
-
-                category_covers: safeParse('category_covers', data['category_covers']?.value, {
+                oneSignalAppId: getVal('oneSignalAppId') || '',
+                oneSignalApiKey: getVal('oneSignalApiKey') || '',
+                site_logo_url: getVal('site_logo_url') || '',
+                site_theme_color: getVal('site_theme_color') || '#0047AB',
+                feature_polyclinic_today: getVal('feature_polyclinic_today') === 'true',
+                feature_doctor_leave: getVal('feature_doctor_leave') !== 'false', // Default true
+                header_slides: safeParse('header_slides', getVal('header_slides'), []),
+                feature_google_review: getVal('feature_google_review') !== 'false', // Default true
+                doctor_priority: safeParse('doctor_priority', getVal('doctor_priority'), { 'umum': [] }),
+                category_covers: safeParse('category_covers', getVal('category_covers'), {
                     'tarif-kamar': '/asset/categories/placeholder.svg',
                     'fasilitas': '/asset/categories/placeholder.svg',
                     'layanan-unggulan': '/asset/categories/placeholder.svg',
                     'contact-person': '/asset/categories/placeholder.svg'
                 }),
-
-                category_visibility: safeParse('category_visibility', data['category_visibility']?.value, {
+                category_visibility: safeParse('category_visibility', getVal('category_visibility'), {
                     'tarif-kamar': true,
                     'fasilitas': true,
                     'layanan-unggulan': true,
                     'contact-person': true
                 }),
-
-                cors_allowed_origins: data['cors_allowed_origins']?.value || '*'
+                ecatalog_categories: safeParse('ecatalog_categories', getVal('ecatalog_categories'), DEFAULT_CATEGORIES),
+                cors_allowed_origins: getVal('cors_allowed_origins') || '*'
             });
         } catch (err) {
             console.error("Failed to load settings", err);
@@ -489,6 +464,39 @@ export default function SettingsManager() {
         }
     };
 
+    // Category Management Handlers
+    const updateCategoryLabel = (index, newLabel) => {
+        const newCats = [...config.ecatalog_categories];
+        newCats[index].label = newLabel;
+        setConfig(prev => ({ ...prev, ecatalog_categories: newCats }));
+    };
+
+    const addCategory = () => {
+        const newLabel = prompt("Nama Kategori Baru:");
+        if (newLabel) {
+            const id = newLabel.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            const newCats = [...config.ecatalog_categories, { id, label: newLabel }];
+            setConfig(prev => ({ ...prev, ecatalog_categories: newCats }));
+        }
+    };
+
+    const removeCategory = (index) => {
+        if (window.confirm("Hapus kategori ini? (Pastikan tidak ada item penting di dalamnya)")) {
+            const newCats = config.ecatalog_categories.filter((_, i) => i !== index);
+            setConfig(prev => ({ ...prev, ecatalog_categories: newCats }));
+        }
+    };
+
+    const moveCategory = (index, direction) => {
+        const newCats = [...config.ecatalog_categories];
+        if (direction === 'up' && index > 0) {
+            [newCats[index], newCats[index - 1]] = [newCats[index - 1], newCats[index]];
+        } else if (direction === 'down' && index < newCats.length - 1) {
+            [newCats[index], newCats[index + 1]] = [newCats[index + 1], newCats[index]];
+        }
+        setConfig(prev => ({ ...prev, ecatalog_categories: newCats }));
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -505,6 +513,7 @@ export default function SettingsManager() {
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
             category_covers: { value: JSON.stringify(config.category_covers), enabled: true },
             category_visibility: { value: JSON.stringify(config.category_visibility), enabled: true },
+            ecatalog_categories: { value: JSON.stringify(config.ecatalog_categories), enabled: true },
             cors_allowed_origins: { value: config.cors_allowed_origins, enabled: true }
         };
 
@@ -995,6 +1004,65 @@ export default function SettingsManager() {
                                     <span className="text-sm">
                                         Mengubah URL ini akan memengaruhi izin akses dari domain lain ke API ini (CORS policy). Pastikan URL ditulis dengan protokol (https://).
                                     </span>
+                                </div>
+                            </AccordionSection>
+
+                            {/* SECTION: MENU MANAGER */}
+                            <AccordionSection title="Menu E-Catalog (Kategori)">
+                                <p className="text-xs text-gray-500 mb-4">
+                                    Atur item menu, urutan, dan label kategori di E-Catalog.
+                                </p>
+                                <div className="space-y-3">
+                                    {(config.ecatalog_categories || []).map((cat, idx) => (
+                                        <div key={cat.id} className="flex gap-2 items-center bg-gray-50 p-3 rounded border border-gray-200 shadow-sm">
+                                            <div className="flex flex-col gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveCategory(idx, 'up')}
+                                                    disabled={idx === 0}
+                                                    className="text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m18 15-6-6-6 6" /></svg>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => moveCategory(idx, 'down')}
+                                                    disabled={idx === (config.ecatalog_categories || []).length - 1}
+                                                    className="text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m6 9 6 6 6-6" /></svg>
+                                                </button>
+                                            </div>
+
+                                            <div className="flex-1">
+                                                <label className="text-[10px] text-gray-400 font-mono block mb-0.5">ID: {cat.id}</label>
+                                                <input
+                                                    type="text"
+                                                    value={cat.label}
+                                                    onChange={(e) => updateCategoryLabel(idx, e.target.value)}
+                                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCategory(idx)}
+                                                className="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded transition-colors"
+                                                title="Hapus Kategori"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={addCategory}
+                                        className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded border border-dashed border-blue-200 flex items-center justify-center gap-2 font-medium transition-colors"
+                                    >
+                                        <Plus size={16} />
+                                        Tambah Kategori Baru
+                                    </button>
                                 </div>
                             </AccordionSection>
 

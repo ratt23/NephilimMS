@@ -26,13 +26,19 @@ exports.handler = async (event, context) => {
         }
 
         // Seed data from eCataLog hardcoded content
+        const CATEGORIES = [
+            { id: 'tarif-kamar', label: 'Tarif Kamar', image: '/asset/categories/placeholder.svg' },
+            { id: 'fasilitas', label: 'Fasilitas', image: '/asset/categories/placeholder.svg' },
+            { id: 'layanan-unggulan', label: 'Layanan Unggulan', image: '/asset/categories/placeholder.svg' },
+            { id: 'contact-person', label: 'Contact Person', image: '/asset/categories/placeholder.svg' }
+        ];
         const seedData = [
             {
                 category: 'tarif-kamar',
                 title: 'KELAS 3',
                 price: 'Rp 150.000',
                 description: 'Kamar rawat inap kelas 3 dengan fasilitas standar',
-                image_url: '/asset/categories/tarif_kamar.png',
+                image_url: '/asset/categories/placeholder.svg',
                 features: [
                     '8 Tempat tidur single / 8 Single bed',
                     '8 Kursi / 8 Chairs',
@@ -48,7 +54,7 @@ exports.handler = async (event, context) => {
                 title: 'KELAS 2',
                 price: 'Rp 250.000',
                 description: 'Kamar rawat inap kelas 2 dengan fasilitas yang lebih nyaman',
-                image_url: '/asset/categories/tarif_kamar.png',
+                image_url: '/asset/categories/placeholder.svg',
                 features: [
                     '4 Tempat tidur / 4 Beds',
                     '4 Kursi / 4 Chairs',
@@ -64,7 +70,7 @@ exports.handler = async (event, context) => {
                 title: 'KELAS 1',
                 price: 'Rp 400.000',
                 description: 'Kamar rawat inap kelas 1 dengan fasilitas premium',
-                image_url: '/asset/categories/tarif_kamar.png',
+                image_url: '/asset/categories/placeholder.svg',
                 features: [
                     '2 Tempat tidur / 2 Beds',
                     'Kamar mandi dalam',
@@ -80,7 +86,7 @@ exports.handler = async (event, context) => {
                 title: 'VIP',
                 price: 'Rp 600.000',
                 description: 'Kamar VIP dengan fasilitas mewah dan nyaman',
-                image_url: '/asset/categories/tarif_kamar.png',
+                image_url: '/asset/categories/placeholder.svg',
                 features: [
                     '1 Tempat tidur queen / Queen bed',
                     'Kamar mandi dalam dengan water heater',
@@ -96,7 +102,7 @@ exports.handler = async (event, context) => {
                 title: 'VVIP',
                 price: 'Rp 1.000.000',
                 description: 'Kamar VVIP dengan fasilitas super premium',
-                image_url: '/asset/categories/tarif_kamar.png',
+                image_url: '/asset/categories/placeholder.svg',
                 features: [
                     '1 Tempat tidur king / King bed',
                     'Kamar mandi premium dengan bathtub',

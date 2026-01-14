@@ -194,11 +194,13 @@ export default function ECatalogItemsManager() {
             const response = await fetch(`/.netlify/functions/api/catalog-items/all?category=${selectedCategory}`);
             const data = await response.json();
 
-            // Parse features if they are JSON strings
-            const parsedData = data.map(item => ({
-                ...item,
-                features: typeof item.features === 'string' ? JSON.parse(item.features) : (item.features || [])
-            }));
+            // Parse features if they are JSON strings and filter out inactive items
+            const parsedData = data
+                .filter(item => item.is_active !== false) // Only show active items
+                .map(item => ({
+                    ...item,
+                    features: typeof item.features === 'string' ? JSON.parse(item.features) : (item.features || [])
+                }));
 
             setItems(parsedData);
         } catch (err) {
@@ -308,7 +310,7 @@ export default function ECatalogItemsManager() {
         if (!confirm('Yakin ingin menghapus item ini?')) return;
 
         try {
-            const res = await fetch(`/.netlify/functions/api/catalog/${id}`, {
+            const res = await fetch(`/.netlify/functions/api/catalog-items?id=${id}`, {
                 method: 'DELETE'
             });
 

@@ -2,6 +2,31 @@
 
 All notable changes to the RSU Siloam Ambon Admin Dashboard.
 
+## [2.6.0] - 2026-01-15
+
+### Added - Ad Management & Adsterra Integration
+- **Adsterra Ad Network Support**: Full integration with Adsterra ads (banner, in-article, video)
+- **Ad Management UI**: Dashboard interface to configure AdSense and Adsterra settings
+- **Banner Ad Toggle**: Show/hide banner ads globally from Dashboard Settings
+- **Adsterra Async Script**: Dynamic script loading for Adsterra ads with site/unit ID format
+- **Adsterra iFrame Mode**: Toggle to use iFrame code instead of async scripts
+- **iFrame Code Input**: Textarea to paste custom Adsterra iFrame code directly
+- **Development Placeholders**: Purple-bordered ad placeholders in dev mode showing network type and slot ID
+- **Dynamic Ad Config**: AdDisplay component fetches configuration from API settings
+
+### Fixed - eCatalog Delete Functionality
+- **Critical Bug**: Removed duplicate GET `/catalog-items` endpoint (lines 487-506) that was blocking DELETE requests
+- **Soft Delete Filter**: Added client-side `.filter(item => item.is_active !== false)` to exclude deleted items from catalog list
+- **Delete Flow**: DELETE endpoint now reachable and properly performs soft delete (sets `is_active = false`)
+- **UI Update**: Items immediately removed from catalog after deletion with proper list refresh
+
+### Changed - SEO & OneSignal
+- **OneSignal Hostname**: Fixed critical typo from 'shah.web.id' to 'shab.web.id' in OneSignal initialization
+- **Meta Robots**: Added comprehensive robots meta tag with max-image-preview, max-snippet, max-video-preview directives
+- **Article SEO**: Enhanced meta tags in ArticleView and ArticleDetailView for better search indexing
+
+---
+
 ## [2.5.0] - 2026-01-14
 
 ### Added - eCatalog Major Update

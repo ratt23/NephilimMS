@@ -484,27 +484,6 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(updated) };
       }
 
-      // GET /catalog-items?category={category}
-      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'GET') {
-        const params = new URLSearchParams(event.queryStringParameters || {});
-        const category = params.get('category');
-
-        if (!category) {
-          return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ message: 'category parameter required' })
-          };
-        }
-
-        const items = await sql`
-          SELECT * FROM catalog_items 
-          WHERE category = ${category} AND is_active = true 
-          ORDER BY sort_order ASC, created_at ASC
-        `;
-        return { statusCode: 200, headers, body: JSON.stringify(items) };
-      }
-
       // DELETE /catalog-items?id={id} (Soft delete)
       if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'DELETE') {
         checkAuth();

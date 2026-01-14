@@ -2,6 +2,24 @@ import React from 'react';
 
 const CHANGELOG_DATA = [
     {
+        version: 'v2.6.0',
+        date: '2026-01-15',
+        changes: [
+            { type: 'feature', text: 'Ad Management: Adsterra ad network integration (banner, in-article, video)' },
+            { type: 'feature', text: 'Ad Management: Dashboard UI for AdSense and Adsterra configuration' },
+            { type: 'feature', text: 'Ad Management: Global banner ad visibility toggle' },
+            { type: 'feature', text: 'Ad Management: Adsterra async script mode with dynamic key support' },
+            { type: 'feature', text: 'Ad Management: Adsterra iFrame mode with code textarea input' },
+            { type: 'feature', text: 'Development: Ad placeholders showing network type (async/iframe) and slot ID' },
+            { type: 'fix', text: 'eCatalog: Fixed delete functionality - removed duplicate GET endpoint blocking DELETE' },
+            { type: 'fix', text: 'eCatalog: Added client-side filter to exclude soft-deleted items (is_active=false)' },
+            { type: 'fix', text: 'eCatalog: Delete now properly soft-deletes and refreshes catalog list' },
+            { type: 'fix', text: 'OneSignal: Fixed hostname typo (shah.web.id → shab.web.id)' },
+            { type: 'fix', text: 'SEO: Added comprehensive robots meta tags with max-preview directives' },
+            { type: 'improvement', text: 'Article SEO: Enhanced meta tags in ArticleView and ArticleDetailView' },
+        ]
+    },
+    {
         version: 'v2.5.0',
         date: '2026-01-14',
         changes: [

@@ -274,6 +274,15 @@ export default function SettingsManager() {
         feature_doctor_leave: true,
         feature_google_review: true,
 
+        // Ads Settings
+        showBannerAds: true,
+        adsense_publisher_id: '',
+        adsterra_banner_key: '',
+        adsterra_inarticle_key: '',
+        adsterra_video_key: '',
+        adsterra_use_iframe: false,
+        adsterra_iframe_code: '',
+
         // Header Slides
         header_slides: [],
 
@@ -350,6 +359,13 @@ export default function SettingsManager() {
                 feature_doctor_leave: getVal('feature_doctor_leave') !== 'false', // Default true
                 header_slides: safeParse('header_slides', getVal('header_slides'), []),
                 feature_google_review: getVal('feature_google_review') !== 'false', // Default true
+                showBannerAds: getVal('showBannerAds') !== 'false', // Default true
+                adsense_publisher_id: getVal('adsense_publisher_id') || '',
+                adsterra_banner_key: getVal('adsterra_banner_key') || '',
+                adsterra_inarticle_key: getVal('adsterra_inarticle_key') || '',
+                adsterra_video_key: getVal('adsterra_video_key') || '',
+                adsterra_use_iframe: getVal('adsterra_use_iframe') === 'true',
+                adsterra_iframe_code: getVal('adsterra_iframe_code') || '',
                 doctor_priority: safeParse('doctor_priority', getVal('doctor_priority'), { 'umum': [] }),
                 category_covers: safeParse('category_covers', getVal('category_covers'), {
                     'tarif-kamar': '/asset/categories/placeholder.svg',
@@ -510,6 +526,13 @@ export default function SettingsManager() {
             feature_doctor_leave: { value: String(config.feature_doctor_leave), enabled: true },
             header_slides: { value: JSON.stringify(config.header_slides), enabled: true },
             feature_google_review: { value: String(config.feature_google_review), enabled: true },
+            showBannerAds: { value: String(config.showBannerAds), enabled: true },
+            adsense_publisher_id: { value: config.adsense_publisher_id, enabled: true },
+            adsterra_banner_key: { value: config.adsterra_banner_key, enabled: true },
+            adsterra_inarticle_key: { value: config.adsterra_inarticle_key, enabled: true },
+            adsterra_video_key: { value: config.adsterra_video_key, enabled: true },
+            adsterra_use_iframe: { value: String(config.adsterra_use_iframe), enabled: true },
+            adsterra_iframe_code: { value: config.adsterra_iframe_code, enabled: true },
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
             category_covers: { value: JSON.stringify(config.category_covers), enabled: true },
             category_visibility: { value: JSON.stringify(config.category_visibility), enabled: true },
@@ -1090,6 +1113,144 @@ export default function SettingsManager() {
                                             className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
                                             placeholder="Enter OneSignal REST API Key"
                                         />
+                                    </div>
+                                </div>
+                            </AccordionSection>
+
+                            {/* SECTION: AD NETWORKS */}
+                            <AccordionSection title="Ad Networks (AdSense & Adsterra)">
+                                <div className="space-y-6">
+                                    {/* Banner Ads Toggle */}
+                                    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors bg-blue-50">
+                                        <div>
+                                            <div className="font-bold text-gray-700 text-sm">Show Banner Ads</div>
+                                            <div className="text-xs text-gray-500">Enable/disable banner ads on home page (above notifications)</div>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name="showBannerAds"
+                                                checked={config.showBannerAds}
+                                                onChange={handleChange}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                        </label>
+                                    </div>
+
+                                    <hr className="border-gray-200" />
+
+                                    {/* AdSense Settings */}
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" />
+                                                <line x1="8" y1="21" x2="16" y2="21" />
+                                                <line x1="12" y1="17" x2="12" y2="21" />
+                                            </svg>
+                                            Google AdSense
+                                        </h4>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">Publisher ID</label>
+                                        <input
+                                            type="text"
+                                            name="adsense_publisher_id"
+                                            value={config.adsense_publisher_id}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                                            placeholder="ca-pub-XXXXXXXXXXXXXXXX"
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">Your Google AdSense Publisher ID (e.g., ca-pub-1234567890123456)</p>
+                                    </div>
+
+                                    <hr className="border-gray-200" />
+
+                                    {/* Adsterra Settings */}
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                            <svg className="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                                <path d="M3 9h18M9 21V9" />
+                                            </svg>
+                                            Adsterra Network
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Banner Ad Key</label>
+                                                <input
+                                                    type="text"
+                                                    name="adsterra_banner_key"
+                                                    value={config.adsterra_banner_key}
+                                                    onChange={handleChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                                    placeholder="SITE_ID/AD_UNIT_ID (e.g., 464927/1519799)"
+                                                />
+                                                <p className="text-xs text-gray-400 mt-1">For 728x90 or 970x90 banner ads</p>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">In-Article Ad Key</label>
+                                                <input
+                                                    type="text"
+                                                    name="adsterra_inarticle_key"
+                                                    value={config.adsterra_inarticle_key}
+                                                    onChange={handleChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                                    placeholder="SITE_ID/AD_UNIT_ID"
+                                                />
+                                                <p className="text-xs text-gray-400 mt-1">For in-article native ads (within content)</p>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Video Ad Key (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    name="adsterra_video_key"
+                                                    value={config.adsterra_video_key}
+                                                    onChange={handleChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-sm font-mono"
+                                                    placeholder="SITE_ID/AD_UNIT_ID"
+                                                />
+                                                <p className="text-xs text-gray-400 mt-1">For video/popunder ads (if applicable)</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-purple-50 border border-purple-200 rounded p-3 mt-4">
+                                            <p className="text-xs text-purple-800">
+                                                <strong>How to get keys:</strong> Login to Adsterra.com → Sites → Select your site → Ad Units → Copy format: SITE_ID/UNIT_ID
+                                            </p>
+                                        </div>
+
+                                        {/* iFrame Option */}
+                                        <div className="mt-6 pt-6 border-t border-gray-200">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h5 className="font-bold text-gray-800 text-sm">Use iFrame Instead</h5>
+                                                    <p className="text-xs text-gray-500">Embed ads via iframe instead of async script</p>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="adsterra_use_iframe"
+                                                        checked={config.adsterra_use_iframe}
+                                                        onChange={handleChange}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                                </label>
+                                            </div>
+
+                                            {config.adsterra_use_iframe && (
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">iFrame Code</label>
+                                                    <textarea
+                                                        name="adsterra_iframe_code"
+                                                        value={config.adsterra_iframe_code}
+                                                        onChange={handleChange}
+                                                        rows="4"
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 text-xs font-mono"
+                                                        placeholder='<iframe src="https://..." width="728" height="90"></iframe>'
+                                                    />
+                                                    <p className="text-xs text-gray-400 mt-1">Paste complete iframe code from Adsterra "Get Code" button</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </AccordionSection>

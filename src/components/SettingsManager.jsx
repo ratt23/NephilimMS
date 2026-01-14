@@ -214,7 +214,7 @@ export default function SettingsManager() {
         oneSignalApiKey: '',
 
         // Site Identity
-        hospital_name: 'Siloam Hospitals Ambon',
+        hospital_name: 'RSU Siloam Ambon',
         hospital_short_name: 'Siloam Ambon',
         hospital_tagline: 'Emergency & Contact Center',
         hospital_phone: '1-500-911',
@@ -237,6 +237,14 @@ export default function SettingsManager() {
         // WhatsApp Contact
         whatsapp_number: '6285158441599',
         whatsapp_enabled: true,
+
+        // eCatalog Category Cover Images
+        category_covers: {
+            'tarif-kamar': '/asset/categories/tarif_kamar.png',
+            'fasilitas': '/asset/categories/fasilitas.png',
+            'layanan-unggulan': '/asset/categories/layanan_unggulan.png',
+            'contact-person': '/asset/categories/contact_person.png'
+        },
 
         // Technical
         cors_allowed_origins: '*'
@@ -273,7 +281,7 @@ export default function SettingsManager() {
                     oneSignalApiKey: data['oneSignalApiKey']?.value || '',
 
                     // Identity Mapping
-                    hospital_name: data['hospital_name']?.value || 'Siloam Hospitals Ambon',
+                    hospital_name: data['hospital_name']?.value || 'RSU Siloam Ambon',
                     hospital_short_name: data['hospital_short_name']?.value || 'Siloam Ambon',
                     hospital_tagline: data['hospital_tagline']?.value || 'Emergency & Contact Center',
                     hospital_phone: data['hospital_phone']?.value || '1-500-911',
@@ -298,6 +306,12 @@ export default function SettingsManager() {
                         'mata': ['dr. I Wayan Ardy Paribrajaka, Sp.M', 'dr. Tjoa Debby Angela Tjoanda, Sp.M', 'dr. Daniel Siegers, Sp.M'],
                         'penyakit-dalam': ['dr. I Made Kristya Permana, Sp.PD', 'dr. I Made Kristya Permana, Sp.PD', 'dr. Dian Qisthi, Sp.PD', 'dr. Jansye Cyntia Pentury, Sp.PD', 'dr. Alex Ranuseto, Sp.PD'],
                         'umum': []
+                    },
+                    category_covers: data['category_covers']?.value ? JSON.parse(data['category_covers']?.value) : {
+                        'tarif-kamar': '/asset/categories/tarif_kamar.png',
+                        'fasilitas': '/asset/categories/fasilitas.png',
+                        'layanan-unggulan': '/asset/categories/layanan_unggulan.png',
+                        'contact-person': '/asset/categories/contact_person.png'
                     },
                     cors_allowed_origins: data['cors_allowed_origins']?.value || '*'
                 });
@@ -372,6 +386,16 @@ export default function SettingsManager() {
                     newSlides[index].image = secureUrl; // Add image field to slide
                     // If uploading image, maybe we don't need title? Or keep both. Let's keep flexibility.
                     setConfig(prev => ({ ...prev, header_slides: newSlides }));
+                } else if (target.startsWith('category-')) {
+                    // Handle category cover uploads
+                    const categoryId = target.replace('category-', '');
+                    setConfig(prev => ({
+                        ...prev,
+                        category_covers: {
+                            ...prev.category_covers,
+                            [categoryId]: secureUrl
+                        }
+                    }));
                 }
             } else {
                 throw new Error(data.error.message || 'Upload failed');
@@ -398,6 +422,7 @@ export default function SettingsManager() {
             header_slides: { value: JSON.stringify(config.header_slides), enabled: true },
             feature_google_review: { value: String(config.feature_google_review), enabled: true },
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
+            category_covers: { value: JSON.stringify(config.category_covers), enabled: true },
             cors_allowed_origins: { value: config.cors_allowed_origins, enabled: true }
         };
 
@@ -456,7 +481,7 @@ export default function SettingsManager() {
                                                 value={config.hospital_name}
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-gray-800"
-                                                placeholder="e.g. Siloam Hospitals Ambon"
+                                                placeholder="e.g. RSU Siloam Ambon"
                                             />
                                         </div>
                                         <div>
@@ -680,6 +705,79 @@ export default function SettingsManager() {
                                     >
                                         + Tambah Slide Baru
                                     </button>
+                                </div>
+                            </AccordionSection>
+
+                            {/* SECTION: eCatalog Category Covers */}
+                            <AccordionSection title="eCatalog Category Covers">
+                                <div className="space-y-4">
+                                    <p className="text-xs text-gray-500">Customize background images for eCatalog category cards. Recommended: 1200x600px (2:1 ratio), Max 2MB.</p>
+
+                                    {[
+                                        { id: 'tarif-kamar', label: 'Tarif Kamar' },
+                                        { id: 'fasilitas', label: 'Fasilitas' },
+                                        { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
+                                        { id: 'contact-person', label: 'Contact Person' }
+                                    ].map(category => (
+                                        <div key={category.id} className="border border-gray-200 rounded p-3 bg-gray-50">
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">{category.label}</label>
+                                            <div className="flex gap-3 items-start">
+                                                {/* Image Preview */}
+                                                {config.category_covers[category.id] && (
+                                                    <div className="flex-shrink-0">
+                                                        <img
+                                                            src={config.category_covers[category.id]}
+                                                            alt={category.label}
+                                                            className="w-24 h-12 object-cover rounded border border-gray-300"
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {/* URL Input & Upload Button */}
+                                                <div className="flex-1 flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={config.category_covers[category.id] || ''}
+                                                        onChange={(e) => setConfig(prev => ({
+                                                            ...prev,
+                                                            category_covers: {
+                                                                ...prev.category_covers,
+                                                                [category.id]: e.target.value
+                                                            }
+                                                        }))}
+                                                        className="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded font-mono"
+                                                        placeholder={`/asset/categories/${category.id.replace('-', '_')}.png`}
+                                                    />
+                                                    <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded px-3 py-1.5 flex items-center justify-center transition-colors">
+                                                        {isUploading === `category-${category.id}` ? <LoadingSpinner size="sm" /> : (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                                        )}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="hidden"
+                                                            onChange={(e) => handleImageUpload(e, `category-${category.id}`)}
+                                                            disabled={!!isUploading}
+                                                        />
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setConfig(prev => ({
+                                                            ...prev,
+                                                            category_covers: {
+                                                                ...prev.category_covers,
+                                                                [category.id]: `/asset/categories/${category.id.replace('-', '_')}.png`
+                                                            }
+                                                        }))}
+                                                        className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded transition-colors"
+                                                        title="Reset to default"
+                                                    >
+                                                        Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </AccordionSection>
 

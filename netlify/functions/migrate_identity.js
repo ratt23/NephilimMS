@@ -8,7 +8,7 @@ export async function handler(event, context) {
 
         // 2. Insert Default Identity Data
         const defaults = [
-            { key: 'hospital_name', value: 'Siloam Hospitals Ambon', desc: 'Official name of the hospital' },
+            { key: 'hospital_name', value: 'RSU Siloam Ambon', desc: 'Official name of the hospital' },
             { key: 'hospital_short_name', value: 'Siloam Ambon', desc: 'Short display name' },
             { key: 'hospital_tagline', value: 'Emergency & Contact Center', desc: 'Tagline used in headers' },
             { key: 'hospital_phone', value: '1-500-911', desc: 'Main contact phone number' },

@@ -2,6 +2,24 @@ import React from 'react';
 
 const CHANGELOG_DATA = [
     {
+        version: 'v2.5.0',
+        date: '2026-01-14',
+        changes: [
+            { type: 'feature', text: 'E-Catalog: Category cover images management from Dashboard' },
+            { type: 'feature', text: 'E-Catalog: Hash-based URL routing for category navigation' },
+            { type: 'feature', text: 'E-Catalog: Contact Person category with management interface' },
+            { type: 'feature', text: 'E-Catalog: Item reordering with up/down arrows' },
+            { type: 'feature', text: 'E-Catalog: Default sort order for Tarif Kamar (Kelas 3→2→1→VIP→VVIP)' },
+            { type: 'feature', text: 'Analytics: Today stats column in visitor dashboard' },
+            { type: 'feature', text: 'Analytics: Monthly Traffic Report with accordion view (6 months)' },
+            { type: 'improvement', text: 'E-Catalog: Typography using Poppins font for consistency' },
+            { type: 'improvement', text: 'E-Catalog: Standardized content section spacing (200px)' },
+            { type: 'improvement', text: 'E-Catalog: Removed redundant section titles (already in header)' },
+            { type: 'fix', text: 'API: Fixed /catalog/reorder 404 error' },
+            { type: 'fix', text: 'Database: Added ORDER BY sort_order to catalog items query' },
+        ]
+    },
+    {
         version: 'v1.3.0',
         date: '2026-01-05',
         changes: [

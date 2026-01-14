@@ -386,6 +386,161 @@ export async function handler(event, context) {
     }
 
     // ==========================================
+    // CATALOG ITEMS
+    // ==========================================
+    if (path.startsWith('/catalog-items')) {
+      // GET /catalog-items?category={category}
+      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'GET') {
+        const { category } = event.queryStringParameters || {};
+
+        let items;
+        if (category) {
+          items = await sql`
+            SELECT * FROM catalog_items 
+            WHERE category = ${category} AND is_active = true
+            ORDER BY sort_order ASC, created_at DESC
+          `;
+        } else {
+          items = await sql`
+            SELECT * FROM catalog_items 
+            WHERE is_active = true
+            ORDER BY category ASC, sort_order ASC, created_at DESC
+          `;
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
+
+      // GET /catalog-items/all (Admin - includes inactive)
+      if (path === '/catalog-items/all' && method === 'GET') {
+        checkAuth();
+        const { category } = event.queryStringParameters || {};
+
+        let items;
+        if (category) {
+          items = await sql`
+            SELECT * FROM catalog_items 
+            WHERE category = ${category}
+            ORDER BY sort_order ASC, created_at DESC
+          `;
+        } else {
+          items = await sql`
+            SELECT * FROM catalog_items 
+            ORDER BY category ASC, sort_order ASC, created_at DESC
+          `;
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
+
+      // POST /catalog-items (Create)
+      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'POST') {
+        checkAuth();
+        const { category, title, description, price, image_url, cloudinary_public_id, features, sort_order } = JSON.parse(event.body);
+
+        if (!category || !title) {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Category and title required' }) };
+        }
+
+        const [newItem] = await sql`
+          INSERT INTO catalog_items (
+            category, title, description, price, image_url, cloudinary_public_id, features, sort_order
+          ) VALUES (
+            ${category}, ${title}, ${description || ''}, ${price || ''}, 
+            ${image_url || ''}, ${cloudinary_public_id || ''}, 
+            ${features ? JSON.stringify(features) : '[]'}, ${sort_order || 0}
+          ) RETURNING *
+        `;
+        return { statusCode: 201, headers, body: JSON.stringify(newItem) };
+      }
+
+      // PUT /catalog-items?id={id} (Update)
+      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'PUT') {
+        checkAuth();
+        const id = event.queryStringParameters?.id;
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
+
+        const { category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active } = JSON.parse(event.body);
+
+        const [updated] = await sql`
+          UPDATE catalog_items SET 
+            category=${category}, title=${title}, description=${description || ''}, 
+            price=${price || ''}, image_url=${image_url || ''}, 
+            cloudinary_public_id=${cloudinary_public_id || ''}, 
+            features=${features ? JSON.stringify(features) : '[]'}, 
+            sort_order=${sort_order !== undefined ? sort_order : 0},
+            is_active=${is_active !== undefined ? is_active : true},
+            updated_at=NOW()
+          WHERE id=${id} RETURNING *
+        `;
+        return { statusCode: 200, headers, body: JSON.stringify(updated) };
+      }
+
+      // GET /catalog-items?category={category}
+      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'GET') {
+        const params = new URLSearchParams(event.queryStringParameters || {});
+        const category = params.get('category');
+
+        if (!category) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ message: 'category parameter required' })
+          };
+        }
+
+        const items = await sql`
+          SELECT * FROM catalog_items 
+          WHERE category = ${category} AND is_active = true 
+          ORDER BY sort_order ASC, created_at ASC
+        `;
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
+
+      // DELETE /catalog-items?id={id} (Soft delete)
+      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'DELETE') {
+        checkAuth();
+        const id = event.queryStringParameters?.id;
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
+
+        await sql`UPDATE catalog_items SET is_active = false WHERE id = ${id}`;
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
+      }
+
+      // POST /catalog-items/reorder
+      if (path === '/catalog-items/reorder' && method === 'POST') {
+        checkAuth();
+        const { orderedIds } = JSON.parse(event.body);
+        if (!orderedIds || !Array.isArray(orderedIds)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'orderedIds required' }) };
+        }
+
+        await sql.begin(async sql => {
+          for (let i = 0; i < orderedIds.length; i++) {
+            await sql`UPDATE catalog_items SET sort_order = ${i} WHERE id = ${orderedIds[i]}`;
+          }
+        });
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Reordered' }) };
+      }
+    }
+
+    // ==========================================
+    // CATALOG REORDER (outside catalog-items path)
+    // ==========================================
+    if (path === '/catalog/reorder' && method === 'POST') {
+      checkAuth();
+      const { items } = JSON.parse(event.body);
+      if (!items || !Array.isArray(items)) {
+        return { statusCode: 400, headers, body: JSON.stringify({ message: 'items array required' }) };
+      }
+
+      await sql.begin(async sql => {
+        for (const item of items) {
+          await sql`UPDATE catalog_items SET sort_order = ${item.sort_order} WHERE id = ${item.id}`;
+        }
+      });
+      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Order updated' }) };
+    }
+
+    // ==========================================
     // PROMOS
     // ==========================================
     if (path.startsWith('/promos')) {

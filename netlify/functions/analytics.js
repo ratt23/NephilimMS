@@ -167,6 +167,45 @@ export const handler = async (event) => {
             };
         }
 
+        // Monthly Report - Detailed day-by-day for specific month
+        if (action === 'monthly' && httpMethod === 'GET') {
+            const month = queryStringParameters?.month; // Format: YYYY-MM
+
+            if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ error: 'Invalid month format. Use YYYY-MM' })
+                };
+            }
+
+            const rows = await sql`
+                SELECT 
+                    date,
+                    to_char(date, 'DD Mon YYYY') as formatted_date,
+                    to_char(date, 'Day') as day_name,
+                    visitors,
+                    page_views
+                FROM daily_stats
+                WHERE to_char(date, 'YYYY-MM') = ${month}
+                ORDER BY date ASC
+            `;
+
+            const stats = rows.map(row => ({
+                date: row.date,
+                formattedDate: row.formatted_date,
+                dayName: row.day_name.trim(),
+                visitors: Number(row.visitors),
+                pageviews: Number(row.page_views)
+            }));
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ stats })
+            };
+        }
+
         return {
             statusCode: 400,
             headers,

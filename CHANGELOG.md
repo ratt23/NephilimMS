@@ -2,6 +2,32 @@
 
 All notable changes to the RSU Siloam Ambon Admin Dashboard.
 
+## [2.5.0] - 2026-01-14
+
+### Added - eCatalog Major Update
+- **Category Cover Images Management**: Dashboard interface untuk upload dan manage cover images untuk 4 kategori eCatalog (Tarif Kamar, Fasilitas, Layanan Unggulan, Contact Person)
+- **URL Routing**: Hash-based routing untuk navigasi category dengan browser back/forward support (`/#/tarif-kamar`, `/#/fasilitas`, dll)
+- **Contact Person Category**: Tab baru di ECatalogItemsManager untuk manage contact person data
+- **Item Reordering**: Drag & drop dengan arrow buttons untuk customize urutan items di setiap kategori
+- **Default Sort Order**: Auto-sort Tarif Kamar (Kelas 3 → 2 → 1 → VIP → VVIP)
+- **Today Stats**: Kolom statistik "Today" di visitor analytics dashboard
+
+### Changed - eCatalog
+- **Typography**: E-CATALOG title menggunakan font Poppins weight 700, size text-xl (matching jadwaldokter)
+- **Branding**: Semua references diubah ke "RSU Siloam Ambon" (full name)
+- **Spacing**: Standardized content section spacing (200px margin-top, 20px gap dari header)
+- **UI Cleanup**: Removed redundant section titles (sudah ada di fixed header)
+
+### Fixed
+- **API Endpoint**: Fixed `/catalog/reorder` 404 error dengan memindahkan endpoint keluar dari catalog-items block
+- **Sort Order Query**: Added `ORDER BY sort_order ASC` ke catalog items query
+
+### API Changes
+- **New Endpoint**: `POST /.netlify/functions/api/catalog/reorder` untuk update item order
+- **Settings**: Added `category_covers` JSON field untuk store custom category images
+
+---
+
 ## [2.0.0] - 2026-01-04
 
 ### Added - MCU Package Manager

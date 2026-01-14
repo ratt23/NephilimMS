@@ -6,7 +6,7 @@ export default function VisitorChart() {
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('7days'); // 7days, 30days, year
     const [systemStatus, setSystemStatus] = useState({ online: false, lastSync: null });
-    const [summary, setSummary] = useState({ visitors: 0, pageviews: 0 });
+    const [summary, setSummary] = useState({ visitors: 0, pageviews: 0, todayVisitors: 0, todayPageviews: 0 });
 
     useEffect(() => {
         fetchStats();
@@ -29,7 +29,18 @@ export default function VisitorChart() {
                 const stats = fetchedData.stats || [];
                 const totalVisitors = stats.reduce((acc, curr) => acc + (curr.visitors || 0), 0);
                 const totalPageviews = stats.reduce((acc, curr) => acc + (curr.pageviews || 0), 0);
-                setSummary({ visitors: totalVisitors, pageviews: totalPageviews });
+
+                // Get today's stats (last item in array)
+                const todayData = stats[stats.length - 1] || {};
+                const todayVisitors = todayData.visitors || 0;
+                const todayPageviews = todayData.pageviews || 0;
+
+                setSummary({
+                    visitors: totalVisitors,
+                    pageviews: totalPageviews,
+                    todayVisitors,
+                    todayPageviews
+                });
             }
         } catch (err) {
             console.error("Failed to load analytics", err);
@@ -53,8 +64,8 @@ export default function VisitorChart() {
                             key={p}
                             onClick={() => setPeriod(p)}
                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             {p === '7days' ? 'Daily' : p === '30days' ? 'Monthly' : 'Yearly'}
@@ -168,16 +179,21 @@ export default function VisitorChart() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 border-t pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
                 <div className="text-center">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Today</div>
+                    <div className="text-2xl font-bold text-blue-600">{summary.todayVisitors.toLocaleString()}</div>
+                    <div className="text-xs text-gray-400 mt-1">{summary.todayPageviews.toLocaleString()} views</div>
+                </div>
+                <div className="text-center border-l border-gray-100">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Visitors</div>
                     <div className="text-2xl font-bold text-gray-800">{summary.visitors.toLocaleString()}</div>
                 </div>
-                <div className="text-center border-l-0 md:border-l border-r-0 md:border-r border-gray-100">
+                <div className="text-center border-l border-gray-100">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Page Views</div>
                     <div className="text-2xl font-bold text-gray-800">{summary.pageviews.toLocaleString()}</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center border-l border-gray-100">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Avg. Views/Visitor</div>
                     <div className="text-2xl font-bold text-gray-800">
                         {(summary.visitors ? (summary.pageviews / summary.visitors).toFixed(1) : 0)}

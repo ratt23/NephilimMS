@@ -32,11 +32,23 @@ const HeaderSliderPreview = ({ slides }) => {
     );
 };
 
-const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", features = {}, headerSlides = [] }) => {
+const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", features = {}, headerSlides = [], categoryCovers = {} }) => {
     // Default features to true if undefined
     const showLeaves = features.feature_doctor_leave !== false;
     const showPolyclinic = features.feature_polyclinic_today !== false;
+
     const showPopup = features.feature_google_review !== false;
+    const vis = features.category_visibility || {};
+
+
+    // eCatalog Categories Mock
+    const CATEGORIES = [
+        { id: 'tarif-kamar', label: 'Tarif Kamar' },
+        { id: 'fasilitas', label: 'Fasilitas' },
+        { id: 'layanan-unggulan', label: 'Layanan' },
+        { id: 'contact-person', label: 'Contact' }
+    ];
+
     return (
         <div className="border border-gray-300 rounded-lg overflow-hidden shadow-lg bg-gray-100 max-w-sm mx-auto transform scale-95 origin-top">
             {/* Header Mock (RSU Siloam Style) */}
@@ -137,6 +149,32 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* eCatalog Preview (Accordion Mock) */}
+                <div className="space-y-1">
+                    {CATEGORIES.map(cat => {
+                        // Check visibility
+                        if (vis[cat.id] === false) return null;
+
+                        return (
+                            <div key={cat.id} className="relative h-10 rounded overflow-hidden shadow-sm group">
+                                {/* Background Image */}
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: `url(${categoryCovers[cat.id] || '/asset/categories/placeholder.svg'})`,
+                                        filter: 'brightness(0.7)'
+                                    }}
+                                />
+                                {/* Content */}
+                                <div className="absolute inset-0 flex items-center justify-between px-3">
+                                    <span className="text-white text-[10px] font-bold uppercase tracking-wider">{cat.label}</span>
+                                    <svg className="w-3 h-3 text-white opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -240,10 +278,18 @@ export default function SettingsManager() {
 
         // eCatalog Category Cover Images
         category_covers: {
-            'tarif-kamar': '/asset/categories/tarif_kamar.png',
-            'fasilitas': '/asset/categories/fasilitas.png',
-            'layanan-unggulan': '/asset/categories/layanan_unggulan.png',
-            'contact-person': '/asset/categories/contact_person.png'
+            'tarif-kamar': '/asset/categories/placeholder.svg',
+            'fasilitas': '/asset/categories/placeholder.svg',
+            'layanan-unggulan': '/asset/categories/placeholder.svg',
+            'contact-person': '/asset/categories/placeholder.svg'
+        },
+
+        // Category Visibility
+        category_visibility: {
+            'tarif-kamar': true,
+            'fasilitas': true,
+            'layanan-unggulan': true,
+            'contact-person': true
         },
 
         // Technical
@@ -308,10 +354,16 @@ export default function SettingsManager() {
                         'umum': []
                     },
                     category_covers: data['category_covers']?.value ? JSON.parse(data['category_covers']?.value) : {
-                        'tarif-kamar': '/asset/categories/tarif_kamar.png',
-                        'fasilitas': '/asset/categories/fasilitas.png',
-                        'layanan-unggulan': '/asset/categories/layanan_unggulan.png',
-                        'contact-person': '/asset/categories/contact_person.png'
+                        'tarif-kamar': '/asset/categories/placeholder.svg',
+                        'fasilitas': '/asset/categories/placeholder.svg',
+                        'layanan-unggulan': '/asset/categories/placeholder.svg',
+                        'contact-person': '/asset/categories/placeholder.svg'
+                    },
+                    category_visibility: data['category_visibility']?.value ? JSON.parse(data['category_visibility']?.value) : {
+                        'tarif-kamar': true,
+                        'fasilitas': true,
+                        'layanan-unggulan': true,
+                        'contact-person': true
                     },
                     cors_allowed_origins: data['cors_allowed_origins']?.value || '*'
                 });
@@ -344,6 +396,12 @@ export default function SettingsManager() {
                 feature_polyclinic_today: true,
                 feature_doctor_leave: true,
                 feature_google_review: true,
+                category_visibility: {
+                    'tarif-kamar': true,
+                    'fasilitas': true,
+                    'layanan-unggulan': true,
+                    'contact-person': true
+                },
                 cors_allowed_origins: '*'
             });
             setMessage({ type: 'info', text: 'Settings reset to defaults. Click Save to apply.' });
@@ -423,6 +481,7 @@ export default function SettingsManager() {
             feature_google_review: { value: String(config.feature_google_review), enabled: true },
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
             category_covers: { value: JSON.stringify(config.category_covers), enabled: true },
+            category_visibility: { value: JSON.stringify(config.category_visibility), enabled: true },
             cors_allowed_origins: { value: config.cors_allowed_origins, enabled: true }
         };
 
@@ -781,6 +840,42 @@ export default function SettingsManager() {
                                 </div>
                             </AccordionSection>
 
+                            {/* SECTION: Category Visibility */}
+                            <AccordionSection title="Category Visibility">
+                                <div className="space-y-4">
+                                    <p className="text-xs text-gray-500">Atur visibilitas kategori di halaman eCatalog visitor.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {[
+                                            { id: 'tarif-kamar', label: 'Tarif Kamar' },
+                                            { id: 'fasilitas', label: 'Fasilitas' },
+                                            { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
+                                            { id: 'contact-person', label: 'Contact Person' }
+                                        ].map(cat => (
+                                            <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-100 rounded hover:bg-gray-50 transition-colors">
+                                                <span className="font-bold text-gray-700 text-sm">{cat.label}</span>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="sr-only peer"
+                                                        checked={config.category_visibility?.[cat.id] ?? true}
+                                                        onChange={(e) => {
+                                                            setConfig(prev => ({
+                                                                ...prev,
+                                                                category_visibility: {
+                                                                    ...prev.category_visibility,
+                                                                    [cat.id]: e.target.checked
+                                                                }
+                                                            }));
+                                                        }}
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </AccordionSection>
+
                             {/* SECTION: FEATURE TOGGLES */}
                             <AccordionSection title="Feature Management">
                                 <div className="space-y-4">
@@ -1086,6 +1181,7 @@ export default function SettingsManager() {
                         themeColor={config.site_theme_color}
                         headerSlides={config.header_slides}
                         features={config}
+                        categoryCovers={config.category_covers}
                     />
 
                     <div className="mt-6 border-t pt-4">

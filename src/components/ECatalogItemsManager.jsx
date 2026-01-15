@@ -196,7 +196,7 @@ export default function ECatalogItemsManager() {
 
             // Parse features if they are JSON strings
             const parsedData = data
-                .filter(item => item.is_active !== false) // Only show active items (deleted/hidden items are excluded)
+                // .filter(item => item.is_active !== false) // SHOW ALL for admin (visual indication for deleted)
                 .map(item => ({
                     ...item,
                     features: typeof item.features === 'string' ? JSON.parse(item.features) : (item.features || [])
@@ -315,7 +315,7 @@ export default function ECatalogItemsManager() {
             });
 
             if (res.ok) {
-                alert('Item berhasil dihapus');
+                alert('Item berhasil dihapus (soft delete)');
                 loadItems();
             } else {
                 throw new Error('Failed to delete');
@@ -323,6 +323,38 @@ export default function ECatalogItemsManager() {
         } catch (error) {
             console.error('Error deleting item:', error);
             alert('Gagal menghapus item');
+        }
+    };
+
+    const handleRestore = async (id) => {
+        if (!confirm('Kembalikan item ini?')) return;
+        try {
+            // Update item to set is_active = true
+            // We need to fetch the item details first or just send a partial update
+            // Since our API expects a full PUT object usually, but let's check api.js
+            // api.js PUT expects all fields.
+            // We can cheat and use the item from our liststate.
+            const itemToRestore = items.find(i => i.id === id);
+            if (!itemToRestore) return;
+
+            const payload = { ...itemToRestore, is_active: true };
+
+            const res = await fetch(`/.netlify/functions/api/catalog-items?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('Item berhasil dikembalikan!');
+                loadItems();
+            } else {
+                throw new Error('Failed to restore');
+            }
+
+        } catch (error) {
+            console.error('Error restoring item:', error);
+            alert('Gagal mengembalikan item');
         }
     };
 
@@ -550,23 +582,28 @@ export default function ECatalogItemsManager() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map(item => (
-                        <div key={item.id} className="bg-zinc-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
+                        <div key={item.id} className={`bg-zinc-800 rounded-lg overflow-hidden border transition-colors ${item.is_active === false ? 'border-red-900/50 opacity-75' : 'border-gray-700 hover:border-gray-600'}`}>
                             {item.image_url && (
-                                <div className="h-48 bg-gray-900 overflow-hidden">
+                                <div className="h-48 bg-gray-900 overflow-hidden relative">
                                     <img
                                         src={item.image_url.includes('res.cloudinary.com') ? item.image_url.replace('https://res.cloudinary.com', '/cloudinary-proxy') : item.image_url}
                                         alt={item.title}
-                                        className="w-full h-full object-cover"
+                                        className={`w-full h-full object-cover ${item.is_active === false ? 'grayscale' : ''}`}
                                         onError={(e) => {
                                             if (e.target.src.includes('/cloudinary-proxy')) {
                                                 e.target.src = item.image_url;
                                             }
                                         }}
                                     />
+                                    {item.is_active === false && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                            <span className="text-red-500 font-bold bg-black/80 px-3 py-1 rounded border border-red-500 transform -rotate-12">DELETED</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             <div className="p-4">
-                                <h3 className="text-lg font-bold text-white mb-1">{item.title}</h3>
+                                <h3 className={`text-lg font-bold text-white mb-1 ${item.is_active === false ? 'line-through text-gray-500' : ''}`}>{item.title}</h3>
                                 {item.price && (
                                     <p className="text-blue-400 font-semibold mb-2">{item.price}</p>
                                 )}
@@ -588,7 +625,7 @@ export default function ECatalogItemsManager() {
                                     <div className="flex gap-1">
                                         <button
                                             onClick={() => moveItem(items.indexOf(item), 'up')}
-                                            disabled={items.indexOf(item) === 0}
+                                            disabled={items.indexOf(item) === 0 || item.is_active === false}
                                             className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
                                             title="Pindah ke atas"
                                         >
@@ -596,7 +633,7 @@ export default function ECatalogItemsManager() {
                                         </button>
                                         <button
                                             onClick={() => moveItem(items.indexOf(item), 'down')}
-                                            disabled={items.indexOf(item) === items.length - 1}
+                                            disabled={items.indexOf(item) === items.length - 1 || item.is_active === false}
                                             className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
                                             title="Pindah ke bawah"
                                         >
@@ -612,13 +649,23 @@ export default function ECatalogItemsManager() {
                                         <Edit size={16} />
                                         Edit
                                     </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <Trash2 size={16} />
-                                        Hapus
-                                    </button>
+                                    {item.is_active === false ? (
+                                        <button
+                                            onClick={() => handleRestore(item.id)}
+                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Save size={16} />
+                                            Restore
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Trash2 size={16} />
+                                            Hapus
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>

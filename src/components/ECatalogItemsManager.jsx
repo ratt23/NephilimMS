@@ -196,6 +196,7 @@ export default function ECatalogItemsManager() {
 
             // Parse features if they are JSON strings
             const parsedData = data
+                .filter(item => item.is_active !== false) // Only show active items (deleted/hidden items are excluded)
                 .map(item => ({
                     ...item,
                     features: typeof item.features === 'string' ? JSON.parse(item.features) : (item.features || [])
@@ -407,12 +408,16 @@ export default function ECatalogItemsManager() {
                                 {categoryCovers[category.id] ? (
                                     <>
                                         <img
-                                            src={categoryCovers[category.id]}
+                                            src={categoryCovers[category.id] ? (categoryCovers[category.id].includes('res.cloudinary.com') ? categoryCovers[category.id].replace('https://res.cloudinary.com', '/cloudinary-proxy') : categoryCovers[category.id]) : ''}
                                             alt={category.label}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                                e.target.onerror = null; // Prevent infinite loop
-                                                e.target.src = '/asset/categories/placeholder.svg';
+                                                if (e.target.src.includes('/cloudinary-proxy') && categoryCovers[category.id]) {
+                                                    e.target.src = categoryCovers[category.id];
+                                                } else {
+                                                    e.target.onerror = null;
+                                                    e.target.src = '/asset/categories/placeholder.svg';
+                                                }
                                             }}
                                         />
                                         <button
@@ -548,7 +553,16 @@ export default function ECatalogItemsManager() {
                         <div key={item.id} className="bg-zinc-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
                             {item.image_url && (
                                 <div className="h-48 bg-gray-900 overflow-hidden">
-                                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                                    <img
+                                        src={item.image_url.includes('res.cloudinary.com') ? item.image_url.replace('https://res.cloudinary.com', '/cloudinary-proxy') : item.image_url}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            if (e.target.src.includes('/cloudinary-proxy')) {
+                                                e.target.src = item.image_url;
+                                            }
+                                        }}
+                                    />
                                 </div>
                             )}
                             <div className="p-4">

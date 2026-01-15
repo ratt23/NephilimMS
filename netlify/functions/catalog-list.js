@@ -11,12 +11,13 @@ export async function handler(event, context) {
         if (category) {
             items = await sql`
         SELECT * FROM catalog_items 
-        WHERE category = ${category}
+        WHERE category = ${category} AND is_active = true
         ORDER BY sort_order ASC, created_at DESC
       `;
         } else {
             items = await sql`
         SELECT * FROM catalog_items 
+        WHERE is_active = true
         ORDER BY category ASC, sort_order ASC, created_at DESC
       `;
         }

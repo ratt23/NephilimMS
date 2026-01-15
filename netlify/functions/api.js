@@ -452,11 +452,11 @@ export async function handler(event, context) {
 
         const [newItem] = await sql`
           INSERT INTO catalog_items (
-            category, title, description, price, image_url, cloudinary_public_id, features, sort_order
+            category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active
           ) VALUES (
             ${category}, ${title}, ${description || ''}, ${price || ''}, 
             ${image_url || ''}, ${cloudinary_public_id || ''}, 
-            ${features ? JSON.stringify(features) : '[]'}, ${sort_order || 0}
+            ${features ? JSON.stringify(features) : '[]'}, ${sort_order || 0}, true
           ) RETURNING *
         `;
         return { statusCode: 201, headers, body: JSON.stringify(newItem) };

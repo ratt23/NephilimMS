@@ -194,9 +194,8 @@ export default function ECatalogItemsManager() {
             const response = await fetch(`/.netlify/functions/api/catalog-items/all?category=${selectedCategory}`);
             const data = await response.json();
 
-            // Parse features if they are JSON strings and filter out inactive items
+            // Parse features if they are JSON strings
             const parsedData = data
-                .filter(item => item.is_active !== false) // Only show active items
                 .map(item => ({
                     ...item,
                     features: typeof item.features === 'string' ? JSON.parse(item.features) : (item.features || [])

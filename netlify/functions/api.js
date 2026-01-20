@@ -47,17 +47,17 @@ export async function handler(event, context) {
     if (path.startsWith('/doctors')) {
       // GET /doctors/grouped (Legacy)
       if (path === '/doctors/grouped' && method === 'GET') {
-        const doctors = await sql`
-                    SELECT d.id, d.name, d.specialty, d.schedule, d.image_url, s.image_url AS image_url_sstv 
+                    SELECT d.id, d.name, d.specialty, d.schedule, d.image_url, d.updated_at, s.image_url AS image_url_sstv 
                     FROM doctors d LEFT JOIN sstv_images s ON d.id = s.doctor_id ORDER BY d.name
-                `;
+          `;
         const doctorsData = {};
         for (const doc of doctors) {
           const specialtyKey = createKey(doc.specialty);
           if (!doctorsData[specialtyKey]) doctorsData[specialtyKey] = { title: doc.specialty, doctors: [] };
-          doctorsData[specialtyKey].doctors.push({
+            doctorsData[specialtyKey].doctors.push({
             name: doc.name, image_url: doc.image_url,
-            image_url_sstv: doc.image_url_sstv, schedule: doc.schedule
+            image_url_sstv: doc.image_url_sstv, schedule: doc.schedule,
+            updated_at: doc.updated_at
           });
         }
         return { statusCode: 200, headers, body: JSON.stringify(doctorsData) };
@@ -69,7 +69,7 @@ export async function handler(event, context) {
         const result = await sql`
                     SELECT t2.name, t2.specialty, t1.start_date, t1.end_date
                     FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id
-                    WHERE t1.start_date <= ${today} AND t1.end_date >= ${today}
+                    WHERE t1.start_date <= ${ today } AND t1.end_date >= ${ today }
                     ORDER BY t1.start_date ASC
                 `;
         return { statusCode: 200, headers, body: JSON.stringify(result) };
@@ -86,11 +86,11 @@ export async function handler(event, context) {
         const { page = '1', limit = '30', search = '' } = event.queryStringParameters || {};
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const searchFilter = search
-          ? sql`WHERE name ILIKE ${'%' + search + '%'} OR specialty ILIKE ${'%' + search + '%'}`
+          ? sql`WHERE name ILIKE ${ '%' + search + '%' } OR specialty ILIKE ${ '%' + search + '%' } `
           : sql``;
 
-        const [countResult] = await sql`SELECT COUNT(*) FROM doctors ${searchFilter}`;
-        const doctors = await sql`SELECT * FROM doctors ${searchFilter} ORDER BY name LIMIT ${limit} OFFSET ${offset}`;
+        const [countResult] = await sql`SELECT COUNT(*) FROM doctors ${ searchFilter } `;
+        const doctors = await sql`SELECT * FROM doctors ${ searchFilter } ORDER BY name LIMIT ${ limit } OFFSET ${ offset } `;
 
         return { statusCode: 200, headers, body: JSON.stringify({ doctors, total: parseInt(countResult.count) }) };
       }
@@ -102,10 +102,10 @@ export async function handler(event, context) {
         if (!name || !specialty) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Nama dan Spesialisasi wajib.' }) };
 
         const [newDoctor] = await sql`
-                    INSERT INTO doctors (name, specialty, image_url, schedule)
-                    VALUES (${name}, ${specialty}, ${image_url || ''}, ${schedule || '{}'})
-                    RETURNING *
-                `;
+                    INSERT INTO doctors(name, specialty, image_url, schedule, updated_at)
+        VALUES(${ name }, ${ specialty }, ${ image_url || ''}, ${ schedule || '{}' }, NOW())
+      RETURNING *
+        `;
         return { statusCode: 201, headers, body: JSON.stringify(newDoctor) };
       }
 
@@ -117,9 +117,9 @@ export async function handler(event, context) {
 
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
         const [updated] = await sql`
-                    UPDATE doctors SET name=${name}, specialty=${specialty}, image_url=${image_url}, schedule=${schedule}
-                    WHERE id=${id} RETURNING *
-                `;
+                    UPDATE doctors SET name = ${ name }, specialty = ${ specialty }, image_url = ${ image_url }, schedule = ${ schedule }, updated_at = NOW()
+                    WHERE id = ${ id } RETURNING *
+        `;
         return { statusCode: 200, headers, body: JSON.stringify(updated) };
       }
 
@@ -128,7 +128,7 @@ export async function handler(event, context) {
         checkAuth();
         const id = event.queryStringParameters?.id;
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID dibutuhkan' }) };
-        await sql`DELETE FROM doctors WHERE id=${id}`;
+        await sql`DELETE FROM doctors WHERE id = ${ id } `;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
       }
     }
@@ -153,11 +153,11 @@ export async function handler(event, context) {
         const { doctor_id, start_date, end_date } = JSON.parse(event.body);
         if (!doctor_id || !start_date || !end_date) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Semua field wajib.' }) };
 
-        const [doctor] = await sql`SELECT name FROM doctors WHERE id = ${doctor_id}`;
+        const [doctor] = await sql`SELECT name FROM doctors WHERE id = ${ doctor_id } `;
         const [newLeave] = await sql`
-                    INSERT INTO leave_data (doctor_id, start_date, end_date) VALUES (${doctor_id}, ${start_date}, ${end_date})
+                    INSERT INTO leave_data(doctor_id, start_date, end_date) VALUES(${ doctor_id }, ${ start_date }, ${ end_date })
                     RETURNING id, start_date, end_date
-                `;
+        `;
 
         if (newLeave) {
           const appId = event.headers['x-onesignal-app-id'];
@@ -179,7 +179,7 @@ export async function handler(event, context) {
           return { statusCode: 200, headers, body: JSON.stringify({ message: 'Cleaned' }) };
         }
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM leave_data WHERE id=${id}`;
+        await sql`DELETE FROM leave_data WHERE id = ${ id } `;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
       }
     }
@@ -192,7 +192,7 @@ export async function handler(event, context) {
         try {
           console.log('[API] Fetching settings...');
           const settings = await sql`SELECT * FROM app_settings`;
-          console.log(`[API] Settings fetched: ${settings.length} rows`);
+          console.log(`[API] Settings fetched: ${ settings.length } rows`);
           const map = settings.reduce((acc, item) => {
             acc[item.setting_key] = { value: item.setting_value, enabled: item.is_enabled };
             return acc;
@@ -209,10 +209,10 @@ export async function handler(event, context) {
         const updates = JSON.parse(event.body);
         const promises = Object.entries(updates).map(([key, data]) => {
           return sql`
-                        INSERT INTO app_settings (setting_key, setting_value, is_enabled, updated_at)
-                        VALUES (${key}, ${data.value}, ${data.enabled}, NOW())
-                        ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
-                    `;
+                        INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at)
+      VALUES(${ key }, ${ data.value }, ${ data.enabled }, NOW())
+                        ON CONFLICT(setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
+        `;
         });
         await Promise.all(promises);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Updated' }) };
@@ -224,7 +224,7 @@ export async function handler(event, context) {
     // ==========================================
     if (path === '/popup-ad') {
       if (method === 'GET') {
-        const s = await sql`SELECT * FROM app_settings WHERE setting_key IN ('popup_ad_image', 'popup_ad_active')`;
+        const s = await sql`SELECT * FROM app_settings WHERE setting_key IN('popup_ad_image', 'popup_ad_active')`;
         const res = {
           image_url: s.find(k => k.setting_key === 'popup_ad_image')?.setting_value || '',
           active: s.find(k => k.setting_key === 'popup_ad_active')?.is_enabled ?? false
@@ -234,8 +234,8 @@ export async function handler(event, context) {
       if (method === 'POST') {
         checkAuth();
         const { image_url, active } = JSON.parse(event.body);
-        await sql`INSERT INTO app_settings (setting_key, setting_value, is_enabled, updated_at) VALUES ('popup_ad_image', ${image_url}, true, NOW()) ON CONFLICT (setting_key) DO UPDATE SET setting_value=EXCLUDED.setting_value`;
-        await sql`INSERT INTO app_settings (setting_key, setting_value, is_enabled, updated_at) VALUES ('popup_ad_active', ${active ? 'true' : 'false'}, ${active}, NOW()) ON CONFLICT (setting_key) DO UPDATE SET is_enabled=EXCLUDED.is_enabled, setting_value=EXCLUDED.setting_value`;
+        await sql`INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at) VALUES('popup_ad_image', ${ image_url }, true, NOW()) ON CONFLICT(setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value`;
+        await sql`INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at) VALUES('popup_ad_active', ${ active? 'true': 'false' }, ${ active }, NOW()) ON CONFLICT(setting_key) DO UPDATE SET is_enabled = EXCLUDED.is_enabled, setting_value = EXCLUDED.setting_value`;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Updated' }) };
       }
     }
@@ -254,7 +254,7 @@ export async function handler(event, context) {
       if (method === 'POST') {
         checkAuth();
         const { doctor_id, image_url } = JSON.parse(event.body);
-        const [res] = await sql`INSERT INTO sstv_images (doctor_id, image_url) VALUES (${doctor_id}, ${image_url}) ON CONFLICT (doctor_id) DO UPDATE SET image_url=EXCLUDED.image_url RETURNING *`;
+        const [res] = await sql`INSERT INTO sstv_images(doctor_id, image_url) VALUES(${ doctor_id }, ${ image_url }) ON CONFLICT(doctor_id) DO UPDATE SET image_url = EXCLUDED.image_url RETURNING * `;
         return { statusCode: 201, headers, body: JSON.stringify(res) };
       }
     }
@@ -267,25 +267,25 @@ export async function handler(event, context) {
         const { id, slug, page = '1', limit = '10', search = '', status, category, tag } = event.queryStringParameters || {};
 
         if (id) {
-          const [post] = await sql`SELECT * FROM posts WHERE id = ${id}`;
+          const [post] = await sql`SELECT * FROM posts WHERE id = ${ id } `;
           if (!post) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
           return { statusCode: 200, headers, body: JSON.stringify(post) };
         }
         if (slug) {
-          const [post] = await sql`SELECT * FROM posts WHERE slug = ${slug}`;
+          const [post] = await sql`SELECT * FROM posts WHERE slug = ${ slug } `;
           if (!post) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
           return { statusCode: 200, headers, body: JSON.stringify(post) };
         }
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        let whereClause = sql`WHERE 1=1`;
-        if (search) whereClause = sql`${whereClause} AND (title ILIKE ${'%' + search + '%'} OR content ILIKE ${'%' + search + '%'})`;
-        if (status) whereClause = sql`${whereClause} AND status = ${status}`;
-        if (category) whereClause = sql`${whereClause} AND category = ${category}`;
-        if (tag) whereClause = sql`${whereClause} AND tags ILIKE ${'%' + tag + '%'}`;
+        let whereClause = sql`WHERE 1 = 1`;
+        if (search) whereClause = sql`${ whereClause } AND(title ILIKE ${ '%' + search + '%' } OR content ILIKE ${ '%' + search + '%' })`;
+        if (status) whereClause = sql`${ whereClause } AND status = ${ status } `;
+        if (category) whereClause = sql`${ whereClause } AND category = ${ category } `;
+        if (tag) whereClause = sql`${ whereClause } AND tags ILIKE ${ '%' + tag + '%' } `;
 
-        const [count] = await sql`SELECT COUNT(*) FROM posts ${whereClause}`;
-        const posts = await sql`SELECT * FROM posts ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+        const [count] = await sql`SELECT COUNT(*) FROM posts ${ whereClause } `;
+        const posts = await sql`SELECT * FROM posts ${ whereClause } ORDER BY created_at DESC LIMIT ${ limit } OFFSET ${ offset } `;
         return { statusCode: 200, headers, body: JSON.stringify({ posts, total: parseInt(count.count) }) };
       }
 
@@ -296,10 +296,10 @@ export async function handler(event, context) {
 
         try {
           const [newPost] = await sql`
-                        INSERT INTO posts (title, slug, content, excerpt, image_url, status, category, tags)
-                        VALUES (${title}, ${slug}, ${content || ''}, ${excerpt || ''}, ${image_url || ''}, ${status || 'draft'}, ${category || 'article'}, ${tags || ''})
-                        RETURNING *
-                     `;
+                        INSERT INTO posts(title, slug, content, excerpt, image_url, status, category, tags)
+      VALUES(${ title }, ${ slug }, ${ content || ''}, ${ excerpt || '' }, ${ image_url || '' }, ${ status || 'draft' }, ${ category || 'article' }, ${ tags || '' })
+    RETURNING *
+      `;
           return { statusCode: 201, headers, body: JSON.stringify(newPost) };
         } catch (err) {
           if (err.code === '23505') return { statusCode: 400, headers, body: JSON.stringify({ message: 'Slug exists' }) };
@@ -314,9 +314,9 @@ export async function handler(event, context) {
         const { title, slug, content, excerpt, image_url, status, category, tags } = JSON.parse(event.body);
         try {
           const [updated] = await sql`
-                        UPDATE posts SET title=${title}, slug=${slug}, content=${content}, excerpt=${excerpt}, image_url=${image_url}, status=${status}, category=${category}, tags=${tags}, updated_at=NOW()
-                        WHERE id=${id} RETURNING *
-                     `;
+                        UPDATE posts SET title = ${ title }, slug = ${ slug }, content = ${ content }, excerpt = ${ excerpt }, image_url = ${ image_url }, status = ${ status }, category = ${ category }, tags = ${ tags }, updated_at = NOW()
+                        WHERE id = ${ id } RETURNING *
+      `;
           return { statusCode: 200, headers, body: JSON.stringify(updated) };
         } catch (err) {
           if (err.code === '23505') return { statusCode: 400, headers, body: JSON.stringify({ message: 'Slug exists' }) };
@@ -328,7 +328,7 @@ export async function handler(event, context) {
         checkAuth();
         const id = event.queryStringParameters?.id;
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM posts WHERE id = ${id}`;
+        await sql`DELETE FROM posts WHERE id = ${ id } `;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
       }
     }
@@ -354,7 +354,7 @@ export async function handler(event, context) {
         if (id !== 'all') {
           if (method === 'GET') {
             checkAuth();
-            const [pkg] = await sql`SELECT * FROM mcu_packages WHERE id = ${id}`;
+            const [pkg] = await sql`SELECT * FROM mcu_packages WHERE id = ${ id } `;
             if (!pkg) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Not found' }) };
             return { statusCode: 200, headers, body: JSON.stringify(pkg) };
           }
@@ -363,18 +363,18 @@ export async function handler(event, context) {
             const body = JSON.parse(event.body);
             const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, is_enabled, display_order } = body;
             const [updated] = await sql`
-                            UPDATE mcu_packages SET 
-                                package_id=${package_id}, name=${name}, price=${price}, base_price=${base_price || null}, image_url=${image_url || null},
-                                is_pelaut=${is_pelaut || false}, is_recommended=${is_recommended || false}, items=${JSON.stringify(items)}, 
-                                addons=${addons ? JSON.stringify(addons) : null}, is_enabled=${is_enabled !== undefined ? is_enabled : true}, 
-                                display_order=${display_order || 0}, updated_at=NOW()
-                            WHERE id=${id} RETURNING *
-                         `;
+                            UPDATE mcu_packages SET
+    package_id = ${ package_id }, name = ${ name }, price = ${ price }, base_price = ${ base_price || null }, image_url = ${ image_url || null },
+    is_pelaut = ${ is_pelaut || false }, is_recommended = ${ is_recommended || false }, items = ${ JSON.stringify(items) },
+    addons = ${ addons ? JSON.stringify(addons) : null }, is_enabled = ${ is_enabled !== undefined ? is_enabled : true },
+    display_order = ${ display_order || 0 }, updated_at = NOW()
+                            WHERE id = ${ id } RETURNING *
+      `;
             return { statusCode: 200, headers, body: JSON.stringify(updated) };
           }
           if (method === 'DELETE') {
             checkAuth();
-            await sql`UPDATE mcu_packages SET is_enabled = false WHERE id = ${id}`;
+            await sql`UPDATE mcu_packages SET is_enabled = false WHERE id = ${ id } `;
             return { statusCode: 200, headers, body: JSON.stringify({ message: 'Disabled' }) };
           }
         }
@@ -385,12 +385,12 @@ export async function handler(event, context) {
         const body = JSON.parse(event.body);
         const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order } = body;
         const [newPkg] = await sql`
-                    INSERT INTO mcu_packages (
-                      package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order
-                    ) VALUES (
-                      ${package_id}, ${name}, ${price}, ${base_price || null}, ${image_url || null}, ${is_pelaut || false}, ${is_recommended || false}, ${JSON.stringify(items)}, ${addons ? JSON.stringify(addons) : null}, ${display_order || 0}
+                    INSERT INTO mcu_packages(
+        package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order
+      ) VALUES(
+        ${ package_id }, ${ name }, ${ price }, ${ base_price || null}, ${ image_url || null }, ${ is_pelaut || false }, ${ is_recommended || false }, ${ JSON.stringify(items) }, ${ addons ? JSON.stringify(addons) : null }, ${ display_order || 0 }
                     ) RETURNING *
-                 `;
+    `;
         return { statusCode: 201, headers, body: JSON.stringify(newPkg) };
       }
     }
@@ -406,16 +406,16 @@ export async function handler(event, context) {
         let items;
         if (category) {
           items = await sql`
-            SELECT * FROM catalog_items 
-            WHERE category = ${category} AND is_active = true
+  SELECT * FROM catalog_items 
+            WHERE category = ${ category } AND is_active = true
             ORDER BY sort_order ASC, created_at DESC
-          `;
+    `;
         } else {
           items = await sql`
-            SELECT * FROM catalog_items 
+  SELECT * FROM catalog_items 
             WHERE is_active = true
             ORDER BY category ASC, sort_order ASC, created_at DESC
-          `;
+    `;
         }
         return { statusCode: 200, headers, body: JSON.stringify(items) };
       }
@@ -428,15 +428,15 @@ export async function handler(event, context) {
         let items;
         if (category) {
           items = await sql`
-            SELECT * FROM catalog_items 
-            WHERE category = ${category}
+  SELECT * FROM catalog_items 
+            WHERE category = ${ category }
             ORDER BY sort_order ASC, created_at DESC
-          `;
+    `;
         } else {
           items = await sql`
-            SELECT * FROM catalog_items 
+  SELECT * FROM catalog_items 
             ORDER BY category ASC, sort_order ASC, created_at DESC
-          `;
+    `;
         }
         return { statusCode: 200, headers, body: JSON.stringify(items) };
       }
@@ -451,14 +451,14 @@ export async function handler(event, context) {
         }
 
         const [newItem] = await sql`
-          INSERT INTO catalog_items (
-            category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active
-          ) VALUES (
-            ${category}, ${title}, ${description || ''}, ${price || ''}, 
-            ${image_url || ''}, ${cloudinary_public_id || ''}, 
-            ${features ? JSON.stringify(features) : '[]'}, ${sort_order || 0}, true
+          INSERT INTO catalog_items(
+      category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active
+    ) VALUES(
+      ${ category }, ${ title }, ${ description || ''}, ${ price || '' }, 
+            ${ image_url || '' }, ${ cloudinary_public_id || '' }, 
+            ${ features ? JSON.stringify(features) : '[]' }, ${ sort_order || 0 }, true
           ) RETURNING *
-        `;
+  `;
         return { statusCode: 201, headers, body: JSON.stringify(newItem) };
       }
 
@@ -471,16 +471,16 @@ export async function handler(event, context) {
         const { category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active } = JSON.parse(event.body);
 
         const [updated] = await sql`
-          UPDATE catalog_items SET 
-            category=${category}, title=${title}, description=${description || ''}, 
-            price=${price || ''}, image_url=${image_url || ''}, 
-            cloudinary_public_id=${cloudinary_public_id || ''}, 
-            features=${features ? JSON.stringify(features) : '[]'}, 
-            sort_order=${sort_order !== undefined ? sort_order : 0},
-            is_active=${is_active !== undefined ? is_active : true},
-            updated_at=NOW()
-          WHERE id=${id} RETURNING *
-        `;
+          UPDATE catalog_items SET
+category = ${ category }, title = ${ title }, description = ${ description || '' },
+price = ${ price || '' }, image_url = ${ image_url || '' },
+cloudinary_public_id = ${ cloudinary_public_id || '' },
+features = ${ features ? JSON.stringify(features) : '[]' },
+sort_order = ${ sort_order !== undefined ? sort_order : 0 },
+is_active = ${ is_active !== undefined ? is_active : true },
+updated_at = NOW()
+          WHERE id = ${ id } RETURNING *
+  `;
         return { statusCode: 200, headers, body: JSON.stringify(updated) };
       }
 
@@ -490,7 +490,7 @@ export async function handler(event, context) {
         const id = event.queryStringParameters?.id;
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
 
-        await sql`UPDATE catalog_items SET is_active = false WHERE id = ${id}`;
+        await sql`UPDATE catalog_items SET is_active = false WHERE id = ${ id } `;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
       }
 
@@ -504,7 +504,7 @@ export async function handler(event, context) {
 
         await sql.begin(async sql => {
           for (let i = 0; i < orderedIds.length; i++) {
-            await sql`UPDATE catalog_items SET sort_order = ${i} WHERE id = ${orderedIds[i]}`;
+            await sql`UPDATE catalog_items SET sort_order = ${ i } WHERE id = ${ orderedIds[i] } `;
           }
         });
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Reordered' }) };
@@ -523,7 +523,7 @@ export async function handler(event, context) {
 
       await sql.begin(async sql => {
         for (const item of items) {
-          await sql`UPDATE catalog_items SET sort_order = ${item.sort_order} WHERE id = ${item.id}`;
+          await sql`UPDATE catalog_items SET sort_order = ${ item.sort_order } WHERE id = ${ item.id } `;
         }
       });
       return { statusCode: 200, headers, body: JSON.stringify({ message: 'Order updated' }) };
@@ -545,7 +545,7 @@ export async function handler(event, context) {
         const [maxOrder] = await sql`SELECT MAX(sort_order) as max FROM promo_images`;
         const newOrder = (maxOrder.max ? parseInt(maxOrder.max, 10) : 0) + 1;
 
-        const [newPromo] = await sql`INSERT INTO promo_images (image_url, alt_text, sort_order) VALUES (${image_url}, ${alt_text || ''}, ${newOrder}) RETURNING *`;
+        const [newPromo] = await sql`INSERT INTO promo_images(image_url, alt_text, sort_order) VALUES(${ image_url }, ${ alt_text || ''}, ${ newOrder }) RETURNING * `;
         return { statusCode: 201, headers, body: JSON.stringify(newPromo) };
       }
       if ((path === '/promos' || path === '/promos/') && method === 'PUT') {
@@ -553,14 +553,14 @@ export async function handler(event, context) {
         const id = event.queryStringParameters?.id;
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
         const { alt_text } = JSON.parse(event.body);
-        const [updated] = await sql`UPDATE promo_images SET alt_text=${alt_text} WHERE id=${id} RETURNING *`;
+        const [updated] = await sql`UPDATE promo_images SET alt_text = ${ alt_text } WHERE id = ${ id } RETURNING * `;
         return { statusCode: 200, headers, body: JSON.stringify(updated) };
       }
       if ((path === '/promos' || path === '/promos/') && method === 'DELETE') {
         checkAuth();
         const id = event.queryStringParameters?.id;
         if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM promo_images WHERE id=${id}`;
+        await sql`DELETE FROM promo_images WHERE id = ${ id } `;
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
       }
       if (path === '/promos/reorder' && method === 'POST') {
@@ -572,9 +572,9 @@ export async function handler(event, context) {
           await sql`
                         UPDATE promo_images AS p
                         SET sort_order = temp.new_order
-                        FROM (SELECT id, ROW_NUMBER() OVER () AS new_order FROM UNNEST(${orderedIds}::int[]) AS id) AS temp
+FROM(SELECT id, ROW_NUMBER() OVER() AS new_order FROM UNNEST(${ orderedIds }:: int[]) AS id) AS temp
                         WHERE p.id = temp.id
-                    `;
+  `;
         });
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Reordered' }) };
       }

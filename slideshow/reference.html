@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
             background: linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%);
             position: relative;
         }
+
         .ticker-wrap {
             position: fixed;
             bottom: 0;
@@ -29,16 +31,24 @@
             font-size: 1.125rem;
             line-height: 1.75rem;
         }
+
         .ticker-move {
             display: inline-block;
             white-space: nowrap;
             padding-left: 100%;
             animation: ticker 60s linear infinite;
         }
+
         @keyframes ticker {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
         }
+
         .info-cuti-label {
             background-color: #FBBF24;
             color: #DC2626;
@@ -47,35 +57,43 @@
             font-weight: 700;
             margin-right: 0.5rem;
         }
-        
+
         .schedule-table-wrapper {
-            border-radius: 0.5rem; /* rounded-lg */
+            border-radius: 0.5rem;
+            /* rounded-lg */
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
+
         .schedule-table {
             border-collapse: collapse;
         }
-        .schedule-table th, .schedule-table td {
-            padding: 0.75rem 0.5rem; 
+
+        .schedule-table th,
+        .schedule-table td {
+            padding: 0.75rem 0.5rem;
             white-space: normal;
-            font-size: 1rem; /* 16px */
+            font-size: 1rem;
+            /* 16px */
             line-height: 1.6;
             text-align: center;
             vertical-align: top;
             border-bottom: 1px solid #e5e7eb;
         }
+
         .schedule-table th {
             background-color: #a7f3d0;
             color: #065f46;
             font-weight: 700;
             text-transform: capitalize;
         }
+
         .schedule-table td {
-             color: #1f293b;
-             background-color: #ffffff;
-             font-weight: 600;
+            color: #1f293b;
+            background-color: #ffffff;
+            font-weight: 600;
         }
+
         .schedule-table tr:last-child td {
             border-bottom: none;
         }
@@ -84,29 +102,93 @@
             -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
             mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
         }
+
         .promo-fullscreen-container {
-            position: fixed; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-            width: 100vw !important; height: 100vh !important;
-            max-width: none !important; max-height: none !important;
-            margin: 0 !important; padding: 0 !important; border: none !important;
-            display: flex; align-items: center; justify-content: center;
-            background: white; z-index: 50; overflow: hidden;
+            position: fixed;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            z-index: 50;
+            overflow: hidden;
         }
+
         .promo-fullscreen-image {
-            width: 100% !important; height: 100% !important;
-            max-width: none !important; max-height: none !important;
-            object-fit: cover; object-position: center;
-            display: block; margin: 0 !important; padding: 0 !important; border: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
         }
-        @keyframes simpleFade { from { opacity: 0; } to { opacity: 1; } }
-        .promo-fullscreen-container.fade-in { animation: simpleFade 0.8s ease-in-out; }
-        .promo-fullscreen-container.fade-in { animation: zoomFadeIn 0.8s ease-in-out; }
-        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: transparent; }
-        .ticker-wrap { position: fixed; bottom: 0; left: 0; z-index: 100; }
-        .fade-in { animation: fadeIn 1s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes simpleFade {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .promo-fullscreen-container.fade-in {
+            animation: simpleFade 0.8s ease-in-out;
+        }
+
+        .promo-fullscreen-container.fade-in {
+            animation: zoomFadeIn 0.8s ease-in-out;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: transparent;
+        }
+
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
+
 <body class="flex flex-col h-screen">
 
     <header class="p-4 md:p-6 flex justify-start">
@@ -114,7 +196,7 @@
     </header>
 
     <main class="flex-grow flex items-center justify-center p-4 md:p-8 -mt-16" style="position: relative; z-index: 10;">
-        
+
         <div id="slideshow-container" class="w-full flex-grow relative flex items-center justify-center">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-8 items-center w-full max-w-7xl">
                 <div class="flex flex-col md:col-span-3">
@@ -123,7 +205,7 @@
                     </div>
                     <h2 id="doctor-name" class="text-4xl font-bold text-gray-800">Memuat Nama Dokter...</h2>
                     <p id="doctor-specialty" class="text-2xl text-green-700 font-semibold mt-1">Memuat Spesialis...</p>
-                    
+
                     <div id="schedule-wrapper" class="mt-8 w-full flex justify-center">
                         <div class="schedule-table-wrapper inline-block">
                             <table id="schedule-table" class="schedule-table">
@@ -138,15 +220,17 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-center h-full md:col-span-2 fade-bottom">
-                    <img id="doctor-photo" src="https://placehold.co/400x500/ffffff/334155?text=Foto+Dokter&bg-opacity=0" alt="Foto Dokter" class="object-contain w-full h-auto max-h-[80vh]">
+                    <img id="doctor-photo"
+                        src="https://placehold.co/400x500/ffffff/334155?text=Foto+Dokter&bg-opacity=0" alt="Foto Dokter"
+                        class="object-contain w-full h-auto max-h-[80vh]">
                 </div>
             </div>
         </div>
-        
+
         <div id="video-container" class="hidden w-full h-full flex-grow flex items-center justify-center">
-             <video id="promo-video" class="w-full h-full max-h-[80vh] object-contain rounded-lg" playsinline></video>
+            <video id="promo-video" class="w-full h-full max-h-[80vh] object-contain rounded-lg" playsinline></video>
         </div>
-        
+
         <div id="promo-container" class="hidden promo-fullscreen-container">
             <img id="promo-fullscreen-image" src="" alt="Gambar Promo" class="promo-fullscreen-image">
         </div>
@@ -159,21 +243,21 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const GOOGLE_SCRIPT_JADWAL_URL = 'https://dashboarddev.netlify.app/.netlify/functions/getDoctors';
-            const GOOGLE_SCRIPT_CUTI_URL = 'https://dashboarddev.netlify.app/.netlify/functions/getLeaveData';
-            const PROMO_DATA_API_URL = 'https://dashboarddev.netlify.app/.netlify/functions/getPromoImages';
-            
+        document.addEventListener('DOMContentLoaded', function () {
+            const GOOGLE_SCRIPT_JADWAL_URL = 'https://dashdev1.netlify.app/.netlify/functions/getDoctors';
+            const GOOGLE_SCRIPT_CUTI_URL = 'https://dashdev1.netlify.app/.netlify/functions/getLeaveData';
+            const PROMO_DATA_API_URL = 'https://dashdev1.netlify.app/.netlify/functions/getPromoImages';
+
             const VIDEO_URLS = ['video/promo.mp4', 'video/promo2.mp4'];
-            
+
             const SLIDE_DURATION = 10000;
             const PROMO_SLIDE_DURATION = 15000;
             const DATA_REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
-            
+
             const doctorNameElement = document.getElementById('doctor-name');
             const doctorSpecialtyElement = document.getElementById('doctor-specialty');
             const doctorPhotoElement = document.getElementById('doctor-photo');
-            const scheduleWrapper = document.getElementById('schedule-wrapper'); 
+            const scheduleWrapper = document.getElementById('schedule-wrapper');
             const scheduleHeadElement = document.getElementById('schedule-head');
             const scheduleBodyElement = document.getElementById('schedule-body');
             const cutiTickerContentElement = document.getElementById('cuti-ticker-content');
@@ -182,7 +266,7 @@
             const promoVideoElement = document.getElementById('promo-video');
             const promoContainer = document.getElementById('promo-container');
             const promoFullscreenImage = document.getElementById('promo-fullscreen-image');
-            
+
             let doctorsData = [];
             let promoData = [];
             let currentSlideIndex = 0;
@@ -205,7 +289,7 @@
             async function ambilDataApi(url) {
                 try {
                     // API sudah no-cache, jadi ?v= tidak diperlukan
-                    const response = await fetch(url); 
+                    const response = await fetch(url);
                     if (!response.ok) {
                         throw new Error('Pengambilan API gagal: ' + response.statusText);
                     }
@@ -215,7 +299,7 @@
                     return null;
                 }
             }
-            
+
             function createKey(name) {
                 if (typeof name !== 'string') return '';
                 return name.toLowerCase()
@@ -235,18 +319,18 @@
                     'bedah-toraks', 'gigi-umum', 'bedah-mulut', 'konservasi-gigi', 'penyakit-mulut',
                     'prostodonsia', 'ortopedi', 'kandungan-onkologi', 'kandungan-fetomaternal',
                     'penyakit-dalam-ginjal', 'bedah-onkologi',
-                    'umum', 'medical-check-up' 
+                    'umum', 'medical-check-up'
                 ];
                 for (const kunciSpesialis in dataJson) {
                     const spesialis = dataJson[kunciSpesialis];
-                    spesialis.doctors.forEach(function(dokter) {
+                    spesialis.doctors.forEach(function (dokter) {
                         if (dokter.schedule && Object.keys(dokter.schedule).length > 0) {
                             const fotoSSTV = dokter.image_url_sstv || dokter.image_url;
                             semuaDokter.push({
                                 nama: dokter.name,
                                 spesialis: spesialis.title,
                                 fotourl: fotoSSTV || 'https://placehold.co/400x500/ffffff/334155?text=Foto+Tidak+Tersedia&bg-opacity=0',
-                                schedule: dokter.schedule 
+                                schedule: dokter.schedule
                             });
                         }
                     });
@@ -268,16 +352,16 @@
 
             function preloadGambarDokter(data) {
                 if (!data) return;
-                data.forEach(function(dokter) {
+                data.forEach(function (dokter) {
                     if (dokter.fotourl) {
                         new Image().src = dokter.fotourl;
                     }
                 });
             }
-            
+
             function preloadGambarPromo(data) {
                 if (!data) return;
-                data.forEach(function(promo) {
+                data.forEach(function (promo) {
                     if (promo.imageUrl && !promo.imageUrl.includes('placehold.co')) {
                         new Image().src = promo.imageUrl;
                     }
@@ -296,9 +380,9 @@
                     const scheduleData = scheduleObj[day];
                     let scheduleTime = null;
                     if (typeof scheduleData === 'string') {
-                        scheduleTime = scheduleData; 
+                        scheduleTime = scheduleData;
                     } else if (typeof scheduleData === 'object' && scheduleData !== null && scheduleData.jam) {
-                        scheduleTime = scheduleData.jam; 
+                        scheduleTime = scheduleData.jam;
                     }
                     if (scheduleTime && scheduleTime.trim() !== '-' && scheduleTime.trim() !== '') {
                         const timeSlots = scheduleTime.split('/').map(slot => slot.trim()).join('<br>');
@@ -321,21 +405,21 @@
                 doctorNameElement.textContent = dokter.nama || 'Nama Tidak Tersedia';
                 doctorSpecialtyElement.textContent = dokter.spesialis || 'Spesialis Tidak Tersedia';
                 doctorPhotoElement.src = dokter.fotourl;
-                doctorPhotoElement.onerror = function() {
+                doctorPhotoElement.onerror = function () {
                     doctorPhotoElement.src = 'https://placehold.co/400x500/ffffff/334155?text=Gagal+Muat&bg-opacity=0';
                 };
                 const jadwal = formatJadwal(dokter.schedule);
                 if (jadwal) {
                     scheduleHeadElement.innerHTML = jadwal.header;
                     scheduleBodyElement.innerHTML = jadwal.body;
-                    scheduleWrapper.style.display = 'block'; 
+                    scheduleWrapper.style.display = 'block';
                 } else {
                     scheduleHeadElement.innerHTML = '';
                     scheduleBodyElement.innerHTML = '';
-                    scheduleWrapper.style.display = 'none'; 
+                    scheduleWrapper.style.display = 'none';
                 }
             }
-            
+
             function perbaruiSlidePromo() {
                 if (promoData.length === 0) {
                     putarVideoBerikutnya();
@@ -347,7 +431,7 @@
                 const promo = promoData[currentPromoIndex];
                 promoFullscreenImage.src = promo.imageUrl;
                 promoFullscreenImage.alt = promo.altText;
-                promoFullscreenImage.onerror = function() {
+                promoFullscreenImage.onerror = function () {
                     promoFullscreenImage.src = 'https://placehold.co/1920x1080/1e3a8a/ffffff?text=Gambar+Promo+Tidak+Tersedia';
                 };
                 promoContainer.style.display = 'flex';
@@ -367,7 +451,7 @@
                 promoContainer.style.display = 'none';
                 promoVideoElement.pause();
                 perbaruiSlideDokter();
-                slideshowInterval = setInterval(function() {
+                slideshowInterval = setInterval(function () {
                     currentSlideIndex++;
                     if (currentSlideIndex >= doctorsData.length) {
                         clearInterval(slideshowInterval);
@@ -387,7 +471,7 @@
                 videoContainer.style.display = 'none';
                 promoContainer.style.display = 'flex';
                 perbaruiSlidePromo();
-                setTimeout(function() {
+                setTimeout(function () {
                     currentPromoIndex++;
                     if (currentPromoIndex >= promoData.length) {
                         putarVideoBerikutnya();
@@ -409,7 +493,7 @@
                 promoVideoElement.muted = false;
                 const janjiPutar = promoVideoElement.play();
                 if (janjiPutar !== undefined) {
-                    janjiPutar.catch(function(error) {
+                    janjiPutar.catch(function (error) {
                         console.warn("Autoplay dengan suara gagal. Mencoba lagi tanpa suara.", error);
                         promoVideoElement.muted = true;
                         promoVideoElement.play();
@@ -424,7 +508,7 @@
                 mulaiSlideshowDokter();
             }
 
-            promoVideoElement.onended = function() {
+            promoVideoElement.onended = function () {
                 currentVideoIndex++;
                 if (currentVideoIndex < VIDEO_URLS.length) {
                     putarVideoBerikutnya();
@@ -432,7 +516,7 @@
                     mulaiUlangSiklus();
                 }
             };
-            promoVideoElement.onerror = function() {
+            promoVideoElement.onerror = function () {
                 console.error('Gagal memuat video: ' + promoVideoElement.src + '. Kembali ke slideshow.');
                 mulaiUlangSiklus();
             };
@@ -440,9 +524,9 @@
             async function aturTickerCuti() {
                 try {
                     const dataCuti = await ambilDataApi(GOOGLE_SCRIPT_CUTI_URL);
-                    
+
                     if (dataCuti && dataCuti.length > 0) {
-                        const teksCuti = dataCuti.map(function(item) {
+                        const teksCuti = dataCuti.map(function (item) {
                             const nama = item.NamaDokter || '';
                             const mulai = item.TanggalMulaiCuti || ''; // Format dd-MM-yyyy
                             const selesai = item.TanggalSelesaiCuti || ''; // Format dd-MM-yyyy
@@ -456,7 +540,7 @@
                             }
                             return '<span class="info-cuti-label">[INFO CUTI]</span> <strong>' + nama + '</strong> tidak praktek ' + infoTanggal;
                         }).join('<span class="mx-6 opacity-60">|</span>');
-                        
+
                         cutiTickerContentElement.innerHTML = teksCuti;
                     } else {
                         cutiTickerContentElement.textContent = 'Tidak ada informasi cuti saat ini.';
@@ -474,7 +558,7 @@
                     ambilDataApi(PROMO_DATA_API_URL),
                     ambilDataApi(GOOGLE_SCRIPT_CUTI_URL)
                 ]);
-                
+
                 if (dataJadwal) {
                     const dataBaru = ubahDataJadwal(dataJadwal); // Perhatikan: dataJadwal
                     if (JSON.stringify(doctorsData) !== JSON.stringify(dataBaru)) {
@@ -483,7 +567,7 @@
                         preloadGambarDokter(doctorsData);
                     }
                 }
-                
+
                 if (dataPromo) {
                     if (JSON.stringify(promoData) !== JSON.stringify(dataPromo)) {
                         console.log('Data promo berubah, memuat ulang.');
@@ -494,7 +578,7 @@
 
                 // Perbarui Ticker Cuti dengan dataCuti
                 if (dataCuti) {
-                     const teksCuti = dataCuti.map(function(item) {
+                    const teksCuti = dataCuti.map(function (item) {
                         const nama = item.NamaDokter || '';
                         const mulai = item.TanggalMulaiCuti || '';
                         const selesai = item.TanggalSelesaiCuti || '';
@@ -508,7 +592,7 @@
                         }
                         return '<span class="info-cuti-label">[INFO CUTI]</span> <strong>' + nama + '</strong> tidak praktek ' + infoTanggal.trim();
                     }).join('<span class="mx-6 opacity-60">|</span>');
-                    
+
                     if (teksCuti) {
                         cutiTickerContentElement.innerHTML = teksCuti;
                     } else {
@@ -530,15 +614,15 @@
                 if (dataJadwal) {
                     doctorsData = ubahDataJadwal(dataJadwal);
                 }
-                
+
                 if (dataPromo) {
                     promoData = dataPromo;
                 }
-                
+
                 // Atur Ticker Cuti
                 if (dataCuti) {
                     if (dataCuti.length > 0) {
-                        const teksCuti = dataCuti.map(function(item) {
+                        const teksCuti = dataCuti.map(function (item) {
                             const nama = item.NamaDokter || '';
                             const mulai = item.TanggalMulaiCuti || '';
                             const selesai = item.TanggalSelesaiCuti || '';
@@ -552,7 +636,7 @@
                             }
                             return '<span class="info-cuti-label">[INFO CUTI]</span> <strong>' + nama + '</strong> tidak praktek ' + infoTanggal;
                         }).join('<span class="mx-6 opacity-60">|</span>');
-                        
+
                         cutiTickerContentElement.innerHTML = teksCuti;
                     } else {
                         cutiTickerContentElement.textContent = 'Tidak ada informasi cuti saat ini.';
@@ -560,10 +644,10 @@
                 } else {
                     cutiTickerContentElement.textContent = 'Error memuat informasi cuti.';
                 }
-                
+
                 preloadGambarDokter(doctorsData);
                 preloadGambarPromo(promoData);
-                
+
                 mulaiSlideshowDokter();
                 // Set interval untuk refresh data
                 setInterval(perbaruiData, DATA_REFRESH_INTERVAL);
@@ -573,4 +657,5 @@
         });
     </script>
 </body>
+
 </html>

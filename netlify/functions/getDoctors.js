@@ -9,8 +9,7 @@ const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
 function createKey(name) {
   if (typeof name !== 'string') return ''; // Safety check
   return name.toLowerCase()
-    .replace(/\b(spesialis|sub|dokter)\b/g, '') // Hapus kata spesifik (whole word)
-    .replace(/&/g, '')
+    .replace(/spesialis|sub|dokter|gigi|&/g, '')
     .replace(/,/g, '') // Hapus koma
     .replace(/\(|\)/g, '') // Hapus kurung
     .trim()
@@ -38,7 +37,6 @@ export async function handler(event, context) {
             d.specialty, 
             d.schedule, 
             d.image_url, 
-            d.updated_at,
             s.image_url AS image_url_sstv 
         FROM 
             doctors d
@@ -66,8 +64,7 @@ export async function handler(event, context) {
         name: doc.name,
         image_url: doc.image_url, // Foto untuk web publik
         image_url_sstv: doc.image_url_sstv, // Foto untuk SSTV
-        schedule: doc.schedule,
-        updated_at: doc.updated_at
+        schedule: doc.schedule
       });
     }
 

@@ -27,15 +27,10 @@ dist-ssr
 .netlify
 .env
 
-# Client has separate repo (ratt23/jadwaldokter)
-jadwaldokter-main/
-jadwaldokter/
-
-# Slideshow has its own repo (ratt23/sstv)
-slideshow/
-
-# eCatalog has its own repo (ratt23/ecatalog)
-eCatalog/
-
-# eNewsletter has its own repo
-eNewsletter/
+# IMPORTANT: Subprojects ARE tracked in this monorepo!
+# These used to have separate repos but are now part of the monorepo
+# DO NOT exclude these directories:
+# jadwaldokter/
+# slideshow/
+# eCatalog/
+# eNewsletter/

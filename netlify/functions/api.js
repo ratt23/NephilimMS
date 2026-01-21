@@ -104,6 +104,7 @@ export async function handler(event, context) {
           const specialtyKey = createKey(doc.specialty);
           if (!doctorsData[specialtyKey]) doctorsData[specialtyKey] = { title: doc.specialty, doctors: [] };
           doctorsData[specialtyKey].doctors.push({
+            id: doc.id,
             name: doc.name, image_url: doc.image_url,
             image_url_sstv: doc.image_url_sstv, schedule: doc.schedule,
             updated_at: doc.updated_at
@@ -116,9 +117,13 @@ export async function handler(event, context) {
       if (path === '/doctors/on-leave' && method === 'GET') {
         const today = new Date().toISOString().split('T')[0];
         const result = await sql`
-                    SELECT t2.name, t2.specialty, t1.start_date, t1.end_date
+                    SELECT 
+                        t2.name AS "NamaDokter", 
+                        t2.specialty AS "Spesialis", 
+                        t1.start_date AS "TanggalMulaiCuti", 
+                        t1.end_date AS "TanggalSelesaiCuti"
                     FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id
-                    WHERE t1.start_date <= ${today} AND t1.end_date >= ${today}
+                    WHERE t1.end_date >= ${today}
                     ORDER BY t1.start_date ASC
                 `;
         return { statusCode: 200, headers, body: JSON.stringify(result) };

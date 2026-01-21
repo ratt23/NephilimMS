@@ -6,15 +6,10 @@ export default defineConfig({
     server: {
         port: 3005,
         proxy: {
-            '/.netlify/functions/api': {
-                target: 'http://localhost:3000',
+            '/.netlify/functions': {
+                target: 'http://localhost:8888',
                 changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/\.netlify\/functions\/api/, '')
-            },
-            '/.netlify/functions/imageProxy': {
-                target: 'http://localhost:3000/imageProxy',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/\.netlify\/functions\/imageProxy/, '')
+                secure: false
             }
         }
     }

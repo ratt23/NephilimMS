@@ -7,12 +7,25 @@ const SlideshowView = () => {
     const config = useConfig();
 
     useEffect(() => {
-        // EXACT LOGIC FROM ORIGINAL HTML - NO MODIFICATIONS (mostly)
+        // Clear any API override in development to ensure we use local proxy
+        if (import.meta.env.DEV) {
+            localStorage.removeItem('api_server_override');
+            console.log('🔧 [Slideshow] Development mode: Cleared API server override');
+        }
+
         // EXACT LOGIC FROM ORIGINAL HTML - NO MODIFICATIONS (mostly)
         const apiBase = getApiBaseUrl();
+        console.log('📡 [Slideshow] Using API base URL:', apiBase);
+
         const GOOGLE_SCRIPT_JADWAL_URL = `${apiBase}/doctors/grouped`;
         const GOOGLE_SCRIPT_CUTI_URL = `${apiBase}/doctors/on-leave`;
         const PROMO_DATA_API_URL = `${apiBase}/promos`;
+
+        console.log('🔗 [Slideshow] API Endpoints:', {
+            doctors: GOOGLE_SCRIPT_JADWAL_URL,
+            leave: GOOGLE_SCRIPT_CUTI_URL,
+            promos: PROMO_DATA_API_URL
+        });
 
         const VIDEO_URLS = ['video/promo.mp4', 'video/promo2.mp4'];
 

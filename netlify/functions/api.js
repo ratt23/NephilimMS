@@ -42,6 +42,42 @@ export async function handler(event, context) {
 
   try {
     // ==========================================
+    // AUTH
+    // ==========================================
+    if (path === '/login' && method === 'POST') {
+      const { password } = JSON.parse(event.body || '{}');
+      const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+      if (password === correctPassword) {
+        return {
+          statusCode: 200,
+          headers: {
+            ...headers,
+            'Set-Cookie': 'nf_auth=true; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400'
+          },
+          body: JSON.stringify({ message: 'Login berhasil' })
+        };
+      }
+
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ message: 'Password salah' })
+      };
+    }
+
+    if (path === '/logout' && method === 'POST') {
+      return {
+        statusCode: 200,
+        headers: {
+          ...headers,
+          'Set-Cookie': 'nf_auth=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
+        },
+        body: JSON.stringify({ message: 'Logout berhasil' })
+      };
+    }
+
+    // ==========================================
     // DOCTORS
     // ==========================================
     if (path.startsWith('/doctors')) {

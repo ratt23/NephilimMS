@@ -1,14 +1,13 @@
-```javascript
 import postgres from 'postgres';
 import { parse } from 'cookie';
 import { sendLeaveNotification } from './utils/notificationSender.js';
 
 const sql = postgres(process.env.NEON_DATABASE_URL, {
   ssl: 'require',
-  idle_timeout: 5,        // Close idle connections after 5s (critical for serverless)
-  connect_timeout: 10,    // Give up initial connect after 10s
-  max_lifetime: 60 * 30,  // Recycle connections every 30m
-  prepare: false,         // Disable prepared statements (Required for Neon Pooling / PgBouncer)
+  idle_timeout: 5,
+  connect_timeout: 10,
+  max_lifetime: 60 * 30,
+  prepare: false,
 });
 
 // Helper to create key from specialty name
@@ -30,6 +29,7 @@ export async function handler(event, context) {
     'https://jadwaldoktershab.netlify.app',
     'https://dashdev1.netlify.app',
     'https://dashdev2.netlify.app',
+    'https://dashdev3.netlify.app',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173'
@@ -43,57 +43,87 @@ export async function handler(event, context) {
     'Content-Type': 'application/json'
   };
 
-  console.log(`[API] ${ event.httpMethod } ${ event.path } `);
+  console.log('[API] ' + event.httpMethod + ' ' + event.path);
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
 
-  const path = event.path.replace('/.netlify/functions/api', '');
-  const method = event.httpMethod;
-  const cookies = parse(event.headers.cookie || '');
-
-  function checkAuth() {
-    if (cookies.nf_auth !== 'true') {
-      throw { status: 401, message: 'Akses ditolak. Silakan login.' };
-    }
-  }
-
   try {
-    // ==========================================
-    // AUTH
-    // ==========================================
-    if (path === '/login' && method === 'POST') {
-      const { password } = JSON.parse(event.body || '{}');
-      const correctPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const path = (event.path || '').replace('/api', '').replace(/.netlify\/functions\/api/, '');
+    const method = event.httpMethod;
 
-      if (password === correctPassword) {
-        return {
-          statusCode: 200,
-          headers: {
-            ...headers,
-            'Set-Cookie': 'nf_auth=true; Path=/; Secure; SameSite=Strict; Max-Age=86400'
-          },
-          body: JSON.stringify({ message: 'Login berhasil' })
-        };
+    // Auth helper
+    function checkAuth() {
+      const cookies = parse(event.headers.cookie || '');
+      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+      if (cookies.adminAuth !== adminPassword) {
+        throw new Error('Unauthorized');
+      }
+    }
+
+    // ==========================================
+    // SETTINGS
+    // ==========================================
+    if (path.startsWith('/settings')) {
+      // GET /settings
+      if ((path === '/settings' || path === '/settings/') && method === 'GET') {
+        const settings = await sql.unsafe('SELECT * FROM settings ORDER BY setting_key ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(settings) };
       }
 
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ message: 'Password salah' })
-      };
-    }
+      // GET /settings/:key
+      if (path.startsWith('/settings/') && method === 'GET') {
+        const key = path.split('/')[2];
+        const rows = await sql.unsafe('SELECT * FROM settings WHERE setting_key = ' + sql.escape(key));
+        if (rows.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Setting not found' }) };
+        }
+        const setting = rows[0];
+        let value = setting.value;
+        try {
+          value = JSON.parse(value);
+        } catch (e) {
+          // Keep as string if not JSON
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ key: setting.setting_key, value }) };
+      }
 
-    if (path === '/logout' && method === 'POST') {
-      return {
-        statusCode: 200,
-        headers: {
-          ...headers,
-          'Set-Cookie': 'nf_auth=; Path=/; Secure; SameSite=Strict; Max-Age=0'
-        },
-        body: JSON.stringify({ message: 'Logout berhasil' })
-      };
+      // POST /settings - Batch update
+      if ((path === '/settings' || path === '/settings/') && method === 'POST') {
+        checkAuth();
+        const updates = JSON.parse(event.body);
+        if (!Array.isArray(updates)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Expected array of {key, value}' }) };
+        }
+
+        for (const { key, value } of updates) {
+          const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
+          const query = 'INSERT INTO settings (setting_key, value, updated_at) VALUES (' + sql.escape(key) + ', ' + sql.escape(jsonValue) + ', NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = ' + sql.escape(jsonValue) + ', updated_at = NOW()';
+          await sql.unsafe(query);
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Settings updated' }) };
+      }
+
+      // PUT /settings/:key
+      if (path.startsWith('/settings/') && method === 'PUT') {
+        checkAuth();
+        const key = path.split('/')[2];
+        const { value } = JSON.parse(event.body);
+        const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
+
+        const query = 'INSERT INTO settings (setting_key, value, updated_at) VALUES (' + sql.escape(key) + ', ' + sql.escape(jsonValue) + ', NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = ' + sql.escape(jsonValue) + ', updated_at = NOW()';
+        await sql.unsafe(query);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting updated' }) };
+      }
+
+      // DELETE /settings/:key
+      if (path.startsWith('/settings/') && method === 'DELETE') {
+        checkAuth();
+        const key = path.split('/')[2];
+        await sql.unsafe('DELETE FROM settings WHERE setting_key = ' + sql.escape(key));
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting deleted' }) };
+      }
     }
 
     // ==========================================
@@ -102,20 +132,14 @@ export async function handler(event, context) {
     if (path.startsWith('/doctors')) {
       // GET /doctors/grouped (Legacy)
       if (path === '/doctors/grouped' && method === 'GET') {
-        const doctors = await sql`
-                    SELECT d.id, d.name, d.specialty, d.schedule, d.image_url, d.updated_at, s.image_url AS image_url_sstv 
-                    FROM doctors d LEFT JOIN sstv_images s ON d.id = s.doctor_id ORDER BY d.name
-  `;
+        const doctors = [];
         const doctorsData = {};
         for (const doc of doctors) {
           const specialtyKey = createKey(doc.specialty);
-          if (!doctorsData[specialtyKey]) doctorsData[specialtyKey] = { title: doc.specialty, doctors: [] };
-          doctorsData[specialtyKey].doctors.push({
-            id: doc.id,
-            name: doc.name, image_url: doc.image_url,
-            image_url_sstv: doc.image_url_sstv, schedule: doc.schedule,
-            updated_at: doc.updated_at
-          });
+          if (!doctorsData[specialtyKey]) {
+            doctorsData[specialtyKey] = { specialty: doc.specialty, doctors: [] };
+          }
+          doctorsData[specialtyKey].doctors.push(doc);
         }
         return { statusCode: 200, headers, body: JSON.stringify(doctorsData) };
       }
@@ -123,22 +147,14 @@ export async function handler(event, context) {
       // GET /doctors/on-leave
       if (path === '/doctors/on-leave' && method === 'GET') {
         const today = new Date().toISOString().split('T')[0];
-        const result = await sql`
-SELECT
-t2.name AS "NamaDokter",
-  t2.specialty AS "Spesialis",
-    t1.start_date AS "TanggalMulaiCuti",
-      t1.end_date AS "TanggalSelesaiCuti"
-                    FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id
-                    WHERE t1.end_date >= ${ today }
-                    ORDER BY t1.start_date ASC
-                `; // Updated Query ensure no stale cache
+        const query = 'SELECT t2.name AS "NamaDokter", t2.specialty AS "Spesialis", t1.start_date AS "TanggalMulaiCuti", t1.end_date AS "TanggalSelesaiCuti" FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id WHERE t1.end_date >= ' + sql.escape(today) + ' ORDER BY t1.start_date ASC';
+        const result = await sql.unsafe(query);
         return { statusCode: 200, headers, body: JSON.stringify(result) };
       }
 
       // GET /doctors/all (Minimal)
       if (path === '/doctors/all' && method === 'GET') {
-        const doctors = await sql`SELECT id, name, specialty FROM doctors ORDER BY name`;
+        const doctors = await sql.unsafe('SELECT id, name, specialty FROM doctors ORDER BY name');
         return { statusCode: 200, headers, body: JSON.stringify(doctors) };
       }
 
@@ -146,14 +162,14 @@ t2.name AS "NamaDokter",
       if ((path === '/doctors' || path === '/doctors/') && method === 'GET') {
         const { page = '1', limit = '30', search = '' } = event.queryStringParameters || {};
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const searchFilter = search
-          ? sql`WHERE name ILIKE ${ '%' + search + '%' } OR specialty ILIKE ${ '%' + search + '%' } `
-          : sql``;
+        const searchFilter = search ? ' WHERE name ILIKE ' + sql.escape('%' + search + '%') + ' OR specialty ILIKE ' + sql.escape('%' + search + '%') : '';
 
-        const [countResult] = await sql`SELECT COUNT(*) FROM doctors ${ searchFilter } `;
-        const doctors = await sql`SELECT * FROM doctors ${ searchFilter } ORDER BY name LIMIT ${ limit } OFFSET ${ offset } `;
+        const countQuery = 'SELECT COUNT(*) FROM doctors' + searchFilter;
+        const countResult = await sql.unsafe(countQuery);
+        const doctorsQuery = 'SELECT * FROM doctors' + searchFilter + ' ORDER BY name LIMIT ' + parseInt(limit) + ' OFFSET ' + parseInt(offset);
+        const doctors = await sql.unsafe(doctorsQuery);
 
-        return { statusCode: 200, headers, body: JSON.stringify({ doctors, total: parseInt(countResult.count) }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ doctors, total: parseInt(countResult[0].count) }) };
       }
 
       // POST /doctors (Create)
@@ -162,726 +178,421 @@ t2.name AS "NamaDokter",
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
         if (!name || !specialty) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Nama dan Spesialisasi wajib.' }) };
 
-        const [newDoctor] = await sql`
-                    INSERT INTO doctors(name, specialty, image_url, schedule, updated_at)
-VALUES(${ name }, ${ specialty }, ${ image_url || ''}, ${ schedule || '{}'}, NOW())
-RETURNING *
-  `;
-        return { statusCode: 201, headers, body: JSON.stringify(newDoctor) };
+        const query = 'INSERT INTO doctors(name, specialty, image_url, schedule, updated_at) VALUES(' + sql.escape(name) + ', ' + sql.escape(specialty) + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(schedule || '{}') + ', NOW()) RETURNING *';
+        const newDoctor = await sql.unsafe(query);
+        return { statusCode: 201, headers, body: JSON.stringify(newDoctor[0]) };
       }
 
-      // PUT /doctors (Update)
-      if ((path === '/doctors' || path === '/doctors/') && method === 'PUT') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID dibutuhkan' }) };
+      // GET /doctors/:id
+      if (path.match(/^\/doctors\/\d+$/) && method === 'GET') {
+        const id = parseInt(path.split('/')[2]);
+        const query = 'SELECT d.*, s.image_url AS image_url_sstv FROM doctors d LEFT JOIN sstv_images s ON d.id = s.doctor_id WHERE d.id = ' + id;
+        const rows = await sql.unsafe(query);
+        if (rows.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Doctor not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(rows[0]) };
+      }
 
+      // PUT /doctors/:id
+      if (path.match(/^\/doctors\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
-        const [updated] = await sql`
-                    UPDATE doctors SET name = ${ name }, specialty = ${ specialty }, image_url = ${ image_url }, schedule = ${ schedule }, updated_at = NOW()
-                    WHERE id = ${ id } RETURNING *
-  `;
-        return { statusCode: 200, headers, body: JSON.stringify(updated) };
+        const query = 'UPDATE doctors SET name = ' + sql.escape(name) + ', specialty = ' + sql.escape(specialty) + ', image_url = ' + sql.escape(image_url || '') + ', schedule = ' + sql.escape(schedule || '{}') + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Doctor not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      // DELETE /doctors
-      if ((path === '/doctors' || path === '/doctors/') && method === 'DELETE') {
+      // DELETE /doctors/:id
+      if (path.match(/^\/doctors\/\d+$/) && method === 'DELETE') {
         checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID dibutuhkan' }) };
-        await sql`DELETE FROM doctors WHERE id = ${ id } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
+        const id = parseInt(path.split('/')[2]);
+        await sql.unsafe('DELETE FROM doctors WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Doctor deleted' }) };
       }
     }
 
     // ==========================================
-    // LEAVES
+    // LEAVE DATA
     // ==========================================
-    if (path.startsWith('/leaves')) {
-      // GET /leaves
-      if ((path === '/leaves' || path === '/leaves/') && method === 'GET') {
-        const leaves = await sql`
-                    SELECT t1.id, t1.start_date, t1.end_date, t2.name AS doctor_name
-                    FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id
-                    ORDER BY t1.start_date DESC
-                `;
-        return { statusCode: 200, headers, body: JSON.stringify(leaves) };
+    if (path.startsWith('/leave')) {
+      // GET /leave
+      if ((path === '/leave' || path === '/leave/') && method === 'GET') {
+        const leave = await sql.unsafe('SELECT l.*, d.name AS doctor_name, d.specialty FROM leave_data l JOIN doctors d ON l.doctor_id = d.id ORDER BY l.start_date DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(leave) };
       }
 
-      // POST /leaves
-      if ((path === '/leaves' || path === '/leaves/') && method === 'POST') {
+      // POST /leave
+      if ((path === '/leave' || path === '/leave/') && method === 'POST') {
         checkAuth();
-        const { doctor_id, start_date, end_date } = JSON.parse(event.body);
-        if (!doctor_id || !start_date || !end_date) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Semua field wajib.' }) };
-
-        const [doctor] = await sql`SELECT name FROM doctors WHERE id = ${ doctor_id } `;
-        const [newLeave] = await sql`
-                    INSERT INTO leave_data(doctor_id, start_date, end_date) VALUES(${ doctor_id }, ${ start_date }, ${ end_date })
-                    RETURNING id, start_date, end_date
-  `;
-
-        if (newLeave) {
-          const appId = event.headers['x-onesignal-app-id'];
-          const apiKey = event.headers['x-onesignal-api-key'];
-          const overrideConfig = (appId && apiKey) ? { appId, apiKey } : {};
-          sendLeaveNotification(doctor?.name || 'Dokter', newLeave.start_date, newLeave.end_date, overrideConfig).catch(console.error);
+        const { doctor_id, start_date, end_date, reason } = JSON.parse(event.body);
+        if (!doctor_id || !start_date || !end_date) {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'doctor_id, start_date, dan end_date wajib.' }) };
         }
-        return { statusCode: 201, headers, body: JSON.stringify(newLeave) };
-      }
+        const query = 'INSERT INTO leave_data(doctor_id, start_date, end_date, reason, created_at) VALUES(' + doctor_id + ', ' + sql.escape(start_date) + ', ' + sql.escape(end_date) + ', ' + sql.escape(reason || '') + ', NOW()) RETURNING *';
+        const newLeave = await sql.unsafe(query);
 
-      // DELETE /leaves
-      if ((path === '/leaves' || path === '/leaves/') && method === 'DELETE') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        const cleanup = event.queryStringParameters?.cleanup;
-
-        if (cleanup === 'true') {
-          await sql`DELETE FROM leave_data WHERE end_date < CURRENT_DATE`;
-          return { statusCode: 200, headers, body: JSON.stringify({ message: 'Cleaned' }) };
-        }
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM leave_data WHERE id = ${ id } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
-      }
-    }
-
-    // ==========================================
-    // SETTINGS
-    // ==========================================
-    if (path.startsWith('/settings')) {
-      if ((path === '/settings' || path === '/settings/') && method === 'GET') {
-        try {
-          console.log('[API] Fetching settings...');
-          const settings = await sql`SELECT * FROM app_settings`;
-          console.log(`[API] Settings fetched: ${ settings.length } rows`);
-          const map = settings.reduce((acc, item) => {
-            acc[item.setting_key] = { value: item.setting_value, enabled: item.is_enabled };
-            return acc;
-          }, {});
-          return { statusCode: 200, headers, body: JSON.stringify(map) };
-        } catch (err) {
-          console.error('[API] Error fetching settings:', err);
-          throw err; // Re-throw to main catch
-        }
-      }
-
-      if ((path === '/settings' || path === '/settings/') && method === 'POST') {
-        checkAuth();
-        const updates = JSON.parse(event.body);
-        const promises = Object.entries(updates).map(([key, data]) => {
-          return sql`
-                        INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at)
-VALUES(${ key }, ${ data.value }, ${ data.enabled }, NOW())
-                        ON CONFLICT(setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, is_enabled = EXCLUDED.is_enabled, updated_at = NOW()
-  `;
-        });
-        await Promise.all(promises);
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Updated' }) };
-      }
-    }
-
-    // ==========================================
-    // MISC (Popup, Specialties, SSTV, etc)
-    // ==========================================
-    if (path === '/popup-ad') {
-      if (method === 'GET') {
-        const s = await sql`SELECT * FROM app_settings WHERE setting_key IN('popup_ad_image', 'popup_ad_active')`;
-        const res = {
-          image_url: s.find(k => k.setting_key === 'popup_ad_image')?.setting_value || '',
-          active: s.find(k => k.setting_key === 'popup_ad_active')?.is_enabled ?? false
-        };
-        return { statusCode: 200, headers, body: JSON.stringify(res) };
-      }
-      if (method === 'POST') {
-        checkAuth();
-        const { image_url, active } = JSON.parse(event.body);
-        await sql`INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at) VALUES('popup_ad_image', ${ image_url }, true, NOW()) ON CONFLICT(setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value`;
-        await sql`INSERT INTO app_settings(setting_key, setting_value, is_enabled, updated_at) VALUES('popup_ad_active', ${ active? 'true': 'false' }, ${ active }, NOW()) ON CONFLICT(setting_key) DO UPDATE SET is_enabled = EXCLUDED.is_enabled, setting_value = EXCLUDED.setting_value`;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Updated' }) };
-      }
-    }
-
-    if (path === '/specialties' && method === 'GET') {
-      const s = await sql`SELECT DISTINCT specialty FROM doctors ORDER BY specialty`;
-      return { statusCode: 200, headers, body: JSON.stringify(s.map(i => i.specialty)) };
-    }
-
-    if (path === '/sstv_images') {
-      if (method === 'GET') {
-        const imgs = await sql`SELECT * FROM sstv_images`;
-        const map = imgs.reduce((acc, i) => ({ ...acc, [i.doctor_id]: i.image_url }), {});
-        return { statusCode: 200, headers, body: JSON.stringify(map) };
-      }
-      if (method === 'POST') {
-        checkAuth();
-        const { doctor_id, image_url } = JSON.parse(event.body);
-        const [res] = await sql`INSERT INTO sstv_images(doctor_id, image_url) VALUES(${ doctor_id }, ${ image_url }) ON CONFLICT(doctor_id) DO UPDATE SET image_url = EXCLUDED.image_url RETURNING * `;
-        return { statusCode: 201, headers, body: JSON.stringify(res) };
-      }
-    }
-
-    // ==========================================
-    // POSTS
-    // ==========================================
-    if (path.startsWith('/posts')) {
-      if ((path === '/posts' || path === '/posts/') && method === 'GET') {
-        const { id, slug, page = '1', limit = '10', search = '', status, category, tag } = event.queryStringParameters || {};
-
-        if (id) {
-          const [post] = await sql`SELECT * FROM posts WHERE id = ${ id } `;
-          if (!post) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
-          return { statusCode: 200, headers, body: JSON.stringify(post) };
-        }
-        if (slug) {
-          const [post] = await sql`SELECT * FROM posts WHERE slug = ${ slug } `;
-          if (!post) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
-          return { statusCode: 200, headers, body: JSON.stringify(post) };
+        // Send notification
+        const doctorQuery = 'SELECT * FROM doctors WHERE id = ' + doctor_id;
+        const doctorResult = await sql.unsafe(doctorQuery);
+        if (doctorResult.length > 0) {
+          await sendLeaveNotification(doctorResult[0], start_date, end_date, reason);
         }
 
-        const offset = (parseInt(page) - 1) * parseInt(limit);
-        let whereClause = sql`WHERE 1 = 1`;
-        if (search) whereClause = sql`${ whereClause } AND(title ILIKE ${ '%' + search + '%' } OR content ILIKE ${ '%' + search + '%' })`;
-        if (status) whereClause = sql`${ whereClause } AND status = ${ status } `;
-        if (category) whereClause = sql`${ whereClause } AND category = ${ category } `;
-        if (tag) whereClause = sql`${ whereClause } AND tags ILIKE ${ '%' + tag + '%' } `;
-
-        const [count] = await sql`SELECT COUNT(*) FROM posts ${ whereClause } `;
-        const posts = await sql`SELECT * FROM posts ${ whereClause } ORDER BY created_at DESC LIMIT ${ limit } OFFSET ${ offset } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ posts, total: parseInt(count.count) }) };
+        return { statusCode: 201, headers, body: JSON.stringify(newLeave[0]) };
       }
 
-      if ((path === '/posts' || path === '/posts/') && method === 'POST') {
+      // PUT /leave/:id
+      if (path.match(/^\/leave\/\d+$/) && method === 'PUT') {
         checkAuth();
-        const { title, slug, content, excerpt, image_url, status, category, tags } = JSON.parse(event.body);
-        if (!title || !slug) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Title/Slug required' }) };
-
-        try {
-          const [newPost] = await sql`
-                        INSERT INTO posts(title, slug, content, excerpt, image_url, status, category, tags)
-VALUES(${ title }, ${ slug }, ${ content || ''}, ${ excerpt || ''}, ${ image_url || ''}, ${ status || 'draft'}, ${ category || 'article'}, ${ tags || ''})
-RETURNING *
-  `;
-          return { statusCode: 201, headers, body: JSON.stringify(newPost) };
-        } catch (err) {
-          if (err.code === '23505') return { statusCode: 400, headers, body: JSON.stringify({ message: 'Slug exists' }) };
-          throw err;
+        const id = parseInt(path.split('/')[2]);
+        const { doctor_id, start_date, end_date, reason } = JSON.parse(event.body);
+        const query = 'UPDATE leave_data SET doctor_id = ' + doctor_id + ', start_date = ' + sql.escape(start_date) + ', end_date = ' + sql.escape(end_date) + ', reason = ' + sql.escape(reason || '') + ' WHERE id = ' + id + ' RET URNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Leave not found' }) };
         }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      if ((path === '/posts' || path === '/posts/') && method === 'PUT') {
+      // DELETE /leave/:id
+      if (path.match(/^\/leave\/\d+$/) && method === 'DELETE') {
         checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        const { title, slug, content, excerpt, image_url, status, category, tags } = JSON.parse(event.body);
-        try {
-          const [updated] = await sql`
-                        UPDATE posts SET title = ${ title }, slug = ${ slug }, content = ${ content }, excerpt = ${ excerpt }, image_url = ${ image_url }, status = ${ status }, category = ${ category }, tags = ${ tags }, updated_at = NOW()
-                        WHERE id = ${ id } RETURNING *
-  `;
-          return { statusCode: 200, headers, body: JSON.stringify(updated) };
-        } catch (err) {
-          if (err.code === '23505') return { statusCode: 400, headers, body: JSON.stringify({ message: 'Slug exists' }) };
-          throw err;
-        }
+        const id = parseInt(path.split('/')[2]);
+        await sql.unsafe('DELETE FROM leave_data WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Leave deleted' }) };
       }
-
-      if ((path === '/posts' || path === '/posts/') && method === 'DELETE') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM posts WHERE id = ${ id } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
-      }
-    }
-
-    // ==========================================
-    // MCU PACKAGES
-    // ==========================================
-    if (path.startsWith('/mcu-packages')) {
-      if ((path === '/mcu-packages' || path === '/mcu-packages/') && method === 'GET') {
-        const packages = await sql`SELECT * FROM mcu_packages WHERE is_enabled = true ORDER BY display_order ASC, id ASC`;
-        return { statusCode: 200, headers, body: JSON.stringify(packages) };
-      }
-      if (path === '/mcu-packages/all' && method === 'GET') {
-        checkAuth();
-        const packages = await sql`SELECT * FROM mcu_packages ORDER BY display_order ASC, id ASC`;
-        return { statusCode: 200, headers, body: JSON.stringify(packages) };
-      }
-
-      // Regex for /mcu-packages/ID
-      const idMatch = path.match(/^\/mcu-packages\/([^\/]+)$/);
-      if (idMatch) {
-        const id = idMatch[1];
-        if (id !== 'all') {
-          if (method === 'GET') {
-            checkAuth();
-            const [pkg] = await sql`SELECT * FROM mcu_packages WHERE id = ${ id } `;
-            if (!pkg) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Not found' }) };
-            return { statusCode: 200, headers, body: JSON.stringify(pkg) };
-          }
-          if (method === 'PUT') {
-            checkAuth();
-            const body = JSON.parse(event.body);
-            const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, is_enabled, display_order } = body;
-            const [updated] = await sql`
-                            UPDATE mcu_packages SET
-package_id = ${ package_id }, name = ${ name }, price = ${ price }, base_price = ${ base_price || null }, image_url = ${ image_url || null },
-is_pelaut = ${ is_pelaut || false }, is_recommended = ${ is_recommended || false }, items = ${ JSON.stringify(items) },
-addons = ${ addons ? JSON.stringify(addons) : null }, is_enabled = ${ is_enabled !== undefined ? is_enabled : true },
-display_order = ${ display_order || 0 }, updated_at = NOW()
-                            WHERE id = ${ id } RETURNING *
-  `;
-            return { statusCode: 200, headers, body: JSON.stringify(updated) };
-          }
-          if (method === 'DELETE') {
-            checkAuth();
-            await sql`UPDATE mcu_packages SET is_enabled = false WHERE id = ${ id } `;
-            return { statusCode: 200, headers, body: JSON.stringify({ message: 'Disabled' }) };
-          }
-        }
-      }
-
-      if ((path === '/mcu-packages' || path === '/mcu-packages/') && method === 'POST') {
-        checkAuth();
-        const body = JSON.parse(event.body);
-        const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order } = body;
-        const [newPkg] = await sql`
-                    INSERT INTO mcu_packages(
-    package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, display_order
-  ) VALUES(
-    ${ package_id }, ${ name }, ${ price }, ${ base_price || null}, ${ image_url || null}, ${ is_pelaut || false}, ${ is_recommended || false}, ${ JSON.stringify(items) }, ${ addons? JSON.stringify(addons) : null}, ${ display_order || 0}
-  ) RETURNING *
-    `;
-        return { statusCode: 201, headers, body: JSON.stringify(newPkg) };
-      }
-    }
-
-    // ==========================================
-    // CATALOG ITEMS
-    // ==========================================
-    if (path.startsWith('/catalog-items')) {
-      // GET /catalog-items?category={category}
-      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'GET') {
-        const { category } = event.queryStringParameters || {};
-
-        let items;
-        if (category) {
-          items = await sql`
-SELECT * FROM catalog_items 
-            WHERE category = ${ category } AND is_active = true
-            ORDER BY sort_order ASC, created_at DESC
-  `;
-        } else {
-          items = await sql`
-SELECT * FROM catalog_items 
-            WHERE is_active = true
-            ORDER BY category ASC, sort_order ASC, created_at DESC
-  `;
-        }
-        return { statusCode: 200, headers, body: JSON.stringify(items) };
-      }
-
-      // GET /catalog-items/all (Admin - includes inactive)
-      if (path === '/catalog-items/all' && method === 'GET') {
-        checkAuth();
-        const { category } = event.queryStringParameters || {};
-
-        let items;
-        if (category) {
-          items = await sql`
-SELECT * FROM catalog_items 
-            WHERE category = ${ category }
-            ORDER BY sort_order ASC, created_at DESC
-  `;
-        } else {
-          items = await sql`
-SELECT * FROM catalog_items 
-            ORDER BY category ASC, sort_order ASC, created_at DESC
-  `;
-        }
-        return { statusCode: 200, headers, body: JSON.stringify(items) };
-      }
-
-      // POST /catalog-items (Create)
-      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'POST') {
-        checkAuth();
-        const { category, title, description, price, image_url, cloudinary_public_id, features, sort_order } = JSON.parse(event.body);
-
-        if (!category || !title) {
-          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Category and title required' }) };
-        }
-
-        const [newItem] = await sql`
-          INSERT INTO catalog_items(
-    category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active
-  ) VALUES(
-    ${ category }, ${ title }, ${ description || ''}, ${ price || ''},
-    ${ image_url || ''}, ${ cloudinary_public_id || ''},
-    ${ features? JSON.stringify(features) : '[]'}, ${ sort_order || 0}, true
-  ) RETURNING *
-    `;
-        return { statusCode: 201, headers, body: JSON.stringify(newItem) };
-      }
-
-      // PUT /catalog-items?id={id} (Update)
-      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'PUT') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-
-        const { category, title, description, price, image_url, cloudinary_public_id, features, sort_order, is_active } = JSON.parse(event.body);
-
-        const [updated] = await sql`
-          UPDATE catalog_items SET
-category = ${ category }, title = ${ title }, description = ${ description || '' },
-price = ${ price || '' }, image_url = ${ image_url || '' },
-cloudinary_public_id = ${ cloudinary_public_id || '' },
-features = ${ features ? JSON.stringify(features) : '[]' },
-sort_order = ${ sort_order !== undefined ? sort_order : 0 },
-is_active = ${ is_active !== undefined ? is_active : true },
-updated_at = NOW()
-          WHERE id = ${ id } RETURNING *
-  `;
-        return { statusCode: 200, headers, body: JSON.stringify(updated) };
-      }
-
-      // DELETE /catalog-items?id={id} (Soft delete)
-      if ((path === '/catalog-items' || path === '/catalog-items/') && method === 'DELETE') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-
-        await sql`UPDATE catalog_items SET is_active = false WHERE id = ${ id } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
-      }
-
-      // POST /catalog-items/reorder
-      if (path === '/catalog-items/reorder' && method === 'POST') {
-        checkAuth();
-        const { orderedIds } = JSON.parse(event.body);
-        if (!orderedIds || !Array.isArray(orderedIds)) {
-          return { statusCode: 400, headers, body: JSON.stringify({ message: 'orderedIds required' }) };
-        }
-
-        await sql.begin(async sql => {
-          for (let i = 0; i < orderedIds.length; i++) {
-            await sql`UPDATE catalog_items SET sort_order = ${ i } WHERE id = ${ orderedIds[i] } `;
-          }
-        });
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Reordered' }) };
-      }
-    }
-
-    // ==========================================
-    // CATALOG REORDER (outside catalog-items path)
-    // ==========================================
-    if (path === '/catalog/reorder' && method === 'POST') {
-      checkAuth();
-      const { items } = JSON.parse(event.body);
-      if (!items || !Array.isArray(items)) {
-        return { statusCode: 400, headers, body: JSON.stringify({ message: 'items array required' }) };
-      }
-
-      await sql.begin(async sql => {
-        for (const item of items) {
-          await sql`UPDATE catalog_items SET sort_order = ${ item.sort_order } WHERE id = ${ item.id } `;
-        }
-      });
-      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Order updated' }) };
     }
 
     // ==========================================
     // PROMOS
     // ==========================================
     if (path.startsWith('/promos')) {
+      // GET /promos
       if ((path === '/promos' || path === '/promos/') && method === 'GET') {
-        const p = await sql`SELECT * FROM promo_images ORDER BY sort_order ASC`;
-        return { statusCode: 200, headers, body: JSON.stringify(p) };
+        const promos = await sql.unsafe('SELECT p.id, p.title, p.content, p.image_url, p.sort_order, p.is_active, p.created_at, p.updated_at, s.image_url AS image_url_sstv FROM promos p LEFT JOIN sstv_images s ON p.id = s.promo_id WHERE p.is_active = true ORDER BY p.sort_order ASC, p.created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(promos) };
       }
+
+      // GET /promos/all
+      if (path === '/promos/all' && method === 'GET') {
+        const promos = await sql.unsafe('SELECT * FROM promos ORDER BY sort_order ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(promos) };
+      }
+
+      // POST /promos
       if ((path === '/promos' || path === '/promos/') && method === 'POST') {
         checkAuth();
-        const { image_url, alt_text } = JSON.parse(event.body);
-        if (!image_url) return { statusCode: 400, headers, body: JSON.stringify({ message: 'URL wajib.' }) };
-
-        const [maxOrder] = await sql`SELECT MAX(sort_order) as max FROM promo_images`;
-        const newOrder = (maxOrder.max ? parseInt(maxOrder.max, 10) : 0) + 1;
-
-        const [newPromo] = await sql`INSERT INTO promo_images(image_url, alt_text, sort_order) VALUES(${ image_url }, ${ alt_text || ''}, ${ newOrder }) RETURNING * `;
-        return { statusCode: 201, headers, body: JSON.stringify(newPromo) };
+        const { title, content, image_url, sort_order = 0, is_active = true } = JSON.parse(event.body);
+        const query = 'INSERT INTO promos(title, content, image_url, sort_order, is_active, created_at, updated_at) VALUES(' + sql.escape(title || '') + ', ' + sql.escape(content || '') + ', ' + sql.escape(image_url || '') + ', ' + sort_order + ', ' + is_active + ', NOW(), NOW()) RETURNING *';
+        const newPromo = await sql.unsafe(query);
+        return { statusCode: 201, headers, body: JSON.stringify(newPromo[0]) };
       }
-      if ((path === '/promos' || path === '/promos/') && method === 'PUT') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        const { alt_text } = JSON.parse(event.body);
-        const [updated] = await sql`UPDATE promo_images SET alt_text = ${ alt_text } WHERE id = ${ id } RETURNING * `;
-        return { statusCode: 200, headers, body: JSON.stringify(updated) };
-      }
-      if ((path === '/promos' || path === '/promos/') && method === 'DELETE') {
-        checkAuth();
-        const id = event.queryStringParameters?.id;
-        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'ID required' }) };
-        await sql`DELETE FROM promo_images WHERE id = ${ id } `;
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
-      }
-      if (path === '/promos/reorder' && method === 'POST') {
-        checkAuth();
-        const { orderedIds } = JSON.parse(event.body);
-        if (!orderedIds || !Array.isArray(orderedIds)) return { statusCode: 400, headers, body: JSON.stringify({ message: 'orderedIds required' }) };
 
-        await sql.begin(async sql => {
-          await sql`
-                        UPDATE promo_images AS p
-                        SET sort_order = temp.new_order
-FROM(SELECT id, ROW_NUMBER() OVER() AS new_order FROM UNNEST(${ orderedIds }:: int[]) AS id) AS temp
-                        WHERE p.id = temp.id
-  `;
-        });
-        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Reordered' }) };
+      // PUT /promos/:id
+      if (path.match(/^\/promos\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        const { title, content, image_url, sort_order, is_active } = JSON.parse(event.body);
+        const query = 'UPDATE promos SET title = ' + sql.escape(title) + ', content = ' + sql.escape(content) + ', image_url = ' + sql.escape(image_url) + ', sort_order = ' + sort_order + ', is_active = ' + is_active + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Promo not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
+      }
+
+      // DELETE /promos/:id
+      if (path.match(/^\/promos\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        await sql.unsafe('DELETE FROM promos WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Promo deleted' }) };
       }
     }
 
     // ==========================================
-    // ANALYTICS
+    // SSTV IMAGES
     // ==========================================
-    if (path.startsWith('/analytics')) {
-      // POST /analytics - Track events
-      if (method === 'POST') {
-        const { action } = event.queryStringParameters || {};
-
-        if (action === 'track') {
-          const body = JSON.parse(event.body || '{}');
-          const { isNewVisitor, path: pagePath, device, browser, referrer, event_type, event_name } = body;
-
-          // Determine traffic source
-          let trafficSource = 'Direct';
-          if (referrer) {
-            if (referrer.includes('google')) trafficSource = 'Organic Search';
-            else if (referrer.includes('facebook') || referrer.includes('instagram') || referrer.includes('t.co')) trafficSource = 'Social Media';
-            else if (referrer.includes(event.headers.host)) trafficSource = 'Internal';
-            else trafficSource = 'Referral';
-          }
-
-          const region = event.headers['x-nf-geo-country-code'] || 'unknown';
-          const city = event.headers['x-nf-geo-city'] || 'unknown';
-          const ip = event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown';
-
-          try {
-            await sql`
-              INSERT INTO analytics_events(
-    date, timestamp, event_type, path, event_name,
-    device_type, browser, region, city,
-    referrer, traffic_source,
-    ip_hash
-  )
-VALUES(
-  CURRENT_DATE, NOW(), ${ event_type || 'pageview'}, ${ pagePath || event_name}, ${ event_name || null},
-  ${ device }, ${ browser }, ${ region }, ${ city },
-  ${ referrer }, ${ trafficSource },
-  ${ ip }
-)
-  `;
-
-            if (event_type === 'pageview') {
-              await sql`
-                INSERT INTO daily_stats(date, page_views, visitors)
-VALUES(CURRENT_DATE, 1, ${ isNewVisitor? 1: 0 })
-                ON CONFLICT(date)
-                DO UPDATE SET
-page_views = daily_stats.page_views + 1,
-  visitors = daily_stats.visitors + ${ isNewVisitor ? 1 : 0 }
-`;
-            }
-
-            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
-          } catch (error) {
-            if (error.message && (error.message.includes('does not exist') || error.message.includes('relation'))) {
-              return { statusCode: 200, headers, body: JSON.stringify({ success: false, error: 'Analytics tables missing' }) };
-            }
-            throw error;
-          }
-        }
+    if (path.startsWith('/sstv')) {
+      // GET /sstv/doctors
+      if (path === '/sstv/doctors' && method === 'GET') {
+        const images = await sql.unsafe('SELECT * FROM sstv_images WHERE doctor_id IS NOT NULL ORDER BY doctor_id ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(images) };
       }
 
-      // GET /analytics - Retrieve stats
-      if (method === 'GET') {
-        const { action, period = '7days', type, month } = event.queryStringParameters || {};
+      // GET /sstv/promos  
+      if (path === '/sstv/promos' && method === 'GET') {
+        const images = await sql.unsafe('SELECT * FROM sstv_images WHERE promo_id IS NOT NULL ORDER BY promo_id ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(images) };
+      }
 
-        try {
-          if (action === 'stats') {
-            if (type === 'advanced') {
-              let interval = '7 days';
-              if (period === '30days') interval = '30 days';
-              if (period === 'year') interval = '1 year';
+      // POST /sstv/doctors/:doctor_id
+      if (path.match(/^\/sstv\/doctors\/\d+$/) && method === 'POST') {
+        checkAuth();
+        const doctor_id = parseInt(path.split('/')[3]);
+        const { image_url } = JSON.parse(event.body);
+        const query = 'INSERT INTO sstv_images(doctor_id, image_url, uploaded_at) VALUES(' + doctor_id + ', ' + sql.escape(image_url) + ', NOW()) ON CONFLICT (doctor_id) DO UPDATE SET image_url = ' + sql.escape(image_url) + ', uploaded_at = NOW()';
+        await sql.unsafe(query);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image uploaded' }) };
+      }
 
-              const [devices, browsers, sources, topPages, conversions] = await Promise.all([
-                sql`SELECT device_type as name, COUNT(*):: int as value
-                    FROM analytics_events
-                    WHERE date > CURRENT_DATE - ${ interval }:: interval
-                    GROUP BY device_type`,
+      // POST /sstv/promos/:promo_id
+      if (path.match(/^\/sstv\/promos\/\d+$/) && method === 'POST') {
+        checkAuth();
+        const promo_id = parseInt(path.split('/')[3]);
+        const { image_url } = JSON.parse(event.body);
+        const query = 'INSERT INTO sstv_images(promo_id, image_url, uploaded_at) VALUES(' + promo_id + ', ' + sql.escape(image_url) + ', NOW()) ON CONFLICT (promo_id) DO UPDATE SET image_url = ' + sql.escape(image_url) + ', uploaded_at = NOW()';
+        await sql.unsafe(query);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image uploaded' }) };
+      }
 
-                sql`SELECT browser as name, COUNT(*):: int as value
-                    FROM analytics_events
-                    WHERE date > CURRENT_DATE - ${ interval }:: interval
-                    GROUP BY browser`,
+      // DELETE /sstv/doctors/:doctor_id
+      if (path.match(/^\/sstv\/doctors\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const doctor_id = parseInt(path.split('/')[3]);
+        await sql.unsafe('DELETE FROM sstv_images WHERE doctor_id = ' + doctor_id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image deleted' }) };
+      }
 
-                sql`SELECT traffic_source as name, COUNT(*):: int as value
-                    FROM analytics_events
-                    WHERE date > CURRENT_DATE - ${ interval }:: interval
-                    GROUP BY traffic_source`,
-
-                sql`SELECT path as name, COUNT(*):: int as value
-                    FROM analytics_events
-                    WHERE date > CURRENT_DATE - ${ interval }::interval AND event_type = 'pageview'
-                    GROUP BY path
-                    ORDER BY value DESC
-                    LIMIT 10`,
-
-                sql`SELECT event_name as name, COUNT(*):: int as value
-                    FROM analytics_events
-                    WHERE date > CURRENT_DATE - ${ interval }:: interval
-AND(event_type = 'event' OR event_type LIKE 'conversion%')
-                    GROUP BY event_name
-                    ORDER BY value DESC`
-              ]);
-
-              return { statusCode: 200, headers, body: JSON.stringify({ devices, browsers, sources, topPages, conversions }) };
-            }
-
-            // Basic Stats
-            let rows;
-            if (period === 'year') {
-              rows = await sql`
-                SELECT to_char(date_trunc('month', date), 'Mon YYYY') as name,
-  SUM(visitors) as visitors,
-  SUM(page_views) as page_views,
-  MIN(date) as sort_date
-                FROM daily_stats
-                WHERE date > CURRENT_DATE - INTERVAL '1 year'
-                GROUP BY date_trunc('month', date)
-                ORDER BY sort_date DESC
-  `;
-            } else {
-              const limit = period === '30days' ? 30 : 7;
-              rows = await sql`
-                SELECT to_char(date, 'DD Mon') as name,
-  date as full_date,
-  visitors,
-  page_views
-                FROM daily_stats
-                ORDER BY date DESC
-                LIMIT ${ limit }
-`;
-            }
-
-            const stats = rows.reverse().map(row => ({
-              name: row.name,
-              visitors: Number(row.visitors),
-              pageviews: Number(row.page_views),
-              fullDate: row.full_date || row.sort_date
-            }));
-
-            const systemStatus = {
-              online: true,
-              lastSync: new Date().toISOString()
-            };
-
-            return { statusCode: 200, headers, body: JSON.stringify({ stats, systemStatus }) };
-          }
-
-          if (action === 'monthly') {
-            if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-              return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid month format' }) };
-            }
-
-            const rows = await sql`
-SELECT
-date,
-  to_char(date, 'DD Mon YYYY') as formatted_date,
-  to_char(date, 'Day') as day_name,
-  visitors,
-  page_views
-              FROM daily_stats
-              WHERE to_char(date, 'YYYY-MM') = ${ month }
-              ORDER BY date ASC
-            `;
-
-            const stats = rows.map(row => ({
-              date: row.date,
-              formattedDate: row.formatted_date,
-              dayName: row.day_name.trim(),
-              visitors: Number(row.visitors),
-              pageviews: Number(row.page_views)
-            }));
-
-            return { statusCode: 200, headers, body: JSON.stringify({ stats }) };
-          }
-
-          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid action' }) };
-        } catch (error) {
-          if (error.message && (error.message.includes('does not exist') || error.message.includes('relation'))) {
-            return {
-              statusCode: 200,
-              headers,
-              body: JSON.stringify({
-                stats: [],
-                devices: [],
-                browsers: [],
-                sources: [],
-                topPages: [],
-                conversions: [],
-                systemStatus: {
-                  online: false,
-                  error: 'Analytics tables not initialized',
-                  lastSync: new Date().toISOString()
-                }
-              })
-            };
-          }
-          throw error;
-        }
+      // DELETE /sstv/promos/:promo_id
+      if (path.match(/^\/sstv\/promos\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const promo_id = parseInt(path.split('/')[3]);
+        await sql.unsafe('DELETE FROM sstv_images WHERE promo_id = ' + promo_id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image deleted' }) };
       }
     }
 
-    // Fallback
-    return { statusCode: 404, headers, body: JSON.stringify({ message: 'Not found' }) };
+    // ==========================================
+    // ECATALOG
+    // ==========================================
+    if (path.startsWith('/ecatalog')) {
+      // GET /ecatalog/items
+      if ((path === '/ecatalog/items' || path === '/ecatalog/items/') && method === 'GET') {
+        const items = await sql.unsafe('SELECT * FROM ecatalog_items WHERE is_deleted = false ORDER BY category, sort_order ASC, created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
 
-  } catch (error) {
-    console.error('API Error:', error);
+      // GET /ecatalog/items/all
+      if (path === '/ecatalog/items/all' && method === 'GET') {
+        const items = await sql.unsafe('SELECT * FROM ecatalog_items ORDER BY category, sort_order ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
 
-    // Check for database table errors
-    if (error.message && error.message.includes('does not exist')) {
-      const tableName = error.message.match(/relation "(\w+)" does not exist/)?.[1] || 'unknown';
+      // POST /ecatalog/items
+      if ((path === '/ecatalog/items' || path === '/ecatalog/items/') && method === 'POST') {
+        checkAuth();
+        const { title, description, image_url, category, price, contact_person, sort_order = 0 } = JSON.parse(event.body);
+        const query = 'INSERT INTO ecatalog_items(title, description, image_url, category, price, contact_person, sort_order, is_deleted, created_at, updated_at) VALUES(' + sql.escape(title) + ', ' + sql.escape(description || '') + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(category) + ', ' + sql.escape(price || '') + ', ' + sql.escape(contact_person || '') + ', ' + sort_order + ', false, NOW(), NOW()) RETURNING *';
+        const newItem = await sql.unsafe(query);
+        return { statusCode: 201, headers, body: JSON.stringify(newItem[0]) };
+      }
+
+      // PUT /ecatalog/items/:id
+      if (path.match(/^\/ecatalog\/items\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/')[3]);
+        const { title, description, image_url, category, price, contact_person, sort_order, is_deleted } = JSON.parse(event.body);
+        const query = 'UPDATE ecatalog_items SET title = ' + sql.escape(title) + ', description = ' + sql.escape(description) + ', image_url = ' + sql.escape(image_url) + ', category = ' + sql.escape(category) + ', price = ' + sql.escape(price) + ', contact_person = ' + sql.escape(contact_person) + ', sort_order = ' + sort_order + ', is_deleted = ' + is_deleted + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Item not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
+      }
+
+      // DELETE /ecatalog/items/:id (soft delete)
+      if (path.match(/^\/ecatalog\/items\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const id = parseInt(path.split('/')[3]);
+        await sql.unsafe('UPDATE ecatalog_items SET is_deleted = true WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Item deleted' }) };
+      }
+    }
+
+    // ==========================================
+    // POPUP ADS
+    // ==========================================
+    if (path.startsWith('/popup-ad')) {
+      // GET /popup-ad
+      if ((path === '/popup-ad' || path === '/popup-ad/') && method === 'GET') {
+        const rows = await sql.unsafe('SELECT * FROM popup_ads WHERE is_active = true ORDER BY created_at DESC LIMIT 1');
+        if (rows.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'No active popup ad' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(rows[0]) };
+      }
+
+      // GET /popup-ad/all
+      if (path === '/popup-ad/all' && method === 'GET') {
+        const ads = await sql.unsafe('SELECT * FROM popup_ads ORDER BY created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(ads) };
+      }
+
+      // POST /popup-ad
+      if ((path === '/popup-ad' || path === '/popup-ad/') && method === 'POST') {
+        checkAuth();
+        const { title, image_url, link_url, is_active = true } = JSON.parse(event.body);
+        const query = 'INSERT INTO popup_ads(title, image_url, link_url, is_active, created_at) VALUES(' + sql.escape(title || '') + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(link_url || '') + ', ' + is_active + ', NOW()) RETURNING *';
+        const newAd = await sql.unsafe(query);
+        return { statusCode: 201, headers, body: JSON.stringify(newAd[0]) };
+      }
+
+      // PUT /popup-ad/:id
+      if (path.match(/^\/popup-ad\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        const { title, image_url, link_url, is_active } = JSON.parse(event.body);
+        const query = 'UPDATE popup_ads SET title = ' + sql.escape(title) + ', image_url = ' + sql.escape(image_url) + ', link_url = ' + sql.escape(link_url) + ', is_active = ' + is_active + ' WHERE id = ' + id + ' RETURNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Popup ad not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
+      }
+
+      // DELETE /popup-ad/:id
+      if (path.match(/^\/popup-ad\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        await sql.unsafe('DELETE FROM popup_ads WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Popup ad deleted' }) };
+      }
+    }
+
+    // ==========================================
+    // POSTS (Articles)
+    // ==========================================
+    if (path.startsWith('/posts')) {
+      // GET /posts
+      if ((path === '/posts' || path === '/posts/') && method === 'GET') {
+        const posts = await sql.unsafe('SELECT * FROM posts WHERE is_active = true ORDER BY created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(posts) };
+      }
+
+      // GET /posts/all
+      if (path === '/posts/all' && method === 'GET') {
+        const posts = await sql.unsafe('SELECT * FROM posts ORDER BY created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(posts) };
+      }
+
+      // GET /posts/:id
+      if (path.match(/^\/posts\/\d+$/) && method === 'GET') {
+        const id = parseInt(path.split('/')[2]);
+        const rows = await sql.unsafe('SELECT * FROM posts WHERE id = ' + id);
+        if (rows.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(rows[0]) };
+      }
+
+      // POST /posts
+      if ((path === '/posts' || path === '/posts/') && method === 'POST') {
+        checkAuth();
+        const { title, content, image_url, is_active = true } = JSON.parse(event.body);
+        const query = 'INSERT INTO posts(title, content, image_url, is_active, created_at, updated_at) VALUES(' + sql.escape(title) + ', ' + sql.escape(content || '') + ', ' + sql.escape(image_url || '') + ', ' + is_active + ', NOW(), NOW()) RETURNING *';
+        const newPost = await sql.unsafe(query);
+        return { statusCode: 201, headers, body: JSON.stringify(newPost[0]) };
+      }
+
+      // PUT /posts/:id
+      if (path.match(/^\/posts\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        const { title, content, image_url, is_active } = JSON.parse(event.body);
+        const query = 'UPDATE posts SET title = ' + sql.escape(title) + ', content = ' + sql.escape(content) + ', image_url = ' + sql.escape(image_url) + ', is_active = ' + is_active + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
+        const updated = await sql.unsafe(query);
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
+      }
+
+      // DELETE /posts/:id
+      if (path.match(/^\/posts\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const id = parseInt(path.split('/')[2]);
+        await sql.unsafe('DELETE FROM posts WHERE id = ' + id);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Post deleted' }) };
+      }
+    }
+
+    // ==========================================
+    // DEVICE HEARTBEAT
+    // ==========================================
+    if (path === '/device-heartbeat' && method === 'POST') {
+      const { device_id, device_name, last_ip } = JSON.parse(event.body);
+      if (!device_id) {
+        return { statusCode: 400, headers, body: JSON.stringify({ message: 'device_id required' }) };
+      }
+
+      const query = 'INSERT INTO device_heartbeats(device_id, device_name, last_ip, last_seen) VALUES(' + sql.escape(device_id) + ', ' + sql.escape(device_name || '') + ', ' + sql.escape(last_ip || '') + ', NOW()) ON CONFLICT (device_id) DO UPDATE SET device_name = ' + sql.escape(device_name || '') + ', last_ip = ' + sql.escape(last_ip || '') + ', last_seen = NOW()';
+      await sql.unsafe(query);
+      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Heartbeat recorded' }) };
+    }
+
+    // GET /device-heartbeat
+    if ((path === '/device-heartbeat' || path === '/device-heartbeat/') && method === 'GET') {
+      const devices = await sql.unsafe('SELECT * FROM device_heartbeats ORDER BY last_seen DESC');
+      return { statusCode: 200, headers, body: JSON.stringify(devices) };
+    }
+
+    // ==========================================
+    // ADMIN LOGIN
+    // ==========================================
+    if (path === '/admin/login' && method === 'POST') {
+      const { password } = JSON.parse(event.body);
+      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+      if (password === adminPassword) {
+        return {
+          statusCode: 200,
+          headers: {
+            ...headers,
+            'Set-Cookie': 'adminAuth=' + adminPassword + '; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000'
+          },
+          body: JSON.stringify({ message: 'Login successful' })
+        };
+      } else {
+        return { statusCode: 401, headers, body: JSON.stringify({ message: 'Invalid password' }) };
+      }
+    }
+
+    // GET /admin/logout
+    if (path === '/admin/logout' && method === 'GET') {
       return {
         statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          error: `Table "${tableName}" does not exist`,
-          doctors: [],
-          total: 0,
-          message: 'Database migration required'
-        })
+        headers: {
+          ...headers,
+          'Set-Cookie': 'adminAuth=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0'
+        },
+        body: JSON.stringify({ message: 'Logged out' })
       };
     }
 
-    // Auth errors
-    if (error.status) {
-      return {
-        statusCode: error.status,
-        headers,
-        body: JSON.stringify({ message: error.message })
-      };
-    }
+    // ==========================================
+    // 404 - Route not found
+    // ==========================================
+    return {
+      statusCode: 404,
+      headers,
+      body: JSON.stringify({ message: 'Route not found', path, method })
+    };
 
-    // Generic errors - always return JSON
+  } catch (error) {
+    console.error('[API Error]', error);
+    if (error.message === 'Unauthorized') {
+      return { statusCode: 401, headers, body: JSON.stringify({ message: 'Unauthorized' }) };
+    }
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        message: 'Server error',
-        error: error.message || error.toString(),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      })
+      body: JSON.stringify({ message: 'Internal server error', error: error.message })
     };
   }
 }

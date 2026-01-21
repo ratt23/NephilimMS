@@ -65,31 +65,38 @@ export async function handler(event, context) {
     }
 
     // ==========================================
-    // SETTINGS
+    // SETTINGS (Using app_settings table)
     // ==========================================
     if (path.startsWith('/settings')) {
       // GET /settings
       if ((path === '/settings' || path === '/settings/') && method === 'GET') {
-        // Corrected: use 'key' column
-        const settings = await sql.unsafe('SELECT * FROM settings ORDER BY key ASC');
-        return { statusCode: 200, headers, body: JSON.stringify(settings) };
+        // Use 'app_settings' because it contains the actual data
+        const settings = await sql.unsafe('SELECT * FROM app_settings ORDER BY setting_key ASC');
+        // Map to standard key/value format for frontend compatibility
+        const mappedSettings = settings.map(s => ({
+          key: s.setting_key,
+          value: s.setting_value,
+          is_enabled: s.is_enabled,
+          updated_at: s.updated_at
+        }));
+        return { statusCode: 200, headers, body: JSON.stringify(mappedSettings) };
       }
 
       // GET /settings/:key
       if (path.startsWith('/settings/') && method === 'GET') {
         const key = path.split('/')[2];
-        const rows = await sql.unsafe('SELECT * FROM settings WHERE key = $1', [key]);
+        const rows = await sql.unsafe('SELECT * FROM app_settings WHERE setting_key = $1', [key]);
         if (rows.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Setting not found' }) };
         }
         const setting = rows[0];
-        let value = setting.value;
+        let value = setting.setting_value;
         try {
           value = JSON.parse(value);
         } catch (e) {
           // Keep as string if not JSON
         }
-        return { statusCode: 200, headers, body: JSON.stringify({ key: setting.key, value }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ key: setting.setting_key, value }) };
       }
 
       // POST /settings - Batch update
@@ -102,7 +109,8 @@ export async function handler(event, context) {
 
         for (const { key, value } of updates) {
           const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
-          await sql.unsafe('INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
+          // Upsert into app_settings
+          await sql.unsafe('INSERT INTO app_settings (setting_key, setting_value, updated_at, is_enabled) VALUES ($1, $2, NOW(), true) ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2, updated_at = NOW()', [key, jsonValue]);
         }
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Settings updated' }) };
       }
@@ -114,7 +122,7 @@ export async function handler(event, context) {
         const { value } = JSON.parse(event.body);
         const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
 
-        await sql.unsafe('INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
+        await sql.unsafe('INSERT INTO app_settings (setting_key, setting_value, updated_at, is_enabled) VALUES ($1, $2, NOW(), true) ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2, updated_at = NOW()', [key, jsonValue]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting updated' }) };
       }
 
@@ -122,7 +130,7 @@ export async function handler(event, context) {
       if (path.startsWith('/settings/') && method === 'DELETE') {
         checkAuth();
         const key = path.split('/')[2];
-        await sql.unsafe('DELETE FROM settings WHERE key = $1', [key]);
+        await sql.unsafe('DELETE FROM app_settings WHERE setting_key = $1', [key]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting deleted' }) };
       }
     }
@@ -217,11 +225,8 @@ export async function handler(event, context) {
                            page_views
                     FROM daily_stats 
                     ORDER BY date DESC 
-                    limit_placeholder
+                    LIMIT $1
                 `;
-          // Note: limit is appended manually to query string or parameter?
-          // sql.unsafe lets us parameterize LIMIT.
-          query = query.replace('limit_placeholder', 'LIMIT $1');
           params.push(limit);
         }
 
@@ -650,7 +655,8 @@ export async function handler(event, context) {
     // ==========================================
     // ADMIN LOGIN
     // ==========================================
-    if (path === '/admin/login' && method === 'POST') {
+    // Support both /admin/login and /login
+    if ((path === '/admin/login' || path === '/login') && method === 'POST') {
       const { password } = JSON.parse(event.body);
       const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 

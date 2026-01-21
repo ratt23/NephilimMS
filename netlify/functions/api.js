@@ -50,7 +50,9 @@ export async function handler(event, context) {
   }
 
   try {
-    const path = (event.path || '').replace('/api', '').replace(/.netlify\/functions\/api/, '');
+    let path = event.path || '';
+    // Remove both /api and /.netlify/functions/api prefixes
+    path = path.replace(/^\/.netlify\/functions\/api/, '').replace(/^\/api/, '');
     const method = event.httpMethod;
 
     // Auth helper

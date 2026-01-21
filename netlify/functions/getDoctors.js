@@ -21,8 +21,19 @@ export async function handler(event, context) {
   /**
    * 2. Header CORS & Cache-Control
    */
+  const origin = event.headers.origin || event.headers.Origin || '';
+  const allowedOrigins = [
+    'https://shab.web.id',
+    'https://jadwaldoktershab.netlify.app',
+    'https://dashdev1.netlify.app',
+    'https://dashdev2.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173'
+  ];
+
   const headers = {
-    'Access-Control-Allow-Origin': '*', // Ganti '*' dengan URL publik Anda saat deploy
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '*', // Ganti '*' dengan URL publik Anda saat deploy
     'Access-Control-Allow-Methods': 'GET',
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=300, s-maxage=300' // Cache 5 menit (browser & CDN)

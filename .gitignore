@@ -27,10 +27,8 @@ dist-ssr
 .netlify
 .env
 
-# IMPORTANT: Subprojects ARE tracked in this monorepo!
-# These used to have separate repos but are now part of the monorepo
-# DO NOT exclude these directories:
-# jadwaldokter/
-# slideshow/
-# eCatalog/
-# eNewsletter/
+# Subprojects with separate Git repositories
+jadwaldokter/
+slideshow/
+eCatalog/
+eNewsletter/

@@ -1,9 +1,5 @@
-# Doctor API Redirects to Standalone Functions
-/.netlify/functions/doctors/grouped  /.netlify/functions/doctors-grouped  200
-/.netlify/functions/doctors/on-leave  /.netlify/functions/doctors-on-leave  200
+# Netlify Functions - Should NOT be redirected
+/.netlify/functions/* 200
 
-# Protect functions from SPA
-/.netlify/functions/*  200
-
-# SPA Catch-all
+# SPA - All other routes go to index.html
 /*  /index.html  200

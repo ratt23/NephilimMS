@@ -70,14 +70,15 @@ export async function handler(event, context) {
     if (path.startsWith('/settings')) {
       // GET /settings
       if ((path === '/settings' || path === '/settings/') && method === 'GET') {
-        const settings = await sql.unsafe('SELECT * FROM settings ORDER BY setting_key ASC');
+        // Corrected: use 'key' column
+        const settings = await sql.unsafe('SELECT * FROM settings ORDER BY key ASC');
         return { statusCode: 200, headers, body: JSON.stringify(settings) };
       }
 
       // GET /settings/:key
       if (path.startsWith('/settings/') && method === 'GET') {
         const key = path.split('/')[2];
-        const rows = await sql.unsafe('SELECT * FROM settings WHERE setting_key = $1', [key]);
+        const rows = await sql.unsafe('SELECT * FROM settings WHERE key = $1', [key]);
         if (rows.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Setting not found' }) };
         }
@@ -88,7 +89,7 @@ export async function handler(event, context) {
         } catch (e) {
           // Keep as string if not JSON
         }
-        return { statusCode: 200, headers, body: JSON.stringify({ key: setting.setting_key, value }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ key: setting.key, value }) };
       }
 
       // POST /settings - Batch update
@@ -101,7 +102,7 @@ export async function handler(event, context) {
 
         for (const { key, value } of updates) {
           const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
-          await sql.unsafe('INSERT INTO settings (setting_key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
+          await sql.unsafe('INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
         }
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Settings updated' }) };
       }
@@ -113,7 +114,7 @@ export async function handler(event, context) {
         const { value } = JSON.parse(event.body);
         const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
 
-        await sql.unsafe('INSERT INTO settings (setting_key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
+        await sql.unsafe('INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting updated' }) };
       }
 
@@ -121,8 +122,119 @@ export async function handler(event, context) {
       if (path.startsWith('/settings/') && method === 'DELETE') {
         checkAuth();
         const key = path.split('/')[2];
-        await sql.unsafe('DELETE FROM settings WHERE setting_key = $1', [key]);
+        await sql.unsafe('DELETE FROM settings WHERE key = $1', [key]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting deleted' }) };
+      }
+    }
+
+    // ==========================================
+    // ANALYTICS
+    // ==========================================
+    if (path.startsWith('/analytics')) {
+      const action = event.queryStringParameters?.action;
+
+      // POST /analytics?action=track
+      if (action === 'track' && method === 'POST') {
+        const { isNewVisitor, path: pagePath, device, browser, referrer, event_type, event_name } = JSON.parse(event.body || '{}');
+
+        // 1. Traffic Source Logic
+        let trafficSource = 'Direct';
+        if (referrer) {
+          if (referrer.includes('google')) trafficSource = 'Organic Search';
+          else if (referrer.includes('facebook') || referrer.includes('instagram') || referrer.includes('t.co')) trafficSource = 'Social Media';
+          else if (referrer.includes(event.headers.host)) trafficSource = 'Internal';
+          else trafficSource = 'Referral';
+        }
+
+        const region = event.headers['x-nf-geo-country-code'] || 'unknown';
+        const city = event.headers['x-nf-geo-city'] || 'unknown';
+        const ip = event.headers['client-ip'] || 'unknown';
+
+        // Insert into analytics_events
+        await sql.unsafe(`
+                INSERT INTO analytics_events (
+                    date, timestamp, event_type, path, event_name,
+                    device_type, browser, region, city, 
+                    referrer, traffic_source, ip_hash
+                )
+                VALUES (
+                    CURRENT_DATE, NOW(), $1, $2, $3,
+                    $4, $5, $6, $7,
+                    $8, $9, $10
+                )
+            `, [
+          event_type || 'pageview',
+          pagePath || event_name,
+          event_name || null,
+          device,
+          browser,
+          region,
+          city,
+          referrer,
+          trafficSource,
+          ip
+        ]);
+
+        // 2. Aggregated Stats
+        if (event_type === 'pageview') {
+          await sql.unsafe(`
+                    INSERT INTO daily_stats (date, page_views, visitors)
+                    VALUES (CURRENT_DATE, 1, $1)
+                    ON CONFLICT (date)
+                    DO UPDATE SET 
+                        page_views = daily_stats.page_views + 1,
+                        visitors = daily_stats.visitors + $2
+                `, [isNewVisitor ? 1 : 0, isNewVisitor ? 1 : 0]);
+        }
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      }
+
+      // GET /analytics?action=stats
+      if (action === 'stats' && method === 'GET') {
+        const period = event.queryStringParameters?.period || '7days';
+
+        let query = '';
+        let params = [];
+
+        if (period === 'year') {
+          query = `
+                    SELECT to_char(date_trunc('month', date), 'Mon YYYY') as name,
+                           SUM(visitors) as visitors,
+                           SUM(page_views) as page_views,
+                           MIN(date) as sort_date
+                    FROM daily_stats
+                    WHERE date > CURRENT_DATE - INTERVAL '1 year'
+                    GROUP BY date_trunc('month', date)
+                    ORDER BY sort_date DESC
+                `;
+        } else {
+          const limit = period === '30days' ? 30 : 7;
+          query = `
+                    SELECT to_char(date, 'DD Mon') as name,
+                           date as full_date,
+                           visitors,
+                           page_views
+                    FROM daily_stats 
+                    ORDER BY date DESC 
+                    limit_placeholder
+                `;
+          // Note: limit is appended manually to query string or parameter?
+          // sql.unsafe lets us parameterize LIMIT.
+          query = query.replace('limit_placeholder', 'LIMIT $1');
+          params.push(limit);
+        }
+
+        const rows = await sql.unsafe(query, params);
+
+        const stats = rows.reverse().map(row => ({
+          name: row.name,
+          visitors: Number(row.visitors),
+          pageviews: Number(row.page_views),
+          fullDate: row.full_date || row.sort_date
+        }));
+
+        return { statusCode: 200, headers, body: JSON.stringify({ stats, systemStatus: { online: true, lastSync: new Date().toISOString() } }) };
       }
     }
 
@@ -132,9 +244,6 @@ export async function handler(event, context) {
     if (path.startsWith('/doctors')) {
       // GET /doctors/grouped (Legacy)
       if (path === '/doctors/grouped' && method === 'GET') {
-        // This endpoint doesn't use SQL anymore based on previous code context, but let's implement the grouped logic if needed.
-        // Actually, previous code had `const doctors = [];` placeholder or fetched all.
-        // Let's implement it properly by fetching all doctors.
         const doctors = await sql.unsafe('SELECT * FROM doctors');
         const doctorsData = {};
         for (const doc of doctors) {
@@ -179,8 +288,6 @@ export async function handler(event, context) {
         const countResult = await sql.unsafe(countQuery, params);
 
         doctorsQuery += ` ORDER BY name LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
-        // Offset/limit are integers, safe to inject or parameterize. Parameterizing is cleaner but unsafe concat for integers is widely accepted if parsed int.
-        // Let's keep it safe by only substituting parsed ints.
 
         const doctors = await sql.unsafe(doctorsQuery, params);
 
@@ -193,7 +300,6 @@ export async function handler(event, context) {
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
         if (!name || !specialty) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Nama dan Spesialisasi wajib.' }) };
 
-        // schedule is jsonb/json, we pass it as string or object? Postgres.js handles objects for json columns usually, lets stringify to be safe if `unsafe` doesn't auto-handle
         const newDoctor = await sql.unsafe('INSERT INTO doctors(name, specialty, image_url, schedule, updated_at) VALUES($1, $2, $3, $4, NOW()) RETURNING *', [name, specialty, image_url || '', schedule || '{}']);
         return { statusCode: 201, headers, body: JSON.stringify(newDoctor[0]) };
       }

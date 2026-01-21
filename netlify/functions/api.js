@@ -17,10 +17,22 @@ function createKey(name) {
 }
 
 export async function handler(event, context) {
+  const origin = event.headers.origin || event.headers.Origin || '';
+  const allowedOrigins = [
+    'https://shab.web.id',
+    'https://jadwaldoktershab.netlify.app',
+    'https://dashdev1.netlify.app',
+    'https://dashdev2.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173'
+  ];
+
   const headers = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-onesignal-app-id, x-onesignal-api-key',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json'
   };
 

@@ -28,8 +28,10 @@
     Access-Control-Allow-Headers = "Content-Type"
 
 # Aturan Redirect untuk Single Page App (SPA)
-# Ini akan mengarahkan semua permintaan ke index.html
+# IMPORTANT: Exclude .netlify/functions/* to allow API calls to work
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
+  conditions = {path = "!/.netlify/functions/*"}

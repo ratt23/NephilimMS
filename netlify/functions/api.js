@@ -2,7 +2,12 @@ import postgres from 'postgres';
 import { parse } from 'cookie';
 import { sendLeaveNotification } from './utils/notificationSender.js';
 
-const sql = postgres(process.env.NEON_DATABASE_URL, { ssl: 'require' });
+const sql = postgres(process.env.NEON_DATABASE_URL, {
+  ssl: 'require',
+  idle_timeout: 5,        // Close idle connections after 5s (critical for serverless)
+  connect_timeout: 10,    // Give up initial connect after 10s
+  max_lifetime: 60 * 30,  // Recycle connections every 30m
+});
 
 // Helper to create key from specialty name
 function createKey(name) {

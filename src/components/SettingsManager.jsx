@@ -1300,7 +1300,7 @@ export default function SettingsManager() {
                                         <p className="font-bold mb-1">Deployment Strategy:</p>
                                         <p className="text-xs mb-2">Switch API endpoints for Netlify free tier flexibility. Reload required after switching.</p>
                                         <div className="flex gap-2">
-                                            {['local', 'dashdev1', 'dashdev2'].map(env => (
+                                            {['local', 'dashdev1', 'dashdev2', 'dashdev3'].map(env => (
                                                 <button
                                                     key={env}
                                                     type="button"

@@ -2,7 +2,8 @@
 const API_SERVERS = {
     local: '/.netlify/functions/api',
     dashdev1: 'https://dashdev1.netlify.app/.netlify/functions/api',
-    dashdev2: 'https://dashdev2.netlify.app/.netlify/functions/api'
+    dashdev2: 'https://dashdev2.netlify.app/.netlify/functions/api',
+    dashdev3: 'https://dashdev3.netlify.app/.netlify/functions/api'
 };
 
 /**
@@ -24,12 +25,12 @@ export function getApiBaseUrl() {
     }
 
     // Fallback logic
-    return import.meta.env.DEV ? API_SERVERS.local : API_SERVERS.dashdev1;
+    return import.meta.env.DEV ? API_SERVERS.local : API_SERVERS.dashdev3;
 }
 
 /**
  * Helper to switch API server (for development/testing)
- * @param {string} serverKey - 'local', 'dashdev1', or 'dashdev2'
+ * @param {string} serverKey - 'local', 'dashdev1', 'dashdev2', or 'dashdev3'
  */
 export function setApiServer(serverKey) {
     if (API_SERVERS[serverKey]) {

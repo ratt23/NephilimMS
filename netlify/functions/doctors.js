@@ -31,70 +31,55 @@ export async function handler(event, context) {
 
     try {
         // ROUTE: /doctors/grouped
+        // Logic matched from original getDoctors.js to ensure schema compatibility
         if (path.endsWith('/grouped')) {
-            // Fetch all doctors from MAIN database (JadwalDokter)
-            // We join doctors with their schedules to determine status properly if needed,
-            // but the original request was just for doctors list grouped by specialty.
-
-            // Query adapted from original getDoctors.js logic
             const doctors = await sql`
         SELECT 
-          d.id, d.name, d.specialty, d.sub_specialty, d.photo_url, d.status,
-          s.day, s.start_time, s.end_time, s.quota, s.is_active
-        FROM doctors d
-        LEFT JOIN schedules s ON d.id = s.doctor_id
-        WHERE d.is_active = true
+            d.id, 
+            d.name, 
+            d.specialty, 
+            d.schedule, 
+            d.image_url, 
+            s.image_url AS image_url_sstv 
+        FROM 
+            doctors d
+        LEFT JOIN 
+            sstv_images s ON d.id = s.doctor_id
+        ORDER BY 
+            d.name
       `;
 
-            // Grouping logic
-            const grouped = {};
-
-            doctors.forEach(doc => {
-                const key = createKey(doc.specialty);
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        name: doc.specialty,
+            const doctorsData = {};
+            for (const doc of doctors) {
+                const specialtyKey = createKey(doc.specialty);
+                if (!doctorsData[specialtyKey]) {
+                    doctorsData[specialtyKey] = {
+                        title: doc.specialty,
                         doctors: []
                     };
                 }
-
-                let existingDoc = grouped[key].doctors.find(d => d.id === doc.id);
-                if (!existingDoc) {
-                    existingDoc = {
-                        id: doc.id,
-                        name: doc.name,
-                        specialty: doc.specialty,
-                        sub_specialty: doc.sub_specialty,
-                        photo_url: doc.photo_url,
-                        status: doc.status,
-                        schedules: []
-                    };
-                    grouped[key].doctors.push(existingDoc);
-                }
-
-                if (doc.day) {
-                    existingDoc.schedules.push({
-                        day: doc.day,
-                        time: `${doc.start_time} - ${doc.end_time}`,
-                        quota: doc.quota,
-                        active: doc.is_active
-                    });
-                }
-            });
+                doctorsData[specialtyKey].doctors.push({
+                    name: doc.name,
+                    image_url: doc.image_url,
+                    image_url_sstv: doc.image_url_sstv,
+                    schedule: doc.schedule
+                });
+            }
 
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify(grouped)
+                body: JSON.stringify(doctorsData)
             };
         }
 
         // ROUTE: /doctors/on-leave
+        // Logic matched from api.js to ensure schema compatibility
         if (path.endsWith('/on-leave')) {
             const leaves = await sql`
         SELECT 
           l.id, l.start_date, l.end_date, l.reason,
-          d.name as doctor_name, d.photo_url, d.specialty
+          d.name as doctor_name, d.image_url, d.specialty
         FROM leaves l
         JOIN doctors d ON l.doctor_id = d.id
         WHERE l.status = 'approved' 
@@ -102,14 +87,19 @@ export async function handler(event, context) {
         ORDER BY l.start_date ASC
       `;
 
+            // Map image_url to photo_url if frontend expects it
+            const mappedLeaves = leaves.map(l => ({
+                ...l,
+                photo_url: l.image_url
+            }));
+
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify(leaves)
+                body: JSON.stringify(mappedLeaves)
             };
         }
 
-        // Default: Not Found
         return {
             statusCode: 404,
             headers,
@@ -126,7 +116,7 @@ export async function handler(event, context) {
     }
 }
 
-// Helper from api.js
+// Helper
 function createKey(name) {
     if (typeof name !== 'string') return '';
     return name.toLowerCase()

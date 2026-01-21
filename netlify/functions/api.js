@@ -65,7 +65,7 @@ export async function handler(event, context) {
           statusCode: 200,
           headers: {
             ...headers,
-            'Set-Cookie': 'nf_auth=true; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400'
+            'Set-Cookie': 'nf_auth=true; Path=/; Secure; SameSite=Strict; Max-Age=86400'
           },
           body: JSON.stringify({ message: 'Login berhasil' })
         };
@@ -83,7 +83,7 @@ export async function handler(event, context) {
         statusCode: 200,
         headers: {
           ...headers,
-          'Set-Cookie': 'nf_auth=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
+          'Set-Cookie': 'nf_auth=; Path=/; Secure; SameSite=Strict; Max-Age=0'
         },
         body: JSON.stringify({ message: 'Logout berhasil' })
       };

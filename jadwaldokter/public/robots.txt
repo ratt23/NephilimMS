@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin or private areas (add as needed)
+# Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://shab.web.id/sitemap.xml

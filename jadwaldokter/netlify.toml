@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+
+[[redirects]]
+  from = "https://jadwaldoktershab.netlify.app/*"
+  to = "https://shab.web.id/:splat"
+  status = 301
+  force = true
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  framework = "#custom"
+  command = "npm run dev"
+  targetPort = 3002
+  port = 8889
+  autoLaunch = false
+  publish = "dist"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.onesignal.com https://api.onesignal.com https://onesignal.com https://*.onesignal.com https://*.profitablegatecpm.com https://*.adsterra.com https://a.magsrv.com https://fonts.googleapis.com https://www.highperformanceformat.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://onesignal.com https://*.onesignal.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https: wss:; frame-src 'self' https://*.profitablegatecpm.com https://*.adsterra.com https://www.highperformanceformat.com;"

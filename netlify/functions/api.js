@@ -132,7 +132,7 @@ t2.name AS "NamaDokter",
                     FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id
                     WHERE t1.end_date >= ${ today }
                     ORDER BY t1.start_date ASC
-                `;
+                `; // Updated Query ensure no stale cache
         return { statusCode: 200, headers, body: JSON.stringify(result) };
       }
 

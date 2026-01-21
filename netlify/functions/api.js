@@ -77,7 +77,7 @@ export async function handler(event, context) {
       // GET /settings/:key
       if (path.startsWith('/settings/') && method === 'GET') {
         const key = path.split('/')[2];
-        const rows = await sql.unsafe('SELECT * FROM settings WHERE setting_key = ' + sql.escape(key));
+        const rows = await sql.unsafe('SELECT * FROM settings WHERE setting_key = $1', [key]);
         if (rows.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Setting not found' }) };
         }
@@ -101,8 +101,7 @@ export async function handler(event, context) {
 
         for (const { key, value } of updates) {
           const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
-          const query = 'INSERT INTO settings (setting_key, value, updated_at) VALUES (' + sql.escape(key) + ', ' + sql.escape(jsonValue) + ', NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = ' + sql.escape(jsonValue) + ', updated_at = NOW()';
-          await sql.unsafe(query);
+          await sql.unsafe('INSERT INTO settings (setting_key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
         }
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Settings updated' }) };
       }
@@ -114,8 +113,7 @@ export async function handler(event, context) {
         const { value } = JSON.parse(event.body);
         const jsonValue = typeof value === 'string' ? value : JSON.stringify(value);
 
-        const query = 'INSERT INTO settings (setting_key, value, updated_at) VALUES (' + sql.escape(key) + ', ' + sql.escape(jsonValue) + ', NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = ' + sql.escape(jsonValue) + ', updated_at = NOW()';
-        await sql.unsafe(query);
+        await sql.unsafe('INSERT INTO settings (setting_key, value, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (setting_key) DO UPDATE SET value = $2, updated_at = NOW()', [key, jsonValue]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting updated' }) };
       }
 
@@ -123,7 +121,7 @@ export async function handler(event, context) {
       if (path.startsWith('/settings/') && method === 'DELETE') {
         checkAuth();
         const key = path.split('/')[2];
-        await sql.unsafe('DELETE FROM settings WHERE setting_key = ' + sql.escape(key));
+        await sql.unsafe('DELETE FROM settings WHERE setting_key = $1', [key]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Setting deleted' }) };
       }
     }
@@ -134,7 +132,10 @@ export async function handler(event, context) {
     if (path.startsWith('/doctors')) {
       // GET /doctors/grouped (Legacy)
       if (path === '/doctors/grouped' && method === 'GET') {
-        const doctors = [];
+        // This endpoint doesn't use SQL anymore based on previous code context, but let's implement the grouped logic if needed.
+        // Actually, previous code had `const doctors = [];` placeholder or fetched all.
+        // Let's implement it properly by fetching all doctors.
+        const doctors = await sql.unsafe('SELECT * FROM doctors');
         const doctorsData = {};
         for (const doc of doctors) {
           const specialtyKey = createKey(doc.specialty);
@@ -149,8 +150,7 @@ export async function handler(event, context) {
       // GET /doctors/on-leave
       if (path === '/doctors/on-leave' && method === 'GET') {
         const today = new Date().toISOString().split('T')[0];
-        const query = 'SELECT t2.name AS "NamaDokter", t2.specialty AS "Spesialis", t1.start_date AS "TanggalMulaiCuti", t1.end_date AS "TanggalSelesaiCuti" FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id WHERE t1.end_date >= ' + sql.escape(today) + ' ORDER BY t1.start_date ASC';
-        const result = await sql.unsafe(query);
+        const result = await sql.unsafe('SELECT t2.name AS "NamaDokter", t2.specialty AS "Spesialis", t1.start_date AS "TanggalMulaiCuti", t1.end_date AS "TanggalSelesaiCuti" FROM leave_data t1 JOIN doctors t2 ON t1.doctor_id = t2.id WHERE t1.end_date >= $1 ORDER BY t1.start_date ASC', [today]);
         return { statusCode: 200, headers, body: JSON.stringify(result) };
       }
 
@@ -164,12 +164,25 @@ export async function handler(event, context) {
       if ((path === '/doctors' || path === '/doctors/') && method === 'GET') {
         const { page = '1', limit = '30', search = '' } = event.queryStringParameters || {};
         const offset = (parseInt(page) - 1) * parseInt(limit);
-        const searchFilter = search ? ' WHERE name ILIKE ' + sql.escape('%' + search + '%') + ' OR specialty ILIKE ' + sql.escape('%' + search + '%') : '';
 
-        const countQuery = 'SELECT COUNT(*) FROM doctors' + searchFilter;
-        const countResult = await sql.unsafe(countQuery);
-        const doctorsQuery = 'SELECT * FROM doctors' + searchFilter + ' ORDER BY name LIMIT ' + parseInt(limit) + ' OFFSET ' + parseInt(offset);
-        const doctors = await sql.unsafe(doctorsQuery);
+        let countQuery = 'SELECT COUNT(*) FROM doctors';
+        let doctorsQuery = 'SELECT * FROM doctors';
+        let params = [];
+
+        if (search) {
+          countQuery += ' WHERE name ILIKE $1 OR specialty ILIKE $2';
+          doctorsQuery += ' WHERE name ILIKE $1 OR specialty ILIKE $2';
+          params.push('%' + search + '%');
+          params.push('%' + search + '%');
+        }
+
+        const countResult = await sql.unsafe(countQuery, params);
+
+        doctorsQuery += ` ORDER BY name LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+        // Offset/limit are integers, safe to inject or parameterize. Parameterizing is cleaner but unsafe concat for integers is widely accepted if parsed int.
+        // Let's keep it safe by only substituting parsed ints.
+
+        const doctors = await sql.unsafe(doctorsQuery, params);
 
         return { statusCode: 200, headers, body: JSON.stringify({ doctors, total: parseInt(countResult[0].count) }) };
       }
@@ -180,16 +193,15 @@ export async function handler(event, context) {
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
         if (!name || !specialty) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Nama dan Spesialisasi wajib.' }) };
 
-        const query = 'INSERT INTO doctors(name, specialty, image_url, schedule, updated_at) VALUES(' + sql.escape(name) + ', ' + sql.escape(specialty) + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(schedule || '{}') + ', NOW()) RETURNING *';
-        const newDoctor = await sql.unsafe(query);
+        // schedule is jsonb/json, we pass it as string or object? Postgres.js handles objects for json columns usually, lets stringify to be safe if `unsafe` doesn't auto-handle
+        const newDoctor = await sql.unsafe('INSERT INTO doctors(name, specialty, image_url, schedule, updated_at) VALUES($1, $2, $3, $4, NOW()) RETURNING *', [name, specialty, image_url || '', schedule || '{}']);
         return { statusCode: 201, headers, body: JSON.stringify(newDoctor[0]) };
       }
 
       // GET /doctors/:id
       if (path.match(/^\/doctors\/\d+$/) && method === 'GET') {
         const id = parseInt(path.split('/')[2]);
-        const query = 'SELECT d.*, s.image_url AS image_url_sstv FROM doctors d LEFT JOIN sstv_images s ON d.id = s.doctor_id WHERE d.id = ' + id;
-        const rows = await sql.unsafe(query);
+        const rows = await sql.unsafe('SELECT d.*, s.image_url AS image_url_sstv FROM doctors d LEFT JOIN sstv_images s ON d.id = s.doctor_id WHERE d.id = $1', [id]);
         if (rows.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Doctor not found' }) };
         }
@@ -201,8 +213,7 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
-        const query = 'UPDATE doctors SET name = ' + sql.escape(name) + ', specialty = ' + sql.escape(specialty) + ', image_url = ' + sql.escape(image_url || '') + ', schedule = ' + sql.escape(schedule || '{}') + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
-        const updated = await sql.unsafe(query);
+        const updated = await sql.unsafe('UPDATE doctors SET name = $1, specialty = $2, image_url = $3, schedule = $4, updated_at = NOW() WHERE id = $5 RETURNING *', [name, specialty, image_url || '', schedule || '{}', id]);
         if (updated.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Doctor not found' }) };
         }
@@ -213,7 +224,7 @@ export async function handler(event, context) {
       if (path.match(/^\/doctors\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
-        await sql.unsafe('DELETE FROM doctors WHERE id = ' + id);
+        await sql.unsafe('DELETE FROM doctors WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Doctor deleted' }) };
       }
     }
@@ -235,12 +246,10 @@ export async function handler(event, context) {
         if (!doctor_id || !start_date || !end_date) {
           return { statusCode: 400, headers, body: JSON.stringify({ message: 'doctor_id, start_date, dan end_date wajib.' }) };
         }
-        const query = 'INSERT INTO leave_data(doctor_id, start_date, end_date, reason, created_at) VALUES(' + doctor_id + ', ' + sql.escape(start_date) + ', ' + sql.escape(end_date) + ', ' + sql.escape(reason || '') + ', NOW()) RETURNING *';
-        const newLeave = await sql.unsafe(query);
+        const newLeave = await sql.unsafe('INSERT INTO leave_data(doctor_id, start_date, end_date, reason, created_at) VALUES($1, $2, $3, $4, NOW()) RETURNING *', [doctor_id, start_date, end_date, reason || '']);
 
         // Send notification
-        const doctorQuery = 'SELECT * FROM doctors WHERE id = ' + doctor_id;
-        const doctorResult = await sql.unsafe(doctorQuery);
+        const doctorResult = await sql.unsafe('SELECT * FROM doctors WHERE id = $1', [doctor_id]);
         if (doctorResult.length > 0) {
           await sendLeaveNotification(doctorResult[0], start_date, end_date, reason);
         }
@@ -253,8 +262,7 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
         const { doctor_id, start_date, end_date, reason } = JSON.parse(event.body);
-        const query = 'UPDATE leave_data SET doctor_id = ' + doctor_id + ', start_date = ' + sql.escape(start_date) + ', end_date = ' + sql.escape(end_date) + ', reason = ' + sql.escape(reason || '') + ' WHERE id = ' + id + ' RET URNING *';
-        const updated = await sql.unsafe(query);
+        const updated = await sql.unsafe('UPDATE leave_data SET doctor_id = $1, start_date = $2, end_date = $3, reason = $4 WHERE id = $5 RETURNING *', [doctor_id, start_date, end_date, reason || '', id]);
         if (updated.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Leave not found' }) };
         }
@@ -265,7 +273,7 @@ export async function handler(event, context) {
       if (path.match(/^\/leave\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
-        await sql.unsafe('DELETE FROM leave_data WHERE id = ' + id);
+        await sql.unsafe('DELETE FROM leave_data WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Leave deleted' }) };
       }
     }
@@ -290,8 +298,7 @@ export async function handler(event, context) {
       if ((path === '/promos' || path === '/promos/') && method === 'POST') {
         checkAuth();
         const { title, content, image_url, sort_order = 0, is_active = true } = JSON.parse(event.body);
-        const query = 'INSERT INTO promos(title, content, image_url, sort_order, is_active, created_at, updated_at) VALUES(' + sql.escape(title || '') + ', ' + sql.escape(content || '') + ', ' + sql.escape(image_url || '') + ', ' + sort_order + ', ' + is_active + ', NOW(), NOW()) RETURNING *';
-        const newPromo = await sql.unsafe(query);
+        const newPromo = await sql.unsafe('INSERT INTO promos(title, content, image_url, sort_order, is_active, created_at, updated_at) VALUES($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *', [title || '', content || '', image_url || '', sort_order, is_active]);
         return { statusCode: 201, headers, body: JSON.stringify(newPromo[0]) };
       }
 
@@ -300,8 +307,7 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
         const { title, content, image_url, sort_order, is_active } = JSON.parse(event.body);
-        const query = 'UPDATE promos SET title = ' + sql.escape(title) + ', content = ' + sql.escape(content) + ', image_url = ' + sql.escape(image_url) + ', sort_order = ' + sort_order + ', is_active = ' + is_active + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
-        const updated = await sql.unsafe(query);
+        const updated = await sql.unsafe('UPDATE promos SET title = $1, content = $2, image_url = $3, sort_order = $4, is_active = $5, updated_at = NOW() WHERE id = $6 RETURNING *', [title, content, image_url, sort_order, is_active, id]);
         if (updated.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Promo not found' }) };
         }
@@ -312,7 +318,7 @@ export async function handler(event, context) {
       if (path.match(/^\/promos\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
-        await sql.unsafe('DELETE FROM promos WHERE id = ' + id);
+        await sql.unsafe('DELETE FROM promos WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Promo deleted' }) };
       }
     }
@@ -338,8 +344,7 @@ export async function handler(event, context) {
         checkAuth();
         const doctor_id = parseInt(path.split('/')[3]);
         const { image_url } = JSON.parse(event.body);
-        const query = 'INSERT INTO sstv_images(doctor_id, image_url, uploaded_at) VALUES(' + doctor_id + ', ' + sql.escape(image_url) + ', NOW()) ON CONFLICT (doctor_id) DO UPDATE SET image_url = ' + sql.escape(image_url) + ', uploaded_at = NOW()';
-        await sql.unsafe(query);
+        await sql.unsafe('INSERT INTO sstv_images(doctor_id, image_url, uploaded_at) VALUES($1, $2, NOW()) ON CONFLICT (doctor_id) DO UPDATE SET image_url = $2, uploaded_at = NOW()', [doctor_id, image_url]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image uploaded' }) };
       }
 
@@ -348,8 +353,7 @@ export async function handler(event, context) {
         checkAuth();
         const promo_id = parseInt(path.split('/')[3]);
         const { image_url } = JSON.parse(event.body);
-        const query = 'INSERT INTO sstv_images(promo_id, image_url, uploaded_at) VALUES(' + promo_id + ', ' + sql.escape(image_url) + ', NOW()) ON CONFLICT (promo_id) DO UPDATE SET image_url = ' + sql.escape(image_url) + ', uploaded_at = NOW()';
-        await sql.unsafe(query);
+        await sql.unsafe('INSERT INTO sstv_images(promo_id, image_url, uploaded_at) VALUES($1, $2, NOW()) ON CONFLICT (promo_id) DO UPDATE SET image_url = $2, uploaded_at = NOW()', [promo_id, image_url]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image uploaded' }) };
       }
 
@@ -357,7 +361,7 @@ export async function handler(event, context) {
       if (path.match(/^\/sstv\/doctors\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const doctor_id = parseInt(path.split('/')[3]);
-        await sql.unsafe('DELETE FROM sstv_images WHERE doctor_id = ' + doctor_id);
+        await sql.unsafe('DELETE FROM sstv_images WHERE doctor_id = $1', [doctor_id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image deleted' }) };
       }
 
@@ -365,7 +369,7 @@ export async function handler(event, context) {
       if (path.match(/^\/sstv\/promos\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const promo_id = parseInt(path.split('/')[3]);
-        await sql.unsafe('DELETE FROM sstv_images WHERE promo_id = ' + promo_id);
+        await sql.unsafe('DELETE FROM sstv_images WHERE promo_id = $1', [promo_id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image deleted' }) };
       }
     }
@@ -390,8 +394,7 @@ export async function handler(event, context) {
       if ((path === '/ecatalog/items' || path === '/ecatalog/items/') && method === 'POST') {
         checkAuth();
         const { title, description, image_url, category, price, contact_person, sort_order = 0 } = JSON.parse(event.body);
-        const query = 'INSERT INTO ecatalog_items(title, description, image_url, category, price, contact_person, sort_order, is_deleted, created_at, updated_at) VALUES(' + sql.escape(title) + ', ' + sql.escape(description || '') + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(category) + ', ' + sql.escape(price || '') + ', ' + sql.escape(contact_person || '') + ', ' + sort_order + ', false, NOW(), NOW()) RETURNING *';
-        const newItem = await sql.unsafe(query);
+        const newItem = await sql.unsafe('INSERT INTO ecatalog_items(title, description, image_url, category, price, contact_person, sort_order, is_deleted, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, false, NOW(), NOW()) RETURNING *', [title, description || '', image_url || '', category, price || '', contact_person || '', sort_order]);
         return { statusCode: 201, headers, body: JSON.stringify(newItem[0]) };
       }
 
@@ -400,9 +403,8 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[3]);
         const { title, description, image_url, category, price, contact_person, sort_order, is_deleted } = JSON.parse(event.body);
-        const query = 'UPDATE ecatalog_items SET title = ' + sql.escape(title) + ', description = ' + sql.escape(description) + ', image_url = ' + sql.escape(image_url) + ', category = ' + sql.escape(category) + ', price = ' + sql.escape(price) + ', contact_person = ' + sql.escape(contact_person) + ', sort_order = ' + sort_order + ', is_deleted = ' + is_deleted + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
-        const updated = await sql.unsafe(query);
-        if (updated.length === 0) {
+        const updated = await sql.unsafe('UPDATE ecatalog_items SET title = $1, description = $2, image_url = $3, category = $4, price = $5, contact_person = $6, sort_order = $7, is_deleted = $8, updated_at = NOW() WHERE id = $9 RETURNING *', [title, description, image_url, category, price, contact_person, sort_order, is_deleted, id]);
+        if (!updated) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Item not found' }) };
         }
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
@@ -412,7 +414,7 @@ export async function handler(event, context) {
       if (path.match(/^\/ecatalog\/items\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[3]);
-        await sql.unsafe('UPDATE ecatalog_items SET is_deleted = true WHERE id = ' + id);
+        await sql.unsafe('UPDATE ecatalog_items SET is_deleted = true WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Item deleted' }) };
       }
     }
@@ -440,8 +442,7 @@ export async function handler(event, context) {
       if ((path === '/popup-ad' || path === '/popup-ad/') && method === 'POST') {
         checkAuth();
         const { title, image_url, link_url, is_active = true } = JSON.parse(event.body);
-        const query = 'INSERT INTO popup_ads(title, image_url, link_url, is_active, created_at) VALUES(' + sql.escape(title || '') + ', ' + sql.escape(image_url || '') + ', ' + sql.escape(link_url || '') + ', ' + is_active + ', NOW()) RETURNING *';
-        const newAd = await sql.unsafe(query);
+        const newAd = await sql.unsafe('INSERT INTO popup_ads(title, image_url, link_url, is_active, created_at) VALUES($1, $2, $3, $4, NOW()) RETURNING *', [title || '', image_url || '', link_url || '', is_active]);
         return { statusCode: 201, headers, body: JSON.stringify(newAd[0]) };
       }
 
@@ -450,9 +451,8 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
         const { title, image_url, link_url, is_active } = JSON.parse(event.body);
-        const query = 'UPDATE popup_ads SET title = ' + sql.escape(title) + ', image_url = ' + sql.escape(image_url) + ', link_url = ' + sql.escape(link_url) + ', is_active = ' + is_active + ' WHERE id = ' + id + ' RETURNING *';
-        const updated = await sql.unsafe(query);
-        if (updated.length === 0) {
+        const updated = await sql.unsafe('UPDATE popup_ads SET title = $1, image_url = $2, link_url = $3, is_active = $4 WHERE id = $5 RETURNING *', [title, image_url, link_url, is_active, id]);
+        if (!updated) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Popup ad not found' }) };
         }
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
@@ -462,7 +462,7 @@ export async function handler(event, context) {
       if (path.match(/^\/popup-ad\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
-        await sql.unsafe('DELETE FROM popup_ads WHERE id = ' + id);
+        await sql.unsafe('DELETE FROM popup_ads WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Popup ad deleted' }) };
       }
     }
@@ -486,7 +486,7 @@ export async function handler(event, context) {
       // GET /posts/:id
       if (path.match(/^\/posts\/\d+$/) && method === 'GET') {
         const id = parseInt(path.split('/')[2]);
-        const rows = await sql.unsafe('SELECT * FROM posts WHERE id = ' + id);
+        const rows = await sql.unsafe('SELECT * FROM posts WHERE id = $1', [id]);
         if (rows.length === 0) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
         }
@@ -497,8 +497,7 @@ export async function handler(event, context) {
       if ((path === '/posts' || path === '/posts/') && method === 'POST') {
         checkAuth();
         const { title, content, image_url, is_active = true } = JSON.parse(event.body);
-        const query = 'INSERT INTO posts(title, content, image_url, is_active, created_at, updated_at) VALUES(' + sql.escape(title) + ', ' + sql.escape(content || '') + ', ' + sql.escape(image_url || '') + ', ' + is_active + ', NOW(), NOW()) RETURNING *';
-        const newPost = await sql.unsafe(query);
+        const newPost = await sql.unsafe('INSERT INTO posts(title, content, image_url, is_active, created_at, updated_at) VALUES($1, $2, $3, $4, NOW(), NOW()) RETURNING *', [title, content || '', image_url || '', is_active]);
         return { statusCode: 201, headers, body: JSON.stringify(newPost[0]) };
       }
 
@@ -507,9 +506,8 @@ export async function handler(event, context) {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
         const { title, content, image_url, is_active } = JSON.parse(event.body);
-        const query = 'UPDATE posts SET title = ' + sql.escape(title) + ', content = ' + sql.escape(content) + ', image_url = ' + sql.escape(image_url) + ', is_active = ' + is_active + ', updated_at = NOW() WHERE id = ' + id + ' RETURNING *';
-        const updated = await sql.unsafe(query);
-        if (updated.length === 0) {
+        const updated = await sql.unsafe('UPDATE posts SET title = $1, content = $2, image_url = $3, is_active = $4, updated_at = NOW() WHERE id = $5 RETURNING *', [title, content, image_url, is_active, id]);
+        if (!updated) {
           return { statusCode: 404, headers, body: JSON.stringify({ message: 'Post not found' }) };
         }
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
@@ -519,7 +517,7 @@ export async function handler(event, context) {
       if (path.match(/^\/posts\/\d+$/) && method === 'DELETE') {
         checkAuth();
         const id = parseInt(path.split('/')[2]);
-        await sql.unsafe('DELETE FROM posts WHERE id = ' + id);
+        await sql.unsafe('DELETE FROM posts WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Post deleted' }) };
       }
     }
@@ -533,8 +531,7 @@ export async function handler(event, context) {
         return { statusCode: 400, headers, body: JSON.stringify({ message: 'device_id required' }) };
       }
 
-      const query = 'INSERT INTO device_heartbeats(device_id, device_name, last_ip, last_seen) VALUES(' + sql.escape(device_id) + ', ' + sql.escape(device_name || '') + ', ' + sql.escape(last_ip || '') + ', NOW()) ON CONFLICT (device_id) DO UPDATE SET device_name = ' + sql.escape(device_name || '') + ', last_ip = ' + sql.escape(last_ip || '') + ', last_seen = NOW()';
-      await sql.unsafe(query);
+      await sql.unsafe('INSERT INTO device_heartbeats(device_id, device_name, last_ip, last_seen) VALUES($1, $2, $3, NOW()) ON CONFLICT (device_id) DO UPDATE SET device_name = $2, last_ip = $3, last_seen = NOW()', [device_id, device_name || '', last_ip || '']);
       return { statusCode: 200, headers, body: JSON.stringify({ message: 'Heartbeat recorded' }) };
     }
 

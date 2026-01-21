@@ -1,0 +1,5 @@
+# Netlify Functions - Should NOT be redirected
+/.netlify/functions/* 200
+
+# SPA - All other routes go to index.html
+/*  /index.html  200

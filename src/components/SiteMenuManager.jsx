@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 import { Trash, Plus, ArrowUp, ArrowDown, Type, Link as IconLink, Square } from 'lucide-react';
+import { getApiBaseUrl } from '../utils/apiConfig';
 // Using lucide-react (found in package.json) for icons in this new component
 
 export default function SiteMenuManager() {
@@ -16,7 +17,7 @@ export default function SiteMenuManager() {
     const fetchMenu = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch('/.netlify/functions/api/settings');
+            const res = await fetch(`${getApiBaseUrl()}/settings`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 const menuJson = data['site_menu']?.value;
@@ -81,10 +82,11 @@ export default function SiteMenuManager() {
         };
 
         try {
-            const res = await fetch('/.netlify/functions/api/settings', {
+            const res = await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
 
             if (res.ok) {
@@ -103,13 +105,13 @@ export default function SiteMenuManager() {
         <div className="p-6 max-w-4xl mx-auto animate-fade-in font-sans">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border-b pb-4">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-800">Site Menu Manager</h2>
-                    <p className="text-gray-500 text-sm">Configure the navigation menu appearing on the client site (Footer/Header).</p>
+                    <h2 className="text-xl font-bold text-[#E6E6E3]">Site Menu Manager</h2>
+                    <p className="text-[#a0a4ab] text-sm">Configure the navigation menu appearing on the client site (Footer/Header).</p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow-sm font-bold flex items-center gap-2"
+                    className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-6 py-2 rounded shadow-2xl-sm font-bold flex items-center gap-2"
                 >
                     {isLoading ? <LoadingSpinner size="sm" /> : null}
                     Save Changes
@@ -124,21 +126,21 @@ export default function SiteMenuManager() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* LIST / PREVIEW */}
-                <div className="bg-white border border-gray-200 rounded shadow-sm p-4">
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Current Menu Structure</h3>
+                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 rounded shadow-2xl-sm p-4">
+                    <h3 className="text-sm font-bold text-[#a0a4ab] uppercase tracking-wider mb-4">Current Menu Structure</h3>
 
                     <div className="space-y-3">
-                        {menuItems.length === 0 && <p className="text-gray-400 italic text-sm text-center py-4">No menu items defined.</p>}
+                        {menuItems.length === 0 && <p className="text-[#a0a4ab]/60 italic text-sm text-center py-4">No menu items defined.</p>}
 
                         {menuItems.map((item, index) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded group hover:border-blue-200 transition-colors">
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-[#0B0B0C] border border-[#8C7A3E]/10 rounded group hover:border-blue-200 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-blue-100 text-blue-600 flex items-center justify-center rounded text-xs font-bold font-mono">
                                         {index + 1}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-gray-800">{item.label}</div>
-                                        <div className="text-xs text-gray-500 font-mono">{item.url}</div>
+                                        <div className="font-bold text-[#E6E6E3]">{item.label}</div>
+                                        <div className="text-xs text-[#a0a4ab] font-mono">{item.url}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100">
@@ -152,39 +154,39 @@ export default function SiteMenuManager() {
                 </div>
 
                 {/* ADD NEW */}
-                <div className="bg-white border border-gray-200 rounded shadow-sm p-6 h-fit">
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Add New Item</h3>
+                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 rounded shadow-2xl-sm p-6 h-fit">
+                    <h3 className="text-sm font-bold text-[#a0a4ab] uppercase tracking-wider mb-4">Add New Item</h3>
                     <form onSubmit={handleAddItem} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1"><Type size={12} /> Label</label>
+                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><Type size={12} /> Label</label>
                             <input
                                 type="text"
                                 value={newItem.label}
                                 onChange={e => setNewItem({ ...newItem, label: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="e.g. Home"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1"><IconLink size={12} /> URL</label>
+                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><IconLink size={12} /> URL</label>
                             <input
                                 type="text"
                                 value={newItem.url}
                                 onChange={e => setNewItem({ ...newItem, url: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="e.g. /home or https://..."
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1"><Square size={12} /> Icon Code (Optional)</label>
+                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><Square size={12} /> Icon Code (Optional)</label>
                             <input
                                 type="text"
                                 value={newItem.icon}
                                 onChange={e => setNewItem({ ...newItem, icon: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="e.g. home, user, phone"
                             />
-                            <p className="text-[10px] text-gray-400 mt-1">Refers to icon names used in the client app.</p>
+                            <p className="text-[10px] text-[#a0a4ab]/60 mt-1">Refers to icon names used in the client app.</p>
                         </div>
                         <button
                             type="submit"

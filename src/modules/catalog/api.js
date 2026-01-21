@@ -1,83 +1,69 @@
-// API helper for newsletter endpoints
-const API_BASE = '/.netlify/functions';
+import { getApiBaseUrl } from '../../utils/apiConfig';
 
-export const newsletterAPI = {
-    // Get newsletter archive (paginated)
-    async getArchive(page = 1, limit = 20, admin = false) {
-        const params = new URLSearchParams({ page, limit, admin: admin.toString() });
-        const response = await fetch(`${API_BASE}/newsletter-archive?${params}`);
-        if (!response.ok) {
-            const text = await response.text();
-            try {
-                const json = JSON.parse(text);
-                throw new Error(json.message || 'Failed to fetch archive');
-            } catch {
-                throw new Error(text || 'Failed to fetch archive');
-            }
-        }
+const getApiBase = () => getApiBaseUrl();
+
+export const catalogAPI = {
+    // Get public items (for filter)
+    async getItems(category) {
+        const query = category ? `?category=${category}` : '';
+        const response = await fetch(`${getApiBase()}/catalog-items${query}`);
+        if (!response.ok) throw new Error('Failed to fetch catalog');
         return response.json();
     },
 
-    // Get specific newsletter by year and month
-    async getByYearMonth(year, month) {
-        const params = new URLSearchParams({ year, month });
-        const response = await fetch(`${API_BASE}/newsletter-issue?${params}`);
-        if (!response.ok) {
-            if (response.status === 404) return null;
-            throw new Error('Failed to fetch newsletter');
-        }
+    // Get ALL items (admin)
+    async getAllItems(category) {
+        const query = category ? `?category=${category}` : '';
+        const response = await fetch(`${getApiBase()}/catalog-items/all${query}`, {
+            credentials: 'include'
+        });
+        if (!response.ok) throw new Error('Failed to fetch catalog (admin)');
         return response.json();
     },
 
-    // Get newsletter by ID
+    // Get item by ID (helper, client-side finding often used but let's add one)
     async getById(id) {
-        const params = new URLSearchParams({ id });
-        const response = await fetch(`${API_BASE}/newsletter-issue?${params}`);
-        if (!response.ok) {
-            if (response.status === 404) return null;
-            throw new Error('Failed to fetch newsletter');
-        }
-        return response.json();
+        // We retrieve all and find, or we could add backend endpoint. 
+        // For now, reuse allItems and find filtering client side or implementing /:id locally?
+        // Let's assume we fetch all and find, as per CatalogForm logic.
+        // Or better, GET /catalog-items?id=... (not implemented in backend yet).
+        // Let's just fetch all for now or rely on List passing data.
+        // CatalogForm currently fetches LIST and finds.
+        const items = await this.getAllItems();
+        return items.find(i => i.id === id);
     },
 
-    // Create or update newsletter
-    async upsert(data) {
-        const response = await fetch(`${API_BASE}/newsletter-upsert`, {
+    // Upsert (Create/Update based on ID presence in payload or ID arg)
+    // CatalogForm logic sends POST to upsert endpoint usually.
+    // Our refactored backend uses POST / (create) and PUT / (update with query id)
+    async create(data) {
+        const response = await fetch(`${getApiBase()}/catalog-items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            credentials: 'include'
         });
-        if (!response.ok) {
-            const text = await response.text();
-            let errorMessage = 'Failed to save newsletter';
-            try {
-                const json = JSON.parse(text);
-                errorMessage = json.message || errorMessage;
-            } catch {
-                errorMessage = text || errorMessage;
-            }
-            throw new Error(errorMessage);
-        }
+        if (!response.ok) throw new Error('Failed to create item');
         return response.json();
     },
 
-    // Toggle publish status
-    async togglePublish(id) {
-        const params = new URLSearchParams({ id });
-        const response = await fetch(`${API_BASE}/newsletter-issue?${params}`, {
-            method: 'PUT'
+    async update(id, data) {
+        const response = await fetch(`${getApiBase()}/catalog-items?id=${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            credentials: 'include'
         });
-        if (!response.ok) throw new Error('Failed to toggle publish status');
+        if (!response.ok) throw new Error('Failed to update item');
         return response.json();
     },
 
-    // Delete newsletter
     async delete(id) {
-        const params = new URLSearchParams({ id });
-        const response = await fetch(`${API_BASE}/newsletter-issue?${params}`, {
-            method: 'DELETE'
+        const response = await fetch(`${getApiBase()}/catalog-items?id=${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
         });
-        if (!response.ok) throw new Error('Failed to delete newsletter');
+        if (!response.ok) throw new Error('Failed to delete item');
         return response.json();
     }
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 export default function McuManager() {
     const [packages, setPackages] = useState([]);
@@ -16,7 +17,7 @@ export default function McuManager() {
     const fetchPackages = async () => {
         try {
             setIsLoading(true);
-            const res = await fetch('/.netlify/functions/api/mcu-packages/all');
+            const res = await fetch(`${getApiBaseUrl()}/mcu-packages/all`, { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to fetch packages');
             const data = await res.json();
             setPackages(data);
@@ -29,10 +30,11 @@ export default function McuManager() {
 
     const handleToggleEnabled = async (pkg) => {
         try {
-            const res = await fetch(`/.netlify/functions/api/mcu-packages/${pkg.id}`, {
+            const res = await fetch(`${getApiBaseUrl()}/mcu-packages/${pkg.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...pkg, is_enabled: !pkg.is_enabled })
+                body: JSON.stringify({ ...pkg, is_enabled: !pkg.is_enabled }),
+                credentials: 'include'
             });
             if (!res.ok) throw new Error('Failed to update package');
             setMessage({ type: 'success', text: 'Package status updated' });
@@ -47,8 +49,9 @@ export default function McuManager() {
         if (!window.confirm('Are you sure you want to disable this package?')) return;
 
         try {
-            const res = await fetch(`/.netlify/functions/api/mcu-packages/${id}`, {
-                method: 'DELETE'
+            const res = await fetch(`${getApiBaseUrl()}/mcu-packages/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
             });
             if (!res.ok) throw new Error('Failed to delete package');
             setMessage({ type: 'success', text: 'Package disabled' });
@@ -81,16 +84,16 @@ export default function McuManager() {
 
     return (
         <div className="space-y-6 animate-fade-in font-sans">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-none">
+            <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
                 {/* TOOLBAR */}
-                <div className="bg-white p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+                <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
                         <span>MCU Package Manager</span>
                         <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{packages.length}</span>
                     </h2>
                     <button
                         onClick={openAddModal}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2"
+                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
@@ -115,46 +118,46 @@ export default function McuManager() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-[#f0f2f5]">
                             <tr>
-                                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Order</th>
-                                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Package</th>
-                                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Price</th>
-                                <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Type</th>
-                                <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Order</th>
+                                <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Package</th>
+                                <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Price</th>
+                                <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Type</th>
+                                <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Status</th>
+                                <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
                             {packages.map((pkg) => (
-                                <tr key={pkg.id} className="hover:bg-blue-50 transition-colors">
-                                    <td className="p-3 text-sm text-gray-600">{pkg.display_order}</td>
+                                <tr key={pkg.id} className="hover:bg-blue-900/20 transition-colors">
+                                    <td className="p-3 text-sm text-[#a0a4ab]">{pkg.display_order}</td>
                                     <td className="p-3">
                                         <div className="flex items-center gap-3">
                                             {pkg.image_url && (
                                                 pkg.image_url.startsWith('http') ? (
                                                     <img src={pkg.image_url} alt={pkg.name} className="w-16 h-16 object-cover rounded border" />
                                                 ) : (
-                                                    <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center text-xs text-gray-500">
+                                                    <div className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center text-xs text-[#a0a4ab]">
                                                         No Preview
                                                     </div>
                                                 )
                                             )}
                                             <div>
-                                                <div className="font-semibold text-gray-800">{pkg.name}</div>
-                                                <div className="text-xs text-gray-500">{pkg.package_id}</div>
+                                                <div className="font-semibold text-[#E6E6E3]">{pkg.name}</div>
+                                                <div className="text-xs text-[#a0a4ab]">{pkg.package_id}</div>
                                                 {pkg.is_recommended && (
                                                     <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Recommended</span>
                                                 )}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-3 text-sm font-semibold text-gray-800">
+                                    <td className="p-3 text-sm font-semibold text-[#E6E6E3]">
                                         Rp {pkg.price.toLocaleString('id-ID')}
                                     </td>
-                                    <td className="p-3 text-sm text-gray-600">
+                                    <td className="p-3 text-sm text-[#a0a4ab]">
                                         {pkg.is_pelaut ? (
                                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Pelaut</span>
                                         ) : (
-                                            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">Regular</span>
+                                            <span className="bg-[#0B0B0C] text-[#E6E6E3] px-2 py-1 rounded text-xs font-semibold">Regular</span>
                                         )}
                                     </td>
                                     <td className="p-3 text-center">
@@ -165,7 +168,7 @@ export default function McuManager() {
                                                 onChange={() => handleToggleEnabled(pkg)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1a1d21] after:border-[#8C7A3E]/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8C7A3E]"></div>
                                         </label>
                                     </td>
                                     <td className="p-3 text-center">
@@ -357,15 +360,16 @@ function McuPackageModal({ package: pkg, onClose }) {
 
         try {
             const url = pkg
-                ? `/.netlify/functions/api/mcu-packages/${pkg.id}`
-                : '/.netlify/functions/api/mcu-packages';
+                ? `${getApiBaseUrl()}/mcu-packages/${pkg.id}`
+                : `${getApiBaseUrl()}/mcu-packages`;
 
             const method = pkg ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
+                credentials: 'include'
             });
 
             if (!res.ok) {
@@ -384,7 +388,7 @@ function McuPackageModal({ package: pkg, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-[#1a1d21] rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <h3 className="text-2xl font-bold mb-6">{pkg ? 'Edit Package' : 'Add New Package'}</h3>
 
                 <div className="space-y-6">
@@ -396,7 +400,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                 type="text"
                                 value={formData.package_id}
                                 onChange={(e) => setFormData(prev => ({ ...prev, package_id: e.target.value }))}
-                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                className="w-full border border-[#8C7A3E]/30 rounded px-3 py-2"
                                 placeholder="e.g., executive"
                             />
                         </div>
@@ -406,7 +410,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                className="w-full border border-[#8C7A3E]/30 rounded px-3 py-2"
                                 placeholder="e.g., MCU Executive"
                             />
                         </div>
@@ -416,7 +420,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                 type="number"
                                 value={formData.price}
                                 onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
-                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                className="w-full border border-[#8C7A3E]/30 rounded px-3 py-2"
                             />
                         </div>
                         <div>
@@ -425,7 +429,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                 type="number"
                                 value={formData.base_price || ''}
                                 onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseInt(e.target.value) || null }))}
-                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                className="w-full border border-[#8C7A3E]/30 rounded px-3 py-2"
                             />
                         </div>
                         <div>
@@ -434,7 +438,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                 type="number"
                                 value={formData.display_order}
                                 onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
-                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                className="w-full border border-[#8C7A3E]/30 rounded px-3 py-2"
                             />
                         </div>
                     </div>
@@ -450,7 +454,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                             accept="image/*"
                             onChange={handleImageUpload}
                             disabled={isUploading}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            className="block w-full text-sm text-[#a0a4ab] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-900/20 file:text-blue-700 hover:file:bg-blue-100"
                         />
                         {isUploading && <p className="text-sm text-blue-600 mt-1">Uploading...</p>}
                     </div>
@@ -490,14 +494,14 @@ function McuPackageModal({ package: pkg, onClose }) {
                         </div>
 
                         {formData.items.map((cat, catIdx) => (
-                            <div key={catIdx} className="border border-gray-300 rounded p-4 mb-3 bg-gray-50">
+                            <div key={catIdx} className="border border-[#8C7A3E]/30 rounded p-4 mb-3 bg-[#0B0B0C]">
                                 <div className="flex gap-2 mb-2">
                                     <input
                                         type="text"
                                         value={cat.category}
                                         onChange={(e) => updateCategory(catIdx, 'category', e.target.value)}
                                         placeholder="Category name (e.g., Pemeriksaan Fisik)"
-                                        className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm font-semibold"
+                                        className="flex-1 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm font-semibold"
                                     />
                                     <label className="flex items-center gap-1 text-xs">
                                         <input
@@ -509,7 +513,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                     </label>
                                     <button
                                         onClick={() => removeCategory(catIdx)}
-                                        className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                                        className="bg-red-900/200 text-white px-2 py-1 rounded text-xs"
                                     >
                                         Remove
                                     </button>
@@ -524,7 +528,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                                 value={item}
                                                 onChange={(e) => updateCategoryItem(catIdx, itemIdx, e.target.value)}
                                                 placeholder="Item name"
-                                                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                                className="flex-1 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm"
                                             />
                                             <button
                                                 onClick={() => removeCategoryItem(catIdx, itemIdx)}
@@ -564,25 +568,25 @@ function McuPackageModal({ package: pkg, onClose }) {
                                     value={addon.id}
                                     onChange={(e) => updateAddon(idx, 'id', e.target.value)}
                                     placeholder="ID (e.g., golongan_darah)"
-                                    className="w-1/3 border border-gray-300 rounded px-2 py-1 text-sm"
+                                    className="w-1/3 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm"
                                 />
                                 <input
                                     type="text"
                                     value={addon.label}
                                     onChange={(e) => updateAddon(idx, 'label', e.target.value)}
                                     placeholder="Label"
-                                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                                    className="flex-1 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm"
                                 />
                                 <input
                                     type="number"
                                     value={addon.price}
                                     onChange={(e) => updateAddon(idx, 'price', parseInt(e.target.value) || 0)}
                                     placeholder="Price"
-                                    className="w-1/4 border border-gray-300 rounded px-2 py-1 text-sm"
+                                    className="w-1/4 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm"
                                 />
                                 <button
                                     onClick={() => removeAddon(idx)}
-                                    className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                                    className="bg-red-900/200 text-white px-2 py-1 rounded text-xs"
                                 >
                                     Remove
                                 </button>
@@ -602,7 +606,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold disabled:opacity-50"
+                            className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-6 py-2 rounded font-semibold disabled:opacity-50"
                         >
                             {saving ? 'Saving...' : (pkg ? 'Update Package' : 'Create Package')}
                         </button>

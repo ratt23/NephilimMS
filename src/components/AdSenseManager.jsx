@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, AlertCircle, CheckCircle } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 export default function AdSenseManager() {
     const [settings, setSettings] = useState({
@@ -18,7 +19,7 @@ export default function AdSenseManager() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch('/.netlify/functions/api/settings');
+            const res = await fetch(`${getApiBaseUrl()}/settings`, { credentials: 'include' });
             const data = await res.json();
             if (res.ok) {
                 // Map API response ({ key: { value, enabled } }) to local state
@@ -46,10 +47,11 @@ export default function AdSenseManager() {
                 show_ads_on_newsletter: { value: 'false', enabled: settings.show_ads_on_newsletter }
             };
 
-            const res = await fetch('/.netlify/functions/api/settings', {
+            const res = await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
 
             if (!res.ok) throw new Error("Failed to save settings");
@@ -71,9 +73,9 @@ export default function AdSenseManager() {
     return (
         <div className="space-y-6 animate-fade-in font-sans max-w-4xl mx-auto">
 
-            <div className="bg-white border border-gray-200 shadow-sm rounded-none">
-                <div className="bg-white p-4 border-b border-gray-200">
-                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+            <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+                <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20">
+                    <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
                         AdSense & Monetization
                     </h2>
                 </div>
@@ -82,7 +84,7 @@ export default function AdSenseManager() {
 
                     {/* Status Message */}
                     {msg && (
-                        <div className={`p-4 rounded border flex items-center gap-3 ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                        <div className={`p-4 rounded border flex items-center gap-3 ${msg.type === 'success' ? 'bg-green-900/20 border-green-200 text-green-700' : 'bg-red-900/20 border-red-200 text-red-700'}`}>
                             {msg.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
                             <span className="font-bold text-sm uppercase">{msg.text}</span>
                         </div>
@@ -90,47 +92,47 @@ export default function AdSenseManager() {
 
                     {/* Global Script Section */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-800 uppercase mb-2">Global AdSense Script</h3>
-                        <p className="text-xs text-gray-500 mb-3">Paste your <code>&lt;script async ...&gt;</code> code here from your AdSense dashboard. This will be injected into the head of your pages.</p>
+                        <h3 className="text-sm font-bold text-[#E6E6E3] uppercase mb-2">Global AdSense Script</h3>
+                        <p className="text-xs text-[#a0a4ab] mb-3">Paste your <code>&lt;script async ...&gt;</code> code here from your AdSense dashboard. This will be injected into the head of your pages.</p>
                         <textarea
                             rows="6"
                             value={settings.adsense_script}
                             onChange={(e) => setSettings({ ...settings, adsense_script: e.target.value })}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-sm font-mono text-xs bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                            className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm font-mono text-xs bg-[#0B0B0C] focus:ring-blue-500 focus:border-blue-500"
                             placeholder='<script async src="https://pagead2.googlesyndication.com/..."></script>'
                         />
                     </div>
 
-                    <div className="border-t border-gray-100 pt-6"></div>
+                    <div className="border-t border-[#8C7A3E]/10 pt-6"></div>
 
                     {/* Placement Rules */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-800 uppercase mb-4">Ad Placements</h3>
+                        <h3 className="text-sm font-bold text-[#E6E6E3] uppercase mb-4">Ad Placements</h3>
                         <div className="space-y-4">
 
-                            <label className="flex items-center gap-3 cursor-pointer p-4 border border-gray-200 rounded-sm hover:bg-gray-50 transition-colors">
+                            <label className="flex items-center gap-3 cursor-pointer p-4 border border-[#8C7A3E]/20 rounded-sm hover:bg-[#0B0B0C] transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={settings.show_ads_on_article}
                                     onChange={(e) => setSettings({ ...settings, show_ads_on_article: e.target.checked })}
-                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-[#8C7A3E]/30"
                                 />
                                 <div>
-                                    <div className="font-bold text-sm text-gray-800 uppercase">Show on Articles</div>
-                                    <div className="text-xs text-gray-500">Enable ads on posts categorized as "Article"</div>
+                                    <div className="font-bold text-sm text-[#E6E6E3] uppercase">Show on Articles</div>
+                                    <div className="text-xs text-[#a0a4ab]">Enable ads on posts categorized as "Article"</div>
                                 </div>
                             </label>
 
-                            <label className="flex items-center gap-3 cursor-pointer p-4 border border-gray-200 rounded-sm hover:bg-gray-50 transition-colors">
+                            <label className="flex items-center gap-3 cursor-pointer p-4 border border-[#8C7A3E]/20 rounded-sm hover:bg-[#0B0B0C] transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={settings.show_ads_on_newsletter}
                                     onChange={(e) => setSettings({ ...settings, show_ads_on_newsletter: e.target.checked })}
-                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-[#8C7A3E]/30"
                                 />
                                 <div>
-                                    <div className="font-bold text-sm text-gray-800 uppercase">Show on Newsletters</div>
-                                    <div className="text-xs text-gray-500">Enable ads on posts categorized as "Newsletter"</div>
+                                    <div className="font-bold text-sm text-[#E6E6E3] uppercase">Show on Newsletters</div>
+                                    <div className="text-xs text-[#a0a4ab]">Enable ads on posts categorized as "Newsletter"</div>
                                 </div>
                             </label>
 
@@ -142,7 +144,7 @@ export default function AdSenseManager() {
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="py-2 px-6 bg-blue-600 text-white font-bold uppercase text-sm rounded-sm shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="py-2 px-6 bg-[#8C7A3E] text-white font-bold uppercase text-sm rounded-sm shadow-2xl-md hover:bg-[#a89150] transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             <Save size={18} />
                             {isSaving ? 'Saving...' : 'Save Settings'}

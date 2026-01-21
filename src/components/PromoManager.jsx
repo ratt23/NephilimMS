@@ -2,8 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 // Helper API function
-async function fetchApi(url, options = {}) {
-  const response = await fetch(url, options);
+// Helper API
+import { getApiBaseUrl } from '../utils/apiConfig';
+
+async function fetchApi(endpoint, options = {}) {
+  const baseUrl = getApiBaseUrl();
+  let cleanPath = endpoint;
+
+  if (cleanPath.startsWith('/.netlify/functions/api')) {
+    cleanPath = cleanPath.replace('/.netlify/functions/api', '');
+  } else if (cleanPath.startsWith('/.netlify/functions')) {
+    cleanPath = cleanPath.replace('/.netlify/functions', '');
+  }
+
+  const url = `${baseUrl}${cleanPath}`;
+  const response = await fetch(url, { ...options, credentials: 'include' });
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || `Error ${response.status}`);
@@ -31,18 +44,18 @@ function EditModal({ item, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-[#1a3e6e] px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-[#1a1d21] rounded-lg shadow-2xl-xl w-full max-w-md overflow-hidden">
+        <div className="bg-[#1a3e6e] px-4 py-3 border-b border-[#8C7A3E]/20 flex justify-between items-center">
           <h3 className="text-lg font-bold text-white uppercase tracking-wide">Edit Description</h3>
           <button onClick={onClose} className="text-white hover:text-gray-300 text-xl">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
           <div className="mb-4">
-            <img src={item.image_url} alt="Preview" className="w-full h-48 object-cover rounded border border-gray-200" />
+            <img src={item.image_url} alt="Preview" className="w-full h-48 object-cover rounded border border-[#8C7A3E]/20" />
           </div>
           <div className="mb-6">
-            <label htmlFor="alt_text" className="block text-sm font-bold text-gray-700 uppercase mb-1">
+            <label htmlFor="alt_text" className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">
               Alt Text (Description)
             </label>
             <input
@@ -50,22 +63,22 @@ function EditModal({ item, onClose, onSave }) {
               id="alt_text"
               value={altText}
               onChange={(e) => setAltText(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
               placeholder="e.g., Medical Check Up Promo"
             />
           </div>
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-[#8C7A3E]/10">
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-gray-100 text-gray-700 font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-gray-200 border border-gray-300"
+              className="py-2 px-4 bg-[#0B0B0C] text-[#E6E6E3] font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-gray-200 border border-[#8C7A3E]/30"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="py-2 px-4 bg-blue-600 text-white font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-blue-700 disabled:opacity-50"
+              className="py-2 px-4 bg-[#8C7A3E] text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-[#a89150] disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save"}
             </button>
@@ -222,16 +235,16 @@ export default function PromoManager() {
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-      <div className="bg-white border border-gray-200 shadow-sm rounded-none">
+      <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
 
         {/* TOLBAR */}
-        <div className="bg-white p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+        <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
             <span>Promo Manager (SSTV)</span>
             <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{promos.length}</span>
           </h2>
           <div className="flex items-center gap-3">
-            <label className="cursor-pointer flex items-center gap-1 py-1.5 px-3 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-green-700 transition-colors">
+            <label className="cursor-pointer flex items-center gap-1 py-1.5 px-3 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-green-700 transition-colors">
               {isUploading ? "Uploading..." : (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
@@ -249,7 +262,7 @@ export default function PromoManager() {
           </div>
         </div>
 
-        <div className="bg-blue-50 border-b border-blue-100 p-4 text-sm text-blue-800">
+        <div className="bg-blue-900/20 border-b border-blue-100 p-4 text-sm text-blue-800">
           <p>Upload promo images to be displayed on the SSTV slideshow. Use the arrows to reorder them.</p>
         </div>
 
@@ -266,22 +279,22 @@ export default function PromoManager() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-[#f0f2f5]">
                 <tr>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200 w-16 text-center">Order</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Preview</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Description (Alt Text)</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Date Uploaded</th>
-                  <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20 w-16 text-center">Order</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Preview</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Description (Alt Text)</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Date Uploaded</th>
+                  <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
                 {promos.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-gray-500 italic">No promos uploaded yet.</td>
+                    <td colSpan="5" className="p-8 text-center text-[#a0a4ab] italic">No promos uploaded yet.</td>
                   </tr>
                 )}
                 {promos.map((promo, index) => (
-                  <tr key={promo.id} className="hover:bg-blue-50 transition-colors group">
-                    <td className="p-3 text-sm text-gray-500 border-r border-gray-100">
+                  <tr key={promo.id} className="hover:bg-blue-900/20 transition-colors group">
+                    <td className="p-3 text-sm text-[#a0a4ab] border-r border-[#8C7A3E]/10">
                       <div className="flex flex-col items-center gap-1">
                         <button
                           onClick={() => handleReorder(index, 'up')}
@@ -301,11 +314,11 @@ export default function PromoManager() {
                         </button>
                       </div>
                     </td>
-                    <td className="p-3 text-sm text-gray-500 border-r border-gray-100">
-                      <img src={promo.image_url} alt={promo.alt_text} className="h-16 w-auto object-cover rounded border border-gray-200 shadow-sm" />
+                    <td className="p-3 text-sm text-[#a0a4ab] border-r border-[#8C7A3E]/10">
+                      <img src={promo.image_url} alt={promo.alt_text} className="h-16 w-auto object-cover rounded border border-[#8C7A3E]/20 shadow-2xl-sm" />
                     </td>
-                    <td className="p-3 text-sm text-gray-700 font-medium border-r border-gray-100">{promo.alt_text || "-"}</td>
-                    <td className="p-3 text-xs text-gray-500 border-r border-gray-100">{formatDate(promo.uploaded_at)}</td>
+                    <td className="p-3 text-sm text-[#E6E6E3] font-medium border-r border-[#8C7A3E]/10">{promo.alt_text || "-"}</td>
+                    <td className="p-3 text-xs text-[#a0a4ab] border-r border-[#8C7A3E]/10">{formatDate(promo.uploaded_at)}</td>
                     <td className="p-3 text-sm text-center">
                       <div className="flex justify-center items-center gap-2">
                         <button

@@ -1,6 +1,8 @@
 // src/components/LeaveManager.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Modal from 'react-modal';
 import LoadingSpinner from './LoadingSpinner';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 // --- Icons ---
 const IconSearch = () => (
@@ -20,8 +22,18 @@ const IconChevronDown = () => (
 );
 
 // Helper API
-async function fetchApi(url, options = {}) {
-  const response = await fetch(url, options);
+async function fetchApi(endpoint, options = {}) {
+  const baseUrl = getApiBaseUrl();
+  let cleanPath = endpoint;
+
+  if (cleanPath.startsWith('/.netlify/functions/api')) {
+    cleanPath = cleanPath.replace('/.netlify/functions/api', '');
+  } else if (cleanPath.startsWith('/.netlify/functions')) {
+    cleanPath = cleanPath.replace('/.netlify/functions', '');
+  }
+
+  const url = `${baseUrl}${cleanPath}`;
+  const response = await fetch(url, { ...options, credentials: 'include' });
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || `Error ${response.status}`);
@@ -48,6 +60,10 @@ export default function LeaveManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Modal State
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, id: null });
+
+  // Fetch Data
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -68,11 +84,13 @@ export default function LeaveManager() {
     fetchData();
   }, [fetchData]);
 
+  // Handle Change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (new Date(formData.end_date) < new Date(formData.start_date)) {
@@ -80,8 +98,9 @@ export default function LeaveManager() {
       return;
     }
     setError(null);
+    console.log('[LeaveManager] Submitting leave:', formData);
     try {
-      await fetchApi('/.netlify/functions/api/leaves', {
+      const result = await fetchApi('/.netlify/functions/api/leaves', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,34 +109,49 @@ export default function LeaveManager() {
         },
         body: JSON.stringify(formData),
       });
+      console.log('[LeaveManager] Create success:', result);
       setFormData({ doctor_id: '', start_date: '', end_date: '' });
       fetchData();
     } catch (err) {
+      console.error('[LeaveManager] Create error:', err);
       setError(err.message);
+      alert(`Failed to create leave: ${err.message}`);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this leave record?')) {
-      try {
+  // --- Confirm Handlers ---
+  const confirmDelete = (id) => {
+    setDeleteModal({ isOpen: true, type: 'single', id });
+  };
+
+  const confirmClearAll = () => {
+    setDeleteModal({ isOpen: true, type: 'all', id: null });
+  };
+
+  const executeAction = async () => {
+    const { type, id } = deleteModal;
+    setDeleteModal({ ...deleteModal, isOpen: false }); // Close immediately or wait?
+
+    try {
+      if (type === 'single') {
+        console.log(`[LeaveManager] Deleting leave ID: ${id}`);
         await fetchApi(`/.netlify/functions/api/leaves?id=${id}`, { method: 'DELETE' });
-        fetchData();
-      } catch (err) {
-        setError(err.message);
+        console.log('[LeaveManager] Delete success');
+      } else if (type === 'all') {
+        console.log('[LeaveManager] Clearing history...');
+        await fetchApi(`/.netlify/functions/api/leaves?cleanup=true`, { method: 'DELETE' });
+        console.log('[LeaveManager] Cleanup success');
       }
+      fetchData();
+    } catch (err) {
+      console.error('[LeaveManager] Action Error:', err);
+      setError(err.message);
+      alert(`Action failed: ${err.message}`);
     }
   };
 
-  const handleClearHistory = async () => {
-    if (window.confirm('Are you sure you want to delete ALL title history? This cannot be undone.')) {
-      try {
-        await fetchApi(`/.netlify/functions/api/leaves?cleanup=true`, { method: 'DELETE' });
-        fetchData();
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
+  const handleDelete = (id) => confirmDelete(id);
+  const handleClearHistory = () => confirmClearAll();
 
   // --- Logic for Filtering & Sorting ---
   const today = new Date();
@@ -156,14 +190,61 @@ export default function LeaveManager() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* --- Toolbar: Add Leave & Search --- */}
-      <div className="bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <h2 className="text-xl font-light text-gray-800 flex items-center gap-2">
+      {/* ... (render content) ... */}
+
+      {/* --- CONFIRMATION MODAL --- */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onRequestClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        style={{
+          content: {
+            top: '50%', left: '50%', right: 'auto', bottom: 'auto',
+            marginRight: '-50%', transform: 'translate(-50%, -50%)',
+            width: '90%', maxWidth: '400px', padding: '0', borderRadius: '8px',
+            border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+          },
+          overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 60 }
+        }}
+        contentLabel="Confirm Action"
+      >
+        <div className="bg-red-600 text-white px-6 py-4 rounded-t-lg">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            Confirm Action
+          </h2>
+        </div>
+        <div className="p-6 bg-[#1a1d21]">
+          <p className="text-[#E6E6E3] mb-6 font-medium">
+            {deleteModal.type === 'single'
+              ? 'Are you sure you want to delete this leave record?'
+              : 'Are you sure you want to delete ALL title history? This cannot be undone.'}
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+              className="px-4 py-2 bg-[#0B0B0C] text-[#E6E6E3] rounded-lg hover:bg-gray-200 font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={executeAction}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-2xl-md transition-colors"
+              autoFocus
+            >
+              Yes, Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Toolbar ... */}
+
+      <div className="bg-[#1a1d21] p-4 rounded shadow-2xl-sm border border-[#8C7A3E]/20 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+        <h2 className="text-xl font-light text-[#E6E6E3] flex items-center gap-2">
           Leave Management
         </h2>
         <div className="w-full md:w-auto flex flex-col md:flex-row gap-2">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#a0a4ab]/60">
               <IconSearch />
             </div>
             <input
@@ -171,7 +252,7 @@ export default function LeaveManager() {
               placeholder="Search doctor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 w-full"
+              className="pl-9 pr-3 py-1.5 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500 w-full"
             />
           </div>
         </div>
@@ -180,14 +261,14 @@ export default function LeaveManager() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* --- LEFT: Add Form --- */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-semibold text-gray-700 text-sm">Add New Leave</h3>
+          <div className="bg-[#1a1d21] rounded shadow-2xl-sm border border-[#8C7A3E]/20 overflow-hidden">
+            <div className="bg-[#0B0B0C] px-4 py-3 border-b border-[#8C7A3E]/20 flex justify-between items-center">
+              <h3 className="font-semibold text-[#E6E6E3] text-sm">Add New Leave</h3>
             </div>
             <div className="p-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Doctor</label>
+                  <label className="block text-xs font-bold text-[#a0a4ab] uppercase mb-1">Doctor</label>
                   <SearchableSelect
                     options={allDoctors}
                     value={formData.doctor_id}
@@ -197,29 +278,29 @@ export default function LeaveManager() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Start</label>
+                    <label className="block text-xs font-bold text-[#a0a4ab] uppercase mb-1">Start</label>
                     <input
                       type="date"
                       name="start_date"
                       value={formData.start_date}
                       onChange={handleChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                      className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">End</label>
+                    <label className="block text-xs font-bold text-[#a0a4ab] uppercase mb-1">End</label>
                     <input
                       type="date"
                       name="end_date"
                       value={formData.end_date}
                       onChange={handleChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
+                      className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500"
                       required
                     />
                   </div>
                 </div>
-                {error && <div className="text-red-600 text-xs bg-red-50 p-2 rounded border border-red-100">{error}</div>}
+                {error && <div className="text-red-600 text-xs bg-red-900/20 p-2 rounded border border-red-100">{error}</div>}
                 <button
                   type="submit"
                   className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded text-sm flex items-center justify-center gap-2 transition-colors"
@@ -234,25 +315,25 @@ export default function LeaveManager() {
         {/* --- RIGHT: List --- */}
         <div className="lg:col-span-2 space-y-6">
           {/* Active Leaves */}
-          <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-blue-50 px-4 py-3 border-b border-blue-100 flex justify-between items-center">
+          <div className="bg-[#1a1d21] rounded shadow-2xl-sm border border-[#8C7A3E]/20 overflow-hidden">
+            <div className="bg-blue-900/20 px-4 py-3 border-b border-blue-100 flex justify-between items-center">
               <h3 className="font-semibold text-blue-800 text-sm">Active & Upcoming Leaves</h3>
               <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">{activeFiltered.length}</span>
             </div>
             {/* Scrollable Table Container */}
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="min-w-full divide-y divide-gray-100 relative">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium sticky top-0 z-10 shadow-sm">
+                <thead className="bg-[#0B0B0C] text-[#a0a4ab] text-xs uppercase font-medium sticky top-0 z-10 shadow-2xl-sm">
                   <tr>
-                    <th className="px-4 py-3 text-left bg-gray-50">Doctor Name</th>
-                    <th className="px-4 py-3 text-left bg-gray-50">Period</th>
-                    <th className="px-4 py-3 text-right bg-gray-50">Action</th>
+                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Doctor Name</th>
+                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Period</th>
+                    <th className="px-4 py-3 text-right bg-[#0B0B0C]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {activeFiltered.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="px-4 py-8 text-center text-gray-400 text-sm italic">
+                      <td colSpan="3" className="px-4 py-8 text-center text-[#a0a4ab]/60 text-sm italic">
                         No active leaves found.
                       </td>
                     </tr>
@@ -260,19 +341,19 @@ export default function LeaveManager() {
                     activeFiltered.map((leave, index) => {
                       const isSameDoc = index > 0 && activeFiltered[index - 1].doctor_name === leave.doctor_name;
                       return (
-                        <tr key={leave.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 text-sm text-gray-800 font-medium">
+                        <tr key={leave.id} className="hover:bg-[#0B0B0C] transition-colors">
+                          <td className="px-4 py-3 text-sm text-[#E6E6E3] font-medium">
                             {!isSameDoc && leave.doctor_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs border border-blue-100">
+                          <td className="px-4 py-3 text-sm text-[#a0a4ab]">
+                            <span className="bg-blue-900/20 text-blue-700 px-2 py-1 rounded text-xs border border-blue-100">
                               {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => handleDelete(leave.id)}
-                              className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                              className="text-[#a0a4ab]/60 hover:text-red-600 p-1 rounded hover:bg-red-900/20 transition-colors"
                               title="Delete"
                             >
                               <IconTrash />
@@ -288,9 +369,9 @@ export default function LeaveManager() {
           </div>
 
           {/* History Leaves */}
-          <div className="bg-white rounded shadow-sm border border-gray-200 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-semibold text-gray-600 text-sm">Leave History (Expired)</h3>
+          <div className="bg-[#1a1d21] rounded shadow-2xl-sm border border-[#8C7A3E]/20 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+            <div className="bg-[#0B0B0C] px-4 py-3 border-b border-[#8C7A3E]/20 flex justify-between items-center">
+              <h3 className="font-semibold text-[#a0a4ab] text-sm">Leave History (Expired)</h3>
               {historyFiltered.length > 0 && (
                 <button
                   onClick={handleClearHistory}
@@ -303,23 +384,23 @@ export default function LeaveManager() {
             {/* Scrollable Table Container */}
             <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
               <table className="min-w-full divide-y divide-gray-100 relative">
-                <thead className="bg-gray-50 text-gray-400 text-xs uppercase font-medium sticky top-0 z-10 shadow-sm">
+                <thead className="bg-[#0B0B0C] text-[#a0a4ab]/60 text-xs uppercase font-medium sticky top-0 z-10 shadow-2xl-sm">
                   <tr>
-                    <th className="px-4 py-3 text-left bg-gray-50">Doctor Name</th>
-                    <th className="px-4 py-3 text-left bg-gray-50">Period</th>
-                    <th className="px-4 py-3 text-right bg-gray-50">Action</th>
+                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Doctor Name</th>
+                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Period</th>
+                    <th className="px-4 py-3 text-right bg-[#0B0B0C]">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-gray-50/30">
+                <tbody className="divide-y divide-gray-100 bg-[#0B0B0C]/30">
                   {historyFiltered.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="px-4 py-6 text-center text-gray-400 text-xs italic">
+                      <td colSpan="3" className="px-4 py-6 text-center text-[#a0a4ab]/60 text-xs italic">
                         No history data.
                       </td>
                     </tr>
                   ) : (
                     historyFiltered.map((leave) => (
-                      <tr key={leave.id} className="text-gray-500">
+                      <tr key={leave.id} className="text-[#a0a4ab]">
                         <td className="px-4 py-2 text-sm">{leave.doctor_name}</td>
                         <td className="px-4 py-2 text-xs">
                           {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
@@ -396,27 +477,27 @@ const SearchableSelect = ({ options, value, onChange, placeholder = "Select..." 
       <div className="relative">
         <input
           type="text"
-          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           placeholder={placeholder}
           value={inputValue}
           onChange={handleInputChange}
           onClick={() => setIsOpen(true)}
         />
-        <div className="absolute inset-y-0 right-0 top-0 flex items-center pr-3 pointer-events-none text-gray-400">
+        <div className="absolute inset-y-0 right-0 top-0 flex items-center pr-3 pointer-events-none text-[#a0a4ab]/60">
           <IconChevronDown />
         </div>
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-[#1a1d21] border border-[#8C7A3E]/30 rounded shadow-2xl-lg max-h-60 overflow-y-auto">
           {filteredOptions.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-gray-500">No doctors found.</div>
+            <div className="px-3 py-2 text-xs text-[#a0a4ab]">No doctors found.</div>
           ) : (
             filteredOptions.map(opt => (
               <div
                 key={opt.id}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 ${opt.id === value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}`}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-900/20 ${opt.id === value ? 'bg-blue-900/20 text-blue-700 font-medium' : 'text-[#E6E6E3]'}`}
                 onClick={() => handleSelect(opt)}
               >
                 {opt.name}

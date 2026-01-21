@@ -2,8 +2,21 @@ import React, { useState, useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 // Helper function for API calls
-async function fetchApi(url, options = {}) {
-    const response = await fetch(url, options);
+// Helper API
+import { getApiBaseUrl } from '../utils/apiConfig';
+
+async function fetchApi(endpoint, options = {}) {
+    const baseUrl = getApiBaseUrl();
+    let cleanPath = endpoint;
+
+    if (cleanPath.startsWith('/.netlify/functions/api')) {
+        cleanPath = cleanPath.replace('/.netlify/functions/api', '');
+    } else if (cleanPath.startsWith('/.netlify/functions')) {
+        cleanPath = cleanPath.replace('/.netlify/functions', '');
+    }
+
+    const url = `${baseUrl}${cleanPath}`;
+    const response = await fetch(url, { ...options, credentials: 'include' });
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Error ${response.status}`);
@@ -166,8 +179,8 @@ export default function PushNotificationManager() {
     }
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto border border-gray-200">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Send Leave Notification</h2>
+        <div className="bg-[#1a1d21] p-6 rounded-lg shadow-2xl-md max-w-6xl mx-auto border border-[#8C7A3E]/20">
+            <h2 className="text-2xl font-bold mb-6 text-[#E6E6E3] border-b pb-2">Send Leave Notification</h2>
 
             {status.message && (
                 <div className={`p-4 mb-4 rounded ${status.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -178,25 +191,25 @@ export default function PushNotificationManager() {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* LEFT COLUMN: Leave Selection List */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                    <label className="block text-sm font-bold text-[#E6E6E3] mb-2 uppercase tracking-wide">
                         Select Doctors on Leave (Max 5):
                     </label>
-                    <div className="h-[400px] overflow-y-auto border border-gray-300 rounded-md p-2 space-y-2 bg-gray-50 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+                    <div className="h-[400px] overflow-y-auto border border-[#8C7A3E]/30 rounded-md p-2 space-y-2 bg-[#0B0B0C] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                         {leaves.length === 0 ? (
-                            <p className="text-gray-500 text-sm p-4 text-center italic">No active or future leaves found.</p>
+                            <p className="text-[#a0a4ab] text-sm p-4 text-center italic">No active or future leaves found.</p>
                         ) : (
                             leaves.map(group => (
-                                <div key={group.id} className="flex items-start hover:bg-white p-2 rounded border border-transparent hover:border-gray-200 transition-all cursor-pointer" onClick={() => handleCheckboxChange(group)}>
+                                <div key={group.id} className="flex items-start hover:bg-[#1a1d21] p-2 rounded border border-transparent hover:border-[#8C7A3E]/20 transition-all cursor-pointer" onClick={() => handleCheckboxChange(group)}>
                                     <input
                                         id={`leave-${group.id}`}
                                         type="checkbox"
                                         checked={selectedLeaves.some(l => l.id === group.id)}
                                         onChange={() => { }} // Handle click in parent div
-                                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5 pointer-events-none"
+                                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-[#8C7A3E]/30 rounded mt-0.5 pointer-events-none"
                                     />
                                     <div className="ml-3 select-none">
-                                        <span className="block font-semibold text-gray-800 text-sm">{group.doctor_name}</span>
-                                        <span className="block text-gray-500 text-xs mt-0.5">
+                                        <span className="block font-semibold text-[#E6E6E3] text-sm">{group.doctor_name}</span>
+                                        <span className="block text-[#a0a4ab] text-xs mt-0.5">
                                             {group.ranges.map((range, idx) => {
                                                 const startStr = formatDate(range.start);
                                                 const endStr = formatDate(range.end);
@@ -213,7 +226,7 @@ export default function PushNotificationManager() {
                             ))
                         )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2 text-right font-medium">
+                    <p className="text-xs text-[#a0a4ab] mt-2 text-right font-medium">
                         Selected: {selectedLeaves.length}/5
                     </p>
                 </div>
@@ -222,37 +235,37 @@ export default function PushNotificationManager() {
                 <div className="space-y-6">
                     {/* Heading */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">Notification Title</label>
+                        <label className="block text-sm font-bold text-[#E6E6E3] mb-1 uppercase tracking-wide">Notification Title</label>
                         <input
                             type="text"
                             name="heading"
                             value={formData.heading}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                            className="w-full px-4 py-2 border border-[#8C7A3E]/30 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-shadow-2xl"
                         />
                     </div>
 
                     {/* Content */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">Message Content (Auto / Manual Edit)</label>
+                        <label className="block text-sm font-bold text-[#E6E6E3] mb-1 uppercase tracking-wide">Message Content (Auto / Manual Edit)</label>
                         <textarea
                             name="content"
                             value={formData.content}
                             onChange={handleChange}
                             required
                             rows="10"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-sm transition-shadow"
+                            className="w-full px-4 py-2 border border-[#8C7A3E]/30 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-sm transition-shadow-2xl"
                         />
-                        <p className="text-xs text-gray-400 mt-1">* You can manually edit the message above before sending.</p>
+                        <p className="text-xs text-[#a0a4ab]/60 mt-1">* You can manually edit the message above before sending.</p>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-100">
+                    <div className="pt-4 border-t border-[#8C7A3E]/10">
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-3 px-4 rounded-md shadow text-sm font-bold text-white uppercase tracking-wider transition-all
-                  ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'}
+                            className={`w-full py-3 px-4 rounded-md shadow-2xl text-sm font-bold text-white uppercase tracking-wider transition-all
+                  ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8C7A3E] hover:bg-[#a89150] hover:shadow-2xl-lg'}
                 `}
                         >
                             {loading ? 'Sending...' : 'Send Notification'}

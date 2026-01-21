@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import CloudinaryUploadWidget from '../utils/cloudinaryUpload';
+import { catalogAPI } from '../api';
 
 export default function CatalogForm() {
     const { id } = useParams();
@@ -28,9 +26,7 @@ export default function CatalogForm() {
     const fetchItem = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`/.netlify/functions/catalog-list`);
-            const data = await res.json();
-            const item = data.find(i => i.id === id);
+            const item = await catalogAPI.getById(id);
             if (item) {
                 setFormData(item);
             }
@@ -83,19 +79,15 @@ export default function CatalogForm() {
                 id: id || undefined
             };
 
-            const res = await fetch('/.netlify/functions/catalog-upsert', {
-                method: 'POST',
-                body: JSON.stringify(body)
-            });
-
-            if (res.ok) {
-                navigate(-1);
+            if (id) {
+                await catalogAPI.update(id, body);
             } else {
-                alert('Failed to save item');
+                await catalogAPI.create(body);
             }
+            navigate(-1);
         } catch (err) {
             console.error(err);
-            alert('Error saving item');
+            alert('Error saving item: ' + err.message);
         } finally {
             setLoading(false);
         }

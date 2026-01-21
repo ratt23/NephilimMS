@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 const ConfigContext = createContext();
 
@@ -11,12 +12,12 @@ export const ConfigProvider = ({ children }) => {
         loading: true
     });
 
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
+    const apiBase = getApiBaseUrl();
 
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const response = await fetch(`${API_BASE}/api/settings`); // Assuming generic settings endpoint
+                const response = await fetch(`${apiBase}/settings`); // Hono endpoint /settings
                 if (response.ok) {
                     const settings = await response.json();
                     // Map generic settings to component config

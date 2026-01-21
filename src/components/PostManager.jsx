@@ -26,7 +26,7 @@ const MenuBar = ({ editor, addImage }) => {
     }, [editor]);
 
     return (
-        <div className="border-b border-gray-200 p-2 flex flex-wrap gap-1 bg-gray-50 sticky top-0 z-10">
+        <div className="border-b border-[#8C7A3E]/20 p-2 flex flex-wrap gap-1 bg-[#0B0B0C] sticky top-0 z-10">
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -164,8 +164,21 @@ const MenuBar = ({ editor, addImage }) => {
 
 
 // --- Helper Functions ---
-async function fetchApi(url, options = {}) {
-    const response = await fetch(url, options);
+// Helper API
+import { getApiBaseUrl } from '../utils/apiConfig';
+
+async function fetchApi(endpoint, options = {}) {
+    const baseUrl = getApiBaseUrl();
+    let cleanPath = endpoint;
+
+    if (cleanPath.startsWith('/.netlify/functions/api')) {
+        cleanPath = cleanPath.replace('/.netlify/functions/api', '');
+    } else if (cleanPath.startsWith('/.netlify/functions')) {
+        cleanPath = cleanPath.replace('/.netlify/functions', '');
+    }
+
+    const url = `${baseUrl}${cleanPath}`;
+    const response = await fetch(url, { ...options, credentials: 'include' });
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Error ${response.status}`);
@@ -381,15 +394,15 @@ export default function PostManager() {
     if (view === 'list') {
         return (
             <div className="space-y-6 animate-fade-in font-sans">
-                <div className="bg-white border border-gray-200 shadow-sm rounded-none">
-                    <div className="bg-white p-4 border-b border-gray-200 flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide">
+                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+                    <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex justify-between items-center">
+                        <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide">
                             Post Manager
                             <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{posts.length}</span>
                         </h2>
                         <button
                             onClick={handleCreate}
-                            className="py-1.5 px-4 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-green-700 transition-colors flex items-center gap-2"
+                            className="py-1.5 px-4 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-green-700 transition-colors flex items-center gap-2"
                         >
                             <span>+ New Post</span>
                         </button>
@@ -402,32 +415,32 @@ export default function PostManager() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-[#f0f2f5]">
                                     <tr>
-                                        <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Title</th>
-                                        <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Status</th>
-                                        <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Date</th>
-                                        <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Title</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Status</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Date</th>
+                                        <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
                                     {posts.length === 0 && (
-                                        <tr><td colSpan="4" className="p-8 text-center text-gray-500 italic">No posts found.</td></tr>
+                                        <tr><td colSpan="4" className="p-8 text-center text-[#a0a4ab] italic">No posts found.</td></tr>
                                     )}
                                     {posts.map(post => (
-                                        <tr key={post.id} className="hover:bg-blue-50 transition-colors">
-                                            <td className="p-3 text-sm font-medium text-gray-800 border-r border-gray-100">{post.title}</td>
-                                            <td className="p-3 text-sm border-r border-gray-100">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                        <tr key={post.id} className="hover:bg-blue-900/20 transition-colors">
+                                            <td className="p-3 text-sm font-medium text-[#E6E6E3] border-r border-[#8C7A3E]/10">{post.title}</td>
+                                            <td className="p-3 text-sm border-r border-[#8C7A3E]/10">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-[#0B0B0C] text-[#E6E6E3]'}`}>
                                                     {post.status}
                                                 </span>
                                             </td>
-                                            <td className="p-3 text-xs text-gray-500 border-r border-gray-100">
+                                            <td className="p-3 text-xs text-[#a0a4ab] border-r border-[#8C7A3E]/10">
                                                 {new Date(post.created_at).toLocaleDateString()}
-                                                <div className="text-[10px] text-gray-400 mt-1">{post.category}</div>
+                                                <div className="text-[10px] text-[#a0a4ab]/60 mt-1">{post.category}</div>
                                             </td>
                                             <td className="p-3 text-sm text-center">
                                                 <div className="flex justify-center items-center gap-2">
-                                                    <button onClick={() => handleEdit(post)} className="text-blue-600 hover:text-blue-800 font-medium text-xs uppercase px-2 py-1 bg-blue-50 rounded">Edit</button>
-                                                    <button onClick={() => handleDelete(post.id)} className="text-red-600 hover:text-red-800 font-medium text-xs uppercase px-2 py-1 bg-red-50 rounded">Delete</button>
+                                                    <button onClick={() => handleEdit(post)} className="text-blue-600 hover:text-blue-800 font-medium text-xs uppercase px-2 py-1 bg-blue-900/20 rounded">Edit</button>
+                                                    <button onClick={() => handleDelete(post.id)} className="text-red-600 hover:text-red-800 font-medium text-xs uppercase px-2 py-1 bg-red-900/20 rounded">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -444,24 +457,24 @@ export default function PostManager() {
     // Edit / Create View
     return (
         <div className="space-y-6 animate-fade-in font-sans">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-none">
+            <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
 
                 {/* Header */}
-                <div className="bg-white p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-20">
-                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide">
+                <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex justify-between items-center sticky top-0 z-20">
+                    <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide">
                         {view === 'create' ? 'Create New Post' : 'Edit Post'}
                     </h2>
                     <div className="flex gap-3">
                         <button
                             onClick={() => setView('list')}
-                            className="py-1.5 px-4 bg-gray-100 text-gray-600 font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-gray-200 transition-colors"
+                            className="py-1.5 px-4 bg-[#0B0B0C] text-[#a0a4ab] font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-gray-200 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSubmit}
                             disabled={isSaving}
-                            className="py-1.5 px-4 bg-blue-600 text-white font-bold uppercase text-xs rounded-sm shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="py-1.5 px-4 bg-[#8C7A3E] text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-[#a89150] transition-colors disabled:opacity-50"
                         >
                             {isSaving ? 'Saving...' : 'Save Post'}
                         </button>
@@ -473,22 +486,22 @@ export default function PostManager() {
                     {/* Title & Slug */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Title</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Title</label>
                             <input
                                 type="text"
                                 value={formData.title}
                                 onChange={handleTitleChange}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Post Title..."
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Slug (URL)</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Slug (URL)</label>
                             <input
                                 type="text"
                                 value={formData.slug}
                                 onChange={(e) => setFormData(p => ({ ...p, slug: e.target.value }))}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-sm bg-gray-50 text-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm bg-[#0B0B0C] text-[#a0a4ab] focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                     </div>
@@ -496,12 +509,12 @@ export default function PostManager() {
                     {/* Featured Image & Status */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Featured Image</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Featured Image</label>
                             <div className="flex gap-4 items-center">
                                 {formData.image_url && (
-                                    <img src={formData.image_url} alt="Preview" className="h-20 w-auto rounded border border-gray-200" />
+                                    <img src={formData.image_url} alt="Preview" className="h-20 w-auto rounded border border-[#8C7A3E]/20" />
                                 )}
-                                <label className="cursor-pointer py-1.5 px-3 bg-white border border-gray-300 rounded-sm shadow-sm text-xs font-bold uppercase text-gray-600 hover:bg-gray-50">
+                                <label className="cursor-pointer py-1.5 px-3 bg-[#1a1d21] border border-[#8C7A3E]/30 rounded-sm shadow-2xl-sm text-xs font-bold uppercase text-[#a0a4ab] hover:bg-[#0B0B0C]">
                                     Upload Image
                                     <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
                                 </label>
@@ -509,11 +522,11 @@ export default function PostManager() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Status</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Status</label>
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-sm"
+                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm"
                             >
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
@@ -524,11 +537,11 @@ export default function PostManager() {
                     {/* Category & Tags */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Category</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Category</label>
                             <select
                                 value={formData.category}
                                 onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-sm"
+                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm"
                             >
                                 <option value="article">Article</option>
                                 <option value="newsletter">Newsletter</option>
@@ -537,12 +550,12 @@ export default function PostManager() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Tags / Labels</label>
+                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Tags / Labels</label>
                             <input
                                 type="text"
                                 value={formData.tags}
                                 onChange={(e) => setFormData(p => ({ ...p, tags: e.target.value }))}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="health, diet, updates (comma separated)"
                             />
                         </div>
@@ -550,22 +563,22 @@ export default function PostManager() {
 
                     {/* Excerpt */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 uppercase mb-1">Excerpt (Short Description)</label>
+                        <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Excerpt (Short Description)</label>
                         <textarea
                             rows="2"
                             value={formData.excerpt}
                             onChange={(e) => setFormData(p => ({ ...p, excerpt: e.target.value }))}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-sm focus:ring-blue-500 focus:border-blue-500"
+                            className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
 
                     {/* Tiptap Editor */}
-                    <div className="border border-gray-200 rounded-sm overflow-hidden bg-white min-h-[400px] flex flex-col">
-                        <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 text-xs font-bold uppercase text-gray-500">
+                    <div className="border border-[#8C7A3E]/20 rounded-sm overflow-hidden bg-[#1a1d21] min-h-[400px] flex flex-col">
+                        <div className="bg-[#0B0B0C] border-b border-[#8C7A3E]/20 px-4 py-2 text-xs font-bold uppercase text-[#a0a4ab]">
                             Post Content
                         </div>
                         <MenuBar editor={editor} addImage={addImageToEditor} />
-                        <div className="flex-1 bg-white">
+                        <div className="flex-1 bg-[#1a1d21]">
                             <EditorContent editor={editor} />
                         </div>
                     </div>

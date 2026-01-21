@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -21,8 +22,7 @@ export default function AdvancedAnalytics() {
                 // Or we can just fetch 'stats' and Client-side process if the volume is low? 
                 // Let's assume we fetch a mocked structure for UI Dev first, or basic stats.
 
-                const apiBase = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
-                const res = await fetch(`${apiBase}/analytics?action=stats&type=advanced&period=${period}`);
+                const res = await fetch(`${getApiBaseUrl()}/analytics?action=stats&type=advanced&period=${period}`, { credentials: 'include' });
                 const advancedData = await res.json();
 
                 // Fallback for empty data to avoid crash
@@ -43,17 +43,17 @@ export default function AdvancedAnalytics() {
         fetchAnalytics();
     }, [period]);
 
-    if (loading) return <div className="p-4 text-center text-gray-500">Loading Analytics...</div>;
-    if (!data) return <div className="p-4 text-center">No Data Available</div>;
+    if (loading) return <div className="p-4 text-center text-[#a0a4ab]">Loading Analytics...</div>;
+    if (!data) return <div className="p-4 text-center text-[#a0a4ab]">No Data Available</div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-700">Detailed Traffic Analysis</h3>
+                <h3 className="text-lg font-semibold text-[#E6E6E3]">Detailed Traffic Analysis</h3>
                 <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
-                    className="border rounded px-2 py-1 text-sm bg-white"
+                    className="border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm bg-[#0B0B0C] text-[#E6E6E3]"
                 >
                     <option value="7days">Last 7 Days</option>
                     <option value="30days">Last 30 Days</option>
@@ -62,8 +62,8 @@ export default function AdvancedAnalytics() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Traffic Sources */}
-                <div className="bg-white p-4 rounded shadow-sm border border-gray-100">
-                    <h4 className="text-sm font-bold text-gray-600 mb-4">Traffic Sources</h4>
+                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
+                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Traffic Sources</h4>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -88,8 +88,8 @@ export default function AdvancedAnalytics() {
                 </div>
 
                 {/* Device Breakdown */}
-                <div className="bg-white p-4 rounded shadow-sm border border-gray-100">
-                    <h4 className="text-sm font-bold text-gray-600 mb-4">Device Usage</h4>
+                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
+                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Device Usage</h4>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.devices} layout="vertical">
@@ -107,11 +107,11 @@ export default function AdvancedAnalytics() {
                 </div>
 
                 {/* Top Pages Table */}
-                <div className="bg-white p-4 rounded shadow-sm border border-gray-100 md:col-span-2">
-                    <h4 className="text-sm font-bold text-gray-600 mb-4">Top Visited Pages</h4>
+                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20 md:col-span-2">
+                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Top Visited Pages</h4>
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-600 font-medium border-b">
+                            <thead className="bg-[#0B0B0C] text-[#8C7A3E] font-medium border-b border-[#8C7A3E]/20">
                                 <tr>
                                     <th className="py-2 px-3">Page URL</th>
                                     <th className="py-2 px-3 text-right">Views</th>
@@ -120,10 +120,10 @@ export default function AdvancedAnalytics() {
                             </thead>
                             <tbody>
                                 {data.topPages.map((page, idx) => (
-                                    <tr key={idx} className="border-b last:border-0 hover:bg-gray-50">
-                                        <td className="py-2 px-3 font-mono text-xs">{page.name}</td>
-                                        <td className="py-2 px-3 text-right font-semibold">{page.value}</td>
-                                        <td className="py-2 px-3 text-right text-gray-500">
+                                    <tr key={idx} className="border-b border-[#8C7A3E]/10 last:border-0 hover:bg-[#0B0B0C]">
+                                        <td className="py-2 px-3 font-mono text-xs text-[#E6E6E3]">{page.name}</td>
+                                        <td className="py-2 px-3 text-right font-semibold text-[#E6E6E3]">{page.value}</td>
+                                        <td className="py-2 px-3 text-right text-[#a0a4ab]">
                                             {((page.value / 2500) * 100).toFixed(1)}%
                                         </td>
                                     </tr>
@@ -135,12 +135,12 @@ export default function AdvancedAnalytics() {
             </div>
 
             {/* Conversion Events Table */}
-            <div className="bg-white p-4 rounded shadow-sm border border-gray-100">
-                <h4 className="text-sm font-bold text-gray-600 mb-4">Conversion Events</h4>
+            <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
+                <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Conversion Events</h4>
                 {data.conversions && data.conversions.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm text-left">
-                            <thead className="bg-green-50 text-green-700 font-medium border-b border-green-100">
+                            <thead className="bg-green-900/20 text-green-400 font-medium border-b border-green-500/20">
                                 <tr>
                                     <th className="py-2 px-3">Event Name</th>
                                     <th className="py-2 px-3 text-right">Count</th>
@@ -148,16 +148,16 @@ export default function AdvancedAnalytics() {
                             </thead>
                             <tbody>
                                 {data.conversions.map((event, idx) => (
-                                    <tr key={idx} className="border-b last:border-0 hover:bg-gray-50">
-                                        <td className="py-2 px-3 font-mono text-xs text-gray-700">{event.name}</td>
-                                        <td className="py-2 px-3 text-right font-bold text-green-600">{event.value}</td>
+                                    <tr key={idx} className="border-b border-[#8C7A3E]/10 last:border-0 hover:bg-[#0B0B0C]">
+                                        <td className="py-2 px-3 font-mono text-xs text-[#E6E6E3]">{event.name}</td>
+                                        <td className="py-2 px-3 text-right font-bold text-green-400">{event.value}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-gray-400 text-xs italic">
+                    <div className="text-center py-8 text-[#a0a4ab] text-xs italic">
                         No conversion events recorded yet.
                     </div>
                 )}

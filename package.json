@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node --watch server/index.js",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev\" \"cd eNewsletter && npm run dev\" \"cd eCatalog && npm run dev\" \"cd jadwaldokter && npm run dev\" \"cd slideshow && npm run dev\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -12,13 +14,16 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.966.0",
     "@aws-sdk/s3-request-presigner": "^3.966.0",
+    "@hono/node-server": "^1.19.9",
     "@tabler/icons-react": "^3.36.1",
     "@tiptap/extension-image": "^3.14.0",
     "@tiptap/extension-link": "^3.14.0",
     "@tiptap/extension-text-align": "^3.14.0",
     "@tiptap/react": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",
+    "concurrently": "^9.2.1",
     "cookie": "^1.0.2",
+    "hono": "^4.11.4",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.562.0",
     "postgres": "^3.4.7",

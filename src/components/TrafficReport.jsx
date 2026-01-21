@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, RefreshCw } from 'lucide-react';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 export default function TrafficReport() {
     const [loading, setLoading] = useState(true);
@@ -13,11 +14,10 @@ export default function TrafficReport() {
     const fetchMonthlyReport = async () => {
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
-            const url = `${apiBase}/analytics?action=monthly&month=${selectedMonth}`;
+            const url = `${getApiBaseUrl()}/analytics?action=monthly&month=${selectedMonth}`;
             console.log('Fetching:', url);
 
-            const res = await fetch(url);
+            const res = await fetch(url, { credentials: 'include' });
             console.log('Response status:', res.status);
 
             if (res.ok) {
@@ -63,24 +63,24 @@ export default function TrafficReport() {
     const avgPerDay = monthlyData.length ? (totalVisitors / monthlyData.length).toFixed(0) : 0;
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 font-sans">
+        <div className="bg-[#1a1d21] p-6 rounded-lg shadow-2xl border border-[#8C7A3E]/20 font-sans">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <FileText className="text-blue-600" size={20} />
+                <h3 className="text-lg font-bold text-[#E6E6E3] flex items-center gap-2">
+                    <FileText className="text-[#8C7A3E]" size={20} />
                     Monthly Traffic Report
                 </h3>
 
                 <div className="flex items-center gap-3">
                     {/* Month Selector */}
-                    <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
-                        <Calendar size={16} className="text-gray-500" />
+                    <div className="flex items-center gap-2 bg-[#0B0B0C] px-3 py-2 rounded-lg border border-[#8C7A3E]/30">
+                        <Calendar size={16} className="text-[#8C7A3E]" />
                         <input
                             type="month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
                             max={new Date().toISOString().slice(0, 7)}
-                            className="bg-transparent text-sm font-medium text-gray-700 outline-none"
+                            className="bg-transparent text-sm font-medium text-[#E6E6E3] outline-none"
                         />
                     </div>
 
@@ -88,7 +88,7 @@ export default function TrafficReport() {
                     <button
                         onClick={fetchMonthlyReport}
                         disabled={loading}
-                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        className="flex items-center gap-2 bg-[#1a1d21] hover:bg-[#0B0B0C] disabled:bg-[#1a1d21]/50 text-[#E6E6E3] border border-[#8C7A3E]/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                         title="Refresh data"
                     >
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -99,7 +99,7 @@ export default function TrafficReport() {
                     <button
                         onClick={downloadCSV}
                         disabled={loading || monthlyData.length === 0}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        className="flex items-center gap-2 bg-[#8C7A3E] hover:bg-[#a89150] disabled:bg-[#1a1d21]/50 text-[#0B0B0C] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                         <Download size={16} />
                         Download CSV
@@ -109,63 +109,63 @@ export default function TrafficReport() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-xs text-blue-600 uppercase tracking-wide font-semibold mb-1">Total Visitors</div>
-                    <div className="text-2xl font-bold text-blue-900">{totalVisitors.toLocaleString()}</div>
+                <div className="bg-[#0B0B0C] p-4 rounded-lg border border-blue-500/20">
+                    <div className="text-xs text-blue-400 uppercase tracking-wide font-semibold mb-1">Total Visitors</div>
+                    <div className="text-2xl font-bold text-blue-300">{totalVisitors.toLocaleString()}</div>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="text-xs text-green-600 uppercase tracking-wide font-semibold mb-1">Total Page Views</div>
-                    <div className="text-2xl font-bold text-green-900">{totalPageviews.toLocaleString()}</div>
+                <div className="bg-[#0B0B0C] p-4 rounded-lg border border-green-500/20">
+                    <div className="text-xs text-green-400 uppercase tracking-wide font-semibold mb-1">Total Page Views</div>
+                    <div className="text-2xl font-bold text-green-300">{totalPageviews.toLocaleString()}</div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                    <div className="text-xs text-purple-600 uppercase tracking-wide font-semibold mb-1">Avg Per Day</div>
-                    <div className="text-2xl font-bold text-purple-900">{avgPerDay}</div>
+                <div className="bg-[#0B0B0C] p-4 rounded-lg border border-purple-500/20">
+                    <div className="text-xs text-purple-400 uppercase tracking-wide font-semibold mb-1">Avg Per Day</div>
+                    <div className="text-2xl font-bold text-purple-300">{avgPerDay}</div>
                 </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                    <div className="text-xs text-orange-600 uppercase tracking-wide font-semibold mb-1">Days Tracked</div>
-                    <div className="text-2xl font-bold text-orange-900">{monthlyData.length}</div>
+                <div className="bg-[#0B0B0C] p-4 rounded-lg border border-orange-500/20">
+                    <div className="text-xs text-orange-400 uppercase tracking-wide font-semibold mb-1">Days Tracked</div>
+                    <div className="text-2xl font-bold text-orange-300">{monthlyData.length}</div>
                 </div>
             </div>
 
             {/* Table */}
             {loading ? (
-                <div className="h-96 bg-gray-50 animate-pulse rounded-lg flex items-center justify-center text-gray-400">
+                <div className="h-96 bg-[#0B0B0C] animate-pulse rounded-lg flex items-center justify-center text-[#a0a4ab] border border-[#8C7A3E]/20">
                     Loading report...
                 </div>
             ) : monthlyData.length === 0 ? (
-                <div className="h-96 bg-gray-50 rounded-lg flex flex-col items-center justify-center text-gray-400">
-                    <Calendar size={48} className="mb-2" />
+                <div className="h-96 bg-[#0B0B0C] rounded-lg flex flex-col items-center justify-center text-[#a0a4ab] border border-[#8C7A3E]/20">
+                    <Calendar size={48} className="mb-2 text-[#8C7A3E]" />
                     <p>No data available for this month</p>
                     <p className="text-xs mt-2">Try selecting a different month or click Refresh</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto border border-[#8C7A3E]/20 rounded-lg bg-[#0B0B0C]">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
+                        <thead className="bg-[#1a1d21] border-b border-[#8C7A3E]/20">
                             <tr>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">Day</th>
-                                <th className="px-4 py-3 text-right font-semibold text-gray-700">Visitors</th>
-                                <th className="px-4 py-3 text-right font-semibold text-gray-700">Page Views</th>
-                                <th className="px-4 py-3 text-right font-semibold text-gray-700">Avg Views/Visitor</th>
+                                <th className="px-4 py-3 text-left font-semibold text-[#8C7A3E]">Date</th>
+                                <th className="px-4 py-3 text-left font-semibold text-[#8C7A3E]">Day</th>
+                                <th className="px-4 py-3 text-right font-semibold text-[#8C7A3E]">Visitors</th>
+                                <th className="px-4 py-3 text-right font-semibold text-[#8C7A3E]">Page Views</th>
+                                <th className="px-4 py-3 text-right font-semibold text-[#8C7A3E]">Avg Views/Visitor</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#8C7A3E]/10">
                             {monthlyData.map((day, index) => (
-                                <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-3 font-medium text-gray-900">
+                                <tr key={index} className="hover:bg-[#1a1d21] transition-colors">
+                                    <td className="px-4 py-3 font-medium text-[#E6E6E3]">
                                         {day.formattedDate || new Date(day.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-600">
+                                    <td className="px-4 py-3 text-[#a0a4ab]">
                                         {day.dayName || new Date(day.date).toLocaleDateString('id-ID', { weekday: 'long' })}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                                    <td className="px-4 py-3 text-right font-semibold text-blue-400">
                                         {day.visitors.toLocaleString()}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-semibold text-green-600">
+                                    <td className="px-4 py-3 text-right font-semibold text-green-400">
                                         {day.pageviews.toLocaleString()}
                                     </td>
-                                    <td className="px-4 py-3 text-right text-gray-700">
+                                    <td className="px-4 py-3 text-right text-[#E6E6E3]">
                                         {day.visitors ? (day.pageviews / day.visitors).toFixed(1) : '0'}
                                     </td>
                                 </tr>

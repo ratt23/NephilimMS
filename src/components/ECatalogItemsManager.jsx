@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 const DEFAULT_CATEGORIES = [
     { id: 'tarif-kamar', label: 'Tarif Kamar' },
@@ -52,7 +53,7 @@ export default function ECatalogItemsManager() {
 
     async function loadSettings() {
         try {
-            const res = await fetch('/.netlify/functions/api/settings');
+            const res = await fetch(`${getApiBaseUrl()}/settings`, { credentials: 'include' });
             const data = await res.json();
 
             // Helper to get value
@@ -113,7 +114,8 @@ export default function ECatalogItemsManager() {
             setCategoryCovers(newCovers);
 
             // Save to database
-            await fetch('/.netlify/functions/api/settings', {
+            // Save to database
+            await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -121,7 +123,8 @@ export default function ECatalogItemsManager() {
                         value: JSON.stringify(newCovers),
                         enabled: true
                     }
-                })
+                }),
+                credentials: 'include'
             });
 
             alert('Cover image berhasil diupdate!');
@@ -138,7 +141,7 @@ export default function ECatalogItemsManager() {
             setSavingSettings(true);
             const newValue = !ecatalogEnabled;
 
-            await fetch('/.netlify/functions/api/settings', {
+            await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -146,7 +149,8 @@ export default function ECatalogItemsManager() {
                         value: newValue.toString(),
                         enabled: true
                     }
-                })
+                }),
+                credentials: 'include'
             });
 
             setEcatalogEnabled(newValue);
@@ -168,7 +172,7 @@ export default function ECatalogItemsManager() {
     async function saveCategoryVisibility() {
         try {
             setSavingSettings(true);
-            await fetch('/.netlify/functions/api/settings', {
+            await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -176,7 +180,8 @@ export default function ECatalogItemsManager() {
                         value: JSON.stringify(categoryVisibility),
                         enabled: true
                     }
-                })
+                }),
+                credentials: 'include'
             });
             alert('Settings saved successfully!');
         } catch (err) {
@@ -191,7 +196,7 @@ export default function ECatalogItemsManager() {
     async function loadItems() {
         try {
             setLoading(true);
-            const response = await fetch(`/.netlify/functions/api/catalog-items/all?category=${selectedCategory}`);
+            const response = await fetch(`${getApiBaseUrl()}/catalog-items/all?category=${selectedCategory}`, { credentials: 'include' });
             const data = await response.json();
 
             // Parse features if they are JSON strings
@@ -286,13 +291,14 @@ export default function ECatalogItemsManager() {
 
         try {
             const url = editItem
-                ? `/.netlify/functions/api/catalog-items?id=${editItem.id}`
-                : '/.netlify/functions/api/catalog-items';
+                ? `${getApiBaseUrl()}/catalog-items?id=${editItem.id}`
+                : `${getApiBaseUrl()}/catalog-items`;
 
             const response = await fetch(url, {
                 method: editItem ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
+                credentials: 'include'
             });
 
             if (!response.ok) throw new Error('Gagal menyimpan');
@@ -310,8 +316,9 @@ export default function ECatalogItemsManager() {
         if (!confirm('Yakin ingin menghapus item ini?')) return;
 
         try {
-            const res = await fetch(`/.netlify/functions/api/catalog-items?id=${id}`, {
-                method: 'DELETE'
+            const res = await fetch(`${getApiBaseUrl()}/catalog-items?id=${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
             });
 
             if (res.ok) {
@@ -339,10 +346,11 @@ export default function ECatalogItemsManager() {
 
             const payload = { ...itemToRestore, is_active: true };
 
-            const res = await fetch(`/.netlify/functions/api/catalog-items?id=${id}`, {
+            const res = await fetch(`${getApiBaseUrl()}/catalog-items?id=${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
 
             if (res.ok) {
@@ -377,10 +385,11 @@ export default function ECatalogItemsManager() {
                 sort_order: idx
             }));
 
-            const res = await fetch('/.netlify/functions/api/catalog/reorder', {
+            const res = await fetch(`${getApiBaseUrl()}/catalog/reorder`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: updates })
+                body: JSON.stringify({ items: updates }),
+                credentials: 'include'
             });
 
             if (!res.ok) {
@@ -402,7 +411,8 @@ export default function ECatalogItemsManager() {
             setCategoryCovers(newCovers);
 
             // Save to database
-            await fetch('/.netlify/functions/api/settings', {
+            // Save to database
+            await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -410,7 +420,8 @@ export default function ECatalogItemsManager() {
                         value: JSON.stringify(newCovers),
                         enabled: true
                     }
-                })
+                }),
+                credentials: 'include'
             });
         } catch (err) {
             console.error('Error removing cover:', err);
@@ -422,13 +433,13 @@ export default function ECatalogItemsManager() {
         <div className="p-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-white mb-2">E-Catalog Management</h1>
-                <p className="text-gray-400">Kelola kategori cover dan items E-Catalog</p>
+                <p className="text-[#a0a4ab]/60">Kelola kategori cover dan items E-Catalog</p>
             </div>
 
             {/* Category Covers Management */}
             <div className="bg-zinc-800 rounded-lg p-6 mb-6 border border-gray-700">
                 <h3 className="text-lg font-bold text-white mb-4">Category Cover Images</h3>
-                <p className="text-sm text-gray-400 mb-4">Upload gambar cover untuk setiap kategori</p>
+                <p className="text-sm text-[#a0a4ab]/60 mb-4">Upload gambar cover untuk setiap kategori</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {categories.map(category => (
@@ -461,7 +472,7 @@ export default function ECatalogItemsManager() {
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-600">
+                                    <div className="w-full h-full flex items-center justify-center text-[#a0a4ab]">
                                         <ImageIcon size={32} />
                                     </div>
                                 )}
@@ -480,7 +491,7 @@ export default function ECatalogItemsManager() {
                                     }}
                                     disabled={uploadingCovers[category.id]}
                                 />
-                                <div className={`text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2 ${uploadingCovers[category.id] ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}>
+                                <div className={`text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2 ${uploadingCovers[category.id] ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#8C7A3E] hover:bg-[#a89150]'} text-white`}>
                                     {uploadingCovers[category.id] ? (
                                         <>
                                             <Loader2 size={16} className="animate-spin" />
@@ -502,14 +513,14 @@ export default function ECatalogItemsManager() {
             {/* Category Visibility Management */}
             <div className="bg-zinc-800 rounded-lg p-6 mb-6 border border-gray-700">
                 <h3 className="text-lg font-bold text-white mb-4">Category Visibility</h3>
-                <p className="text-sm text-gray-400 mb-4">Tampilkan atau sembunyikan kategori di eCatalog visitor</p>
+                <p className="text-sm text-[#a0a4ab]/60 mb-4">Tampilkan atau sembunyikan kategori di eCatalog visitor</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {categories.map(category => (
                         <div key={category.id} className="bg-zinc-900 rounded-lg p-4 border border-gray-700 flex items-center justify-between">
                             <div>
                                 <h4 className="text-white font-medium">{category.label}</h4>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-[#a0a4ab] mt-1">
                                     {categoryVisibility[category.id] !== false ? 'Visible' : 'Hidden (Coming Soon)'}
                                 </p>
                             </div>
@@ -521,7 +532,7 @@ export default function ECatalogItemsManager() {
                                     }`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${categoryVisibility[category.id] !== false ? 'translate-x-8' : 'translate-x-1'
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-[#1a1d21] transition-transform ${categoryVisibility[category.id] !== false ? 'translate-x-8' : 'translate-x-1'
                                         }`}
                                 />
                             </button>
@@ -533,7 +544,7 @@ export default function ECatalogItemsManager() {
                     <button
                         onClick={saveCategoryVisibility}
                         disabled={savingSettings}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save size={20} />
                         {savingSettings ? 'Menyimpan...' : 'Simpan Visibility'}
@@ -548,14 +559,14 @@ export default function ECatalogItemsManager() {
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${selectedCategory === cat.id
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-zinc-800 text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600'
+                            ? 'bg-[#8C7A3E] text-white'
+                            : 'bg-zinc-800 text-[#a0a4ab]/60 hover:text-white border border-gray-700 hover:border-gray-600'
                             }`}
                     >
                         {cat.label}
                         {/* Visibility Indicator */}
                         {categoryVisibility[cat.id] === false && (
-                            <span className="w-2 h-2 rounded-full bg-red-500" title="Tersembunyi"></span>
+                            <span className="w-2 h-2 rounded-full bg-red-900/200" title="Tersembunyi"></span>
                         )}
                     </button>
                 ))}
@@ -564,7 +575,7 @@ export default function ECatalogItemsManager() {
             <div className="mb-6">
                 <button
                     onClick={() => openForm()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 >
                     <Plus size={20} />
                     Tambah Item
@@ -573,11 +584,11 @@ export default function ECatalogItemsManager() {
 
             {/* Items List */}
             {loading ? (
-                <div className="text-center py-8 text-gray-400">Loading...</div>
+                <div className="text-center py-8 text-[#a0a4ab]/60">Loading...</div>
             ) : items.length === 0 ? (
                 <div className="bg-zinc-800 rounded-lg p-8 text-center">
-                    <ImageIcon className="mx-auto mb-4 text-gray-600" size={48} />
-                    <p className="text-gray-400">Belum ada item di kategori ini</p>
+                    <ImageIcon className="mx-auto mb-4 text-[#a0a4ab]" size={48} />
+                    <p className="text-[#a0a4ab]/60">Belum ada item di kategori ini</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -603,15 +614,15 @@ export default function ECatalogItemsManager() {
                                 </div>
                             )}
                             <div className="p-4">
-                                <h3 className={`text-lg font-bold text-white mb-1 ${item.is_active === false ? 'line-through text-gray-500' : ''}`}>{item.title}</h3>
+                                <h3 className={`text-lg font-bold text-white mb-1 ${item.is_active === false ? 'line-through text-[#a0a4ab]' : ''}`}>{item.title}</h3>
                                 {item.price && (
                                     <p className="text-blue-400 font-semibold mb-2">{item.price}</p>
                                 )}
                                 {item.description && (
-                                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{item.description}</p>
+                                    <p className="text-[#a0a4ab]/60 text-sm mb-3 line-clamp-2">{item.description}</p>
                                 )}
                                 {item.features && item.features.length > 0 && (
-                                    <ul className="text-xs text-gray-500 mb-3 space-y-1">
+                                    <ul className="text-xs text-[#a0a4ab] mb-3 space-y-1">
                                         {item.features.slice(0, 3).map((feature, idx) => (
                                             <li key={idx}>• {feature}</li>
                                         ))}
@@ -626,7 +637,7 @@ export default function ECatalogItemsManager() {
                                         <button
                                             onClick={() => moveItem(items.indexOf(item), 'up')}
                                             disabled={items.indexOf(item) === 0 || item.is_active === false}
-                                            className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
+                                            className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-[#a0a4ab] disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
                                             title="Pindah ke atas"
                                         >
                                             <ArrowUp size={16} />
@@ -634,7 +645,7 @@ export default function ECatalogItemsManager() {
                                         <button
                                             onClick={() => moveItem(items.indexOf(item), 'down')}
                                             disabled={items.indexOf(item) === items.length - 1 || item.is_active === false}
-                                            className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
+                                            className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-[#a0a4ab] disabled:cursor-not-allowed text-white p-2 rounded transition-colors"
                                             title="Pindah ke bawah"
                                         >
                                             <ArrowDown size={16} />
@@ -681,7 +692,7 @@ export default function ECatalogItemsManager() {
                             <h2 className="text-xs font-bold text-white">
                                 {editItem ? 'Edit' : 'Tambah'}
                             </h2>
-                            <button onClick={closeForm} className="text-gray-400 hover:text-white">
+                            <button onClick={closeForm} className="text-[#a0a4ab]/60 hover:text-white">
                                 <X size={16} />
                             </button>
                         </div>
@@ -756,7 +767,7 @@ export default function ECatalogItemsManager() {
                                         disabled={uploading}
                                     />
                                 </label>
-                                <div className="mt-1 text-[9px] text-gray-400 leading-tight">
+                                <div className="mt-1 text-[9px] text-[#a0a4ab]/60 leading-tight">
                                     <p>📐 Ukuran: 800x600 (Kamar), 1200x800 (Fasilitas)</p>
                                     <p className="text-yellow-400">⚠️ Max 5MB</p>
                                 </div>
@@ -776,7 +787,7 @@ export default function ECatalogItemsManager() {
                                     <button
                                         type="button"
                                         onClick={addFeature}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs"
+                                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-2 py-1 rounded text-xs"
                                     >
                                         +
                                     </button>
@@ -802,7 +813,7 @@ export default function ECatalogItemsManager() {
                             <div className="flex flex-col sm:flex-row gap-1 pt-1.5">
                                 <button
                                     type="submit"
-                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded font-medium transition-colors flex items-center justify-center gap-1 text-xs"
+                                    className="w-full bg-[#8C7A3E] hover:bg-[#a89150] text-white px-2 py-1 rounded font-medium transition-colors flex items-center justify-center gap-1 text-xs"
                                 >
                                     <Save size={12} />
                                     {editItem ? 'Update' : 'Simpan'}

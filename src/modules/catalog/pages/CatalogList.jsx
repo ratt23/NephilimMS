@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { catalogAPI } from '../api';
 
 export default function CatalogList() {
     const navigate = useNavigate();
@@ -15,14 +14,9 @@ export default function CatalogList() {
     const fetchItems = async () => {
         try {
             setLoading(true);
-            const url = categoryFilter
-                ? `/.netlify/functions/catalog-list?category=${categoryFilter}`
-                : '/.netlify/functions/catalog-list';
-
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch items');
-
-            const data = await response.json();
+            // Use admin endpoint (getAllItems) to see everything, or getItems for public
+            // Assuming this is admin dashboard, we used getAllItems logic
+            const data = await catalogAPI.getAllItems(categoryFilter);
             setItems(data);
         } catch (err) {
             setError(err.message);
@@ -35,18 +29,11 @@ export default function CatalogList() {
         if (!window.confirm('Are you sure you want to delete this item?')) return;
 
         try {
-            const res = await fetch('/.netlify/functions/catalog-delete', {
-                method: 'POST',
-                body: JSON.stringify({ id })
-            });
-
-            if (res.ok) {
-                fetchItems();
-            } else {
-                alert('Failed to delete');
-            }
+            await catalogAPI.delete(id);
+            fetchItems();
         } catch (err) {
             console.error(err);
+            alert('Failed to delete: ' + err.message);
         }
     };
 

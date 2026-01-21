@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiBaseUrl } from '../utils/apiConfig';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function VisitorChart() {
@@ -15,11 +16,9 @@ export default function VisitorChart() {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
-
             // Add timestamp to prevent caching
             const timestamp = new Date().getTime();
-            const res = await fetch(`${apiBase}/analytics?action=stats&period=${period}&t=${timestamp}`);
+            const res = await fetch(`${getApiBaseUrl()}/analytics?action=stats&period=${period}&t=${timestamp}`, { credentials: 'include' });
 
             if (res.ok) {
                 const fetchedData = await res.json();
@@ -50,22 +49,22 @@ export default function VisitorChart() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 font-sans relative">
+        <div className="bg-[#1a1d21] p-6 rounded-lg shadow-2xl border border-[#8C7A3E]/20 mb-6 font-sans relative">
             {/* Header Section with Controls */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                <h3 className="text-lg font-bold text-[#E6E6E3] flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8C7A3E]"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
                     Site Traffic
                 </h3>
 
-                <div className="flex items-center space-x-2 bg-gray-100 p-1 rounded-lg">
+                <div className="flex items-center space-x-2 bg-[#0B0B0C] p-1 rounded-lg border border-[#8C7A3E]/30">
                     {['7days', '30days', 'year'].map((p) => (
                         <button
                             key={p}
                             onClick={() => setPeriod(p)}
                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                                ? 'bg-[#8C7A3E] text-[#0B0B0C] shadow-xl'
+                                : 'text-[#a0a4ab] hover:text-[#E6E6E3]'
                                 }`}
                         >
                             {p === '7days' ? 'Daily' : p === '30days' ? 'Monthly' : 'Yearly'}
@@ -81,12 +80,12 @@ export default function VisitorChart() {
                                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${systemStatus.online ? 'bg-green-400' : 'bg-red-400'}`}></span>
                                 <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${systemStatus.online ? 'bg-green-500' : 'bg-red-500'}`}></span>
                             </span>
-                            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                            <span className="text-xs font-semibold text-[#a0a4ab] uppercase tracking-wide">
                                 {systemStatus.online ? 'System Online' : 'Offline'}
                             </span>
                         </div>
                         {systemStatus.lastSync && (
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-[#a0a4ab]/60">
                                 Last Sync: {new Date(systemStatus.lastSync).toLocaleTimeString()}
                             </span>
                         )}
@@ -95,7 +94,7 @@ export default function VisitorChart() {
                     {/* Refresh Button */}
                     <button
                         onClick={fetchStats}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
+                        className="p-2 hover:bg-[#0B0B0C] rounded-full transition-colors group"
                         title="Refresh Data"
                     >
                         <svg
@@ -108,7 +107,7 @@ export default function VisitorChart() {
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className={`text-gray-500 group-hover:text-blue-600 ${loading ? 'animate-spin' : ''}`}
+                            className={`text-[#8C7A3E] group-hover:text-[#a89150] ${loading ? 'animate-spin' : ''}`}
                         >
                             <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                             <path d="M21 3v5h-5" />
@@ -118,7 +117,7 @@ export default function VisitorChart() {
             </div>
 
             {loading ? (
-                <div className="h-[300px] w-full bg-gray-50 animate-pulse rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                <div className="h-[300px] w-full bg-[#0B0B0C] animate-pulse rounded-lg flex items-center justify-center text-[#a0a4ab] text-sm border border-[#8C7A3E]/20">
                     Updating Chart...
                 </div>
             ) : (
@@ -138,22 +137,22 @@ export default function VisitorChart() {
                                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#8C7A3E" opacity={0.1} />
                             <XAxis
                                 dataKey="name"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                tick={{ fill: '#a0a4ab', fontSize: 12 }}
                                 dy={10}
                             />
                             <YAxis
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                tick={{ fill: '#a0a4ab', fontSize: 12 }}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                itemStyle={{ fontSize: '12px', fontWeight: '600' }}
+                                contentStyle={{ backgroundColor: '#1a1d21', borderRadius: '8px', border: '1px solid #8C7A3E', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)', color: '#E6E6E3' }}
+                                itemStyle={{ fontSize: '12px', fontWeight: '600', color: '#E6E6E3' }}
                             />
                             <Legend wrapperStyle={{ paddingTop: '20px' }} />
                             <Area
@@ -179,23 +178,23 @@ export default function VisitorChart() {
                 </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-[#8C7A3E]/20 pt-4">
                 <div className="text-center">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Today</div>
-                    <div className="text-2xl font-bold text-blue-600">{summary.todayVisitors.toLocaleString()}</div>
-                    <div className="text-xs text-gray-400 mt-1">{summary.todayPageviews.toLocaleString()} views</div>
+                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Today</div>
+                    <div className="text-2xl font-bold text-blue-400">{summary.todayVisitors.toLocaleString()}</div>
+                    <div className="text-xs text-[#a0a4ab]/60 mt-1">{summary.todayPageviews.toLocaleString()} views</div>
                 </div>
-                <div className="text-center border-l border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Visitors</div>
-                    <div className="text-2xl font-bold text-gray-800">{summary.visitors.toLocaleString()}</div>
+                <div className="text-center border-l border-[#8C7A3E]/20">
+                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Total Visitors</div>
+                    <div className="text-2xl font-bold text-[#E6E6E3]">{summary.visitors.toLocaleString()}</div>
                 </div>
-                <div className="text-center border-l border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Page Views</div>
-                    <div className="text-2xl font-bold text-gray-800">{summary.pageviews.toLocaleString()}</div>
+                <div className="text-center border-l border-[#8C7A3E]/20">
+                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Page Views</div>
+                    <div className="text-2xl font-bold text-[#E6E6E3]">{summary.pageviews.toLocaleString()}</div>
                 </div>
-                <div className="text-center border-l border-gray-100">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Avg. Views/Visitor</div>
-                    <div className="text-2xl font-bold text-gray-800">
+                <div className="text-center border-l border-[#8C7A3E]/20">
+                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Avg. Views/Visitor</div>
+                    <div className="text-2xl font-bold text-[#E6E6E3]">
                         {(summary.visitors ? (summary.pageviews / summary.visitors).toFixed(1) : 0)}
                     </div>
                 </div>

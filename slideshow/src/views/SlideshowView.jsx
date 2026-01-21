@@ -1,15 +1,18 @@
 import { useEffect } from 'react';
 import { useConfig } from '../context/ConfigContext';
+import { getApiBaseUrl } from '../utils/apiConfig';
+import { getProxiedImageUrl } from '../utils/imageUtils';
 
 const SlideshowView = () => {
     const config = useConfig();
 
     useEffect(() => {
         // EXACT LOGIC FROM ORIGINAL HTML - NO MODIFICATIONS (mostly)
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
-        const GOOGLE_SCRIPT_JADWAL_URL = `${API_BASE}/getDoctors`;
-        const GOOGLE_SCRIPT_CUTI_URL = `${API_BASE}/getLeaveData`;
-        const PROMO_DATA_API_URL = `${API_BASE}/getPromoImages`;
+        // EXACT LOGIC FROM ORIGINAL HTML - NO MODIFICATIONS (mostly)
+        const apiBase = getApiBaseUrl();
+        const GOOGLE_SCRIPT_JADWAL_URL = `${apiBase}/doctors/grouped`;
+        const GOOGLE_SCRIPT_CUTI_URL = `${apiBase}/doctors/on-leave`;
+        const PROMO_DATA_API_URL = `${apiBase}/promos`;
 
         const VIDEO_URLS = ['video/promo.mp4', 'video/promo2.mp4'];
 
@@ -91,7 +94,7 @@ const SlideshowView = () => {
                         semuaDokter.push({
                             nama: dokter.name,
                             spesialis: spesialis.title,
-                            fotourl: fotoSSTV || 'https://placehold.co/400x500/ffffff/334155?text=Foto+Tidak+Tersedia&bg-opacity=0',
+                            fotourl: getProxiedImageUrl(fotoSSTV) || 'https://placehold.co/400x500/ffffff/334155?text=Foto+Tidak+Tersedia&bg-opacity=0',
                             schedule: dokter.schedule
                         });
                     }
@@ -125,7 +128,7 @@ const SlideshowView = () => {
             if (!data) return;
             data.forEach(function (promo) {
                 if (promo.imageUrl && !promo.imageUrl.includes('placehold.co')) {
-                    new Image().src = promo.imageUrl;
+                    new Image().src = getProxiedImageUrl(promo.imageUrl);
                 }
             });
         }
@@ -195,7 +198,7 @@ const SlideshowView = () => {
             }
             const promo = promoData[currentPromoIndex];
             if (promoFullscreenImage) {
-                promoFullscreenImage.src = promo.imageUrl;
+                promoFullscreenImage.src = getProxiedImageUrl(promo.imageUrl);
                 promoFullscreenImage.alt = promo.altText;
                 promoFullscreenImage.onerror = function () {
                     promoFullscreenImage.src = 'https://placehold.co/1920x1080/1e3a8a/ffffff?text=Gambar+Promo+Tidak+Tersedia';
@@ -427,7 +430,7 @@ const SlideshowView = () => {
 
         // --- HEARTBEAT & REMOTE REFRESH (NEW) ---
         const HEARTBEAT_INTERVAL = 30000; // 30 seconds
-        const HEARTBEAT_URL = `${API_BASE}/device-heartbeat`;
+        const HEARTBEAT_URL = `${apiBase}/device-heartbeat`;
 
         // Use persistent device ID if possible, otherwise generate one
         let deviceId = localStorage.getItem('slideshow_device_id');

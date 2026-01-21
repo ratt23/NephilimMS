@@ -2,6 +2,21 @@ import React from 'react';
 
 const CHANGELOG_DATA = [
     {
+        version: 'v3.0.0',
+        date: '2026-01-21',
+        changes: [
+            { type: 'feature', text: 'Rebranding: Complete rebrand to "NephilimMS - Born from Knowledge"' },
+            { type: 'feature', text: 'Dark Theme: Nephilim theme with dark backgrounds and brass accents (#8C7A3E)' },
+            { type: 'feature', text: 'Typography: Cinzel font for headings, Inter for body text' },
+            { type: 'feature', text: 'UI: Joomla 5 Atum-inspired accordion sidebar navigation' },
+            { type: 'improvement', text: 'Dashboard: All manager components updated to dark theme' },
+            { type: 'improvement', text: 'Analytics: Traffic charts with dark theme and brass UI elements' },
+            { type: 'improvement', text: 'Login: Complete dark theme with brass button accents' },
+            { type: 'fix', text: 'eCatalog: Added getValidImageUrl export to imageUtils.js' },
+            { type: 'fix', text: 'Theme: Fixed boxShadow syntax errors from batch update' },
+        ]
+    },
+    {
         version: 'v2.6.0',
         date: '2026-01-15',
         changes: [
@@ -118,7 +133,7 @@ export default function ChangelogManager() {
         <div className="space-y-6 animate-fade-in font-sans p-6">
             {/* HEADER */}
             <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-[#E6E6E3] flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -128,7 +143,7 @@ export default function ChangelogManager() {
                     </svg>
                     Changelog
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">Version history and system updates</p>
+                <p className="text-sm text-[#a0a4ab] mt-1">Version history and system updates</p>
             </div>
 
             {/* CHANGELOG TIMELINE */}
@@ -141,24 +156,24 @@ export default function ChangelogManager() {
                     {CHANGELOG_DATA.map((release, idx) => (
                         <div key={release.version} className="relative pl-16">
                             {/* Version Dot */}
-                            <div className={`absolute left-4 top-1 w-4 h-4 rounded-full border-4 border-white ${idx === 0 ? 'bg-blue-600' : 'bg-gray-400'}`}></div>
+                            <div className={`absolute left-4 top-1 w-4 h-4 rounded-full border-4 border-white ${idx === 0 ? 'bg-[#8C7A3E]' : 'bg-gray-400'}`}></div>
 
                             {/* Card */}
-                            <div className={`bg-white border ${idx === 0 ? 'border-blue-200 shadow-md' : 'border-gray-200 shadow-sm'} rounded-lg p-6 transition-all hover:shadow-md`}>
+                            <div className={`bg-[#1a1d21] border ${idx === 0 ? 'border-blue-200 shadow-2xl-md' : 'border-[#8C7A3E]/20 shadow-2xl-sm'} rounded-lg p-6 transition-all hover:shadow-2xl-md`}>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3">
-                                        <h3 className={`text-lg font-bold ${idx === 0 ? 'text-blue-700' : 'text-gray-800'}`}>{release.version}</h3>
+                                        <h3 className={`text-lg font-bold ${idx === 0 ? 'text-blue-700' : 'text-[#E6E6E3]'}`}>{release.version}</h3>
                                         {idx === 0 && (
                                             <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">LATEST</span>
                                         )}
                                     </div>
-                                    <span className="text-sm text-gray-500 font-mono">{release.date}</span>
+                                    <span className="text-sm text-[#a0a4ab] font-mono">{release.date}</span>
                                 </div>
 
                                 {/* Changes List */}
                                 <ul className="space-y-2">
                                     {release.changes.map((change, changeIdx) => (
-                                        <li key={changeIdx} className="flex items-start gap-2 text-sm text-gray-700">
+                                        <li key={changeIdx} className="flex items-start gap-2 text-sm text-[#E6E6E3]">
                                             <div className="flex-shrink-0 mt-0.5">
                                                 <ChangeTypeIcon type={change.type} />
                                             </div>
@@ -173,7 +188,7 @@ export default function ChangelogManager() {
             </div>
 
             {/* Footer Info */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600 mt-8">
+            <div className="bg-[#0B0B0C] border border-[#8C7A3E]/20 rounded-lg p-4 text-sm text-[#a0a4ab] mt-8">
                 <p className="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>

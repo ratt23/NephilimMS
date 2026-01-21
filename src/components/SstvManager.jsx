@@ -2,8 +2,27 @@ import React, { useState, useEffect, useCallback } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 // Helper API function
-async function fetchApi(url, options = {}) {
-  const response = await fetch(url, options);
+import { getApiBaseUrl } from '../utils/apiConfig';
+
+async function fetchApi(endpoint, options = {}) {
+  const baseUrl = getApiBaseUrl();
+  // Ensure endpoint doesn't duplicate slash if baseUrl has it, but usually baseUrl from apiConfig doesn't end in slash
+  // Also handle if endpoint starts with /.netlify/functions or NOT.
+  // We want to STRIP /.netlify/functions if we are switching to Hono which might have different paths?
+  // Actually, Phase 2 migration matched paths: /.netlify/functions/getDoctors -> /doctors/grouped...
+  // BUT here in SstvManager, the calls are: fetchApi('/.netlify/functions/api/doctors/all')
+  // My Hono routes are: /doctors/all
+  // So I need to strip '/.netlify/functions/api' or '/.netlify/functions' prefix.
+
+  let cleanPath = endpoint;
+  if (cleanPath.startsWith('/.netlify/functions/api')) {
+    cleanPath = cleanPath.replace('/.netlify/functions/api', '');
+  } else if (cleanPath.startsWith('/.netlify/functions')) {
+    cleanPath = cleanPath.replace('/.netlify/functions', '');
+  }
+
+  const url = `${baseUrl}${cleanPath}`;
+  const response = await fetch(url, { ...options, credentials: 'include' });
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || `Error ${response.status}`);
@@ -26,33 +45,33 @@ const LivePreviewModal = ({ device, onClose, isOnline }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden relative">
+      <div className="bg-[#1a1d21] rounded-lg shadow-2xl-xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden relative">
         <div className="bg-[#1a3e6e] text-white px-4 py-3 flex justify-between items-center flex-shrink-0">
           <h3 className="font-bold text-sm tracking-wide flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
             LIVE MONITOR: {device.friendly_name || device.device_id}
           </h3>
           <div className="flex items-center gap-3">
-            <span className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-full ${isOnline ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            <span className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-full ${isOnline ? 'bg-green-900/200/20 text-green-200' : 'bg-red-900/200/20 text-red-200'}`}>
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`}></span>
               {isOnline ? 'ONLINE' : 'OFFLINE'}
             </span>
-            <button onClick={onClose} className="hover:bg-white/20 p-1.5 rounded transition-colors">
+            <button onClick={onClose} className="hover:bg-[#1a1d21]/20 p-1.5 rounded transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-100">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#0B0B0C]">
           {/* Left: Mini Browser / Visual Preview */}
-          <div className="flex-1 flex flex-col border-r border-gray-200 relative bg-white">
-            <div className="bg-gray-50 border-b border-gray-200 p-2 flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex-1 flex flex-col border-r border-[#8C7A3E]/20 relative bg-[#1a1d21]">
+            <div className="bg-[#0B0B0C] border-b border-[#8C7A3E]/20 p-2 flex items-center gap-2 text-xs text-[#a0a4ab]">
               <div className="flex gap-1">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
               </div>
-              <div className="flex-1 bg-white border border-gray-300 rounded px-2 py-0.5 truncate font-mono">
+              <div className="flex-1 bg-[#1a1d21] border border-[#8C7A3E]/30 rounded px-2 py-0.5 truncate font-mono">
                 {previewUrl}
               </div>
             </div>
@@ -66,32 +85,32 @@ const LivePreviewModal = ({ device, onClose, isOnline }) => {
               {/* Overlay to prevent interaction if desired, or let them interact */}
               <div className="absolute inset-0 z-10 bg-transparent"></div>
             </div>
-            <div className="p-2 bg-yellow-50 text-yellow-800 text-[10px] text-center border-t border-yellow-100">
+            <div className="p-2 bg-yellow-900/20 text-yellow-800 text-[10px] text-center border-t border-yellow-100">
               *Tampilan ini adalah simulasi halaman slideshow (Preview Mode). Tidak akan terdaftar sebagai device baru.
             </div>
           </div>
 
           {/* Right: Data & Stats */}
-          <div className="w-full md:w-80 bg-white p-6 flex flex-col gap-6 overflow-y-auto z-20 shadow-lg">
+          <div className="w-full md:w-80 bg-[#1a1d21] p-6 flex flex-col gap-6 overflow-y-auto z-20 shadow-2xl-lg">
             <div>
-              <div className="text-gray-400 text-xs uppercase font-bold mb-1">Last Reported Content</div>
-              <div className="font-bold text-gray-800 text-lg leading-tight p-3 bg-blue-50 rounded border border-blue-100">
+              <div className="text-[#a0a4ab]/60 text-xs uppercase font-bold mb-1">Last Reported Content</div>
+              <div className="font-bold text-[#E6E6E3] text-lg leading-tight p-3 bg-blue-900/20 rounded border border-blue-100">
                 {device.current_slide || "No Active Slide Data"}
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <div className="text-gray-400 text-xs uppercase font-bold">Last Heartbeat</div>
-                <div className="font-mono text-gray-700 text-sm">{lastSeen}</div>
+                <div className="text-[#a0a4ab]/60 text-xs uppercase font-bold">Last Heartbeat</div>
+                <div className="font-mono text-[#E6E6E3] text-sm">{lastSeen}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-gray-400 text-xs uppercase font-bold">IP Address</div>
-                <div className="font-mono text-gray-700 text-sm">{device.ip_address || 'Unknown'}</div>
+                <div className="text-[#a0a4ab]/60 text-xs uppercase font-bold">IP Address</div>
+                <div className="font-mono text-[#E6E6E3] text-sm">{device.ip_address || 'Unknown'}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-gray-400 text-xs uppercase font-bold">Browser Info</div>
-                <div className="font-mono text-gray-600 text-xs break-words">{device.browser_info || 'N/A'}</div>
+                <div className="text-[#a0a4ab]/60 text-xs uppercase font-bold">Browser Info</div>
+                <div className="font-mono text-[#a0a4ab] text-xs break-words">{device.browser_info || 'N/A'}</div>
               </div>
             </div>
           </div>
@@ -106,7 +125,7 @@ function DeviceStatusCard({ device, onRefresh, onPin, onRename, onPreview, onDel
   const lastSeen = new Date(device.last_heartbeat).toLocaleString();
 
   return (
-    <div className={`bg-white border rounded-lg p-4 shadow-sm flex flex-col gap-2 relative overflow-hidden transition-all ${device.is_pinned ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200'}`}>
+    <div className={`bg-[#1a1d21] border rounded-lg p-4 shadow-2xl-sm flex flex-col gap-2 relative overflow-hidden transition-all ${device.is_pinned ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-[#8C7A3E]/20'}`}>
 
       {/* Decorative TV Icon Background */}
       <div className="absolute -right-4 -top-4 text-gray-100 transform rotate-12 pointer-events-none">
@@ -118,21 +137,21 @@ function DeviceStatusCard({ device, onRefresh, onPin, onRename, onPreview, onDel
         <div className="flex items-center gap-1">
           <button
             onClick={() => onPin(device.device_id, !device.is_pinned)}
-            className={`p-1 rounded-full transition-colors ${device.is_pinned ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50' : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'}`}
+            className={`p-1 rounded-full transition-colors ${device.is_pinned ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-900/20' : 'text-gray-300 hover:text-[#a0a4ab] hover:bg-[#0B0B0C]'}`}
             title={device.is_pinned ? "Unpin Device" : "Pin Device"}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={device.is_pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2V5a3 3 0 0 0-3-3Z" /></svg>
           </button>
           <button
             onClick={() => onPreview(device)}
-            className="p-1 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            className="p-1 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-900/20 transition-colors"
             title="Live Preview"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
           </button>
           <button
             onClick={() => onDelete(device.device_id, device.friendly_name || device.device_id)}
-            className="p-1 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            className="p-1 rounded-full text-red-400 hover:text-red-600 hover:bg-red-900/20 transition-colors"
             title="Delete Device (Re-appears on next heartbeat)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -148,35 +167,35 @@ function DeviceStatusCard({ device, onRefresh, onPin, onRename, onPreview, onDel
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {/* Small TV Icon */}
-            <div className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0">
+            <div className="p-1.5 bg-blue-900/20 text-blue-600 rounded flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1 group/edit">
-                <span className="font-bold text-gray-800 text-sm truncate" title={device.friendly_name || device.device_id}>
+                <span className="font-bold text-[#E6E6E3] text-sm truncate" title={device.friendly_name || device.device_id}>
                   {device.friendly_name || device.device_id}
                 </span>
                 <button
                   onClick={() => onRename(device.device_id, device.friendly_name)}
-                  className="opacity-0 group-hover/edit:opacity-100 p-0.5 text-gray-400 hover:text-blue-600 transition-opacity"
+                  className="opacity-0 group-hover/edit:opacity-100 p-0.5 text-[#a0a4ab]/60 hover:text-blue-600 transition-opacity"
                   title="Rename Device"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                 </button>
               </div>
               {(device.friendly_name && device.friendly_name !== device.device_id) &&
-                <div className="text-[10px] text-gray-400 font-mono truncate">{device.device_id}</div>
+                <div className="text-[10px] text-[#a0a4ab]/60 font-mono truncate">{device.device_id}</div>
               }
             </div>
           </div>
         </div>
       </div>
 
-      <div className="z-10 mt-3 border-t border-gray-100 pt-2">
-        <div className="text-[11px] text-gray-500 truncate" title={device.browser_info}>
+      <div className="z-10 mt-3 border-t border-[#8C7A3E]/10 pt-2">
+        <div className="text-[11px] text-[#a0a4ab] truncate" title={device.browser_info}>
           {device.browser_info || 'Unknown Browser'}
         </div>
-        <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+        <div className="text-[10px] text-[#a0a4ab]/60 mt-0.5 flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
           {lastSeen}
         </div>
@@ -184,7 +203,7 @@ function DeviceStatusCard({ device, onRefresh, onPin, onRename, onPreview, onDel
 
       <button
         onClick={() => onRefresh(device.device_id)}
-        className="mt-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold py-2 rounded transition-colors z-10 shadow-sm flex items-center justify-center gap-2"
+        className="mt-4 w-full bg-blue-900/20 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold py-2 rounded transition-colors z-10 shadow-2xl-sm flex items-center justify-center gap-2"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
         TRIGGER REFRESH
@@ -250,19 +269,19 @@ function DoctorSstvRow({ doctor, currentImageUrl, onUploadSuccess }) {
   };
 
   return (
-    <tr className="hover:bg-blue-50 transition-colors group border-b border-gray-100">
-      <td className="p-3 text-sm font-semibold text-gray-800 border-l border-r border-gray-100">{doctor.name}</td>
-      <td className="p-3 text-sm text-gray-600 border-r border-gray-100">{doctor.specialty}</td>
-      <td className="p-3 text-center border-r border-gray-100 bg-gray-50">
+    <tr className="hover:bg-blue-900/20 transition-colors group border-b border-[#8C7A3E]/10">
+      <td className="p-3 text-sm font-semibold text-[#E6E6E3] border-l border-r border-[#8C7A3E]/10">{doctor.name}</td>
+      <td className="p-3 text-sm text-[#a0a4ab] border-r border-[#8C7A3E]/10">{doctor.specialty}</td>
+      <td className="p-3 text-center border-r border-[#8C7A3E]/10 bg-[#0B0B0C]">
         {currentImageUrl ? (
-          <img src={currentImageUrl} alt="Preview" className="w-20 h-20 object-cover rounded border border-gray-300 mx-auto shadow-sm" />
+          <img src={currentImageUrl} alt="Preview" className="w-20 h-20 object-cover rounded border border-[#8C7A3E]/30 mx-auto shadow-2xl-sm" />
         ) : (
-          <span className="text-xs text-gray-400 italic">No image yet</span>
+          <span className="text-xs text-[#a0a4ab]/60 italic">No image yet</span>
         )}
       </td>
-      <td className="p-3 text-sm text-center border-r border-gray-100">
+      <td className="p-3 text-sm text-center border-r border-[#8C7A3E]/10">
         <div className="flex flex-col items-center">
-          <label className={`cursor-pointer inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded shadow-sm text-white ${currentImageUrl ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'} transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
+          <label className={`cursor-pointer inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded shadow-2xl-sm text-white ${currentImageUrl ? 'bg-[#8C7A3E] hover:bg-[#a89150]' : 'bg-green-600 hover:bg-green-700'} transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}>
             {isUploading ? "Uploading..." : (currentImageUrl ? "Change Photo" : "Upload Photo")}
             <input
               type="file"
@@ -284,13 +303,13 @@ const AccordionSection = ({ title, children, defaultOpen = true, activeCount = n
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-md overflow-hidden mb-4 transition-all duration-200 hover:shadow-md">
+    <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-md overflow-hidden mb-4 transition-all duration-200 hover:shadow-2xl-md">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[#0B0B0C] border-b border-[#8C7A3E]/20 hover:bg-[#0B0B0C] transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+          <h2 className="text-sm font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
             {title}
           </h2>
           {activeCount && (
@@ -303,7 +322,7 @@ const AccordionSection = ({ title, children, defaultOpen = true, activeCount = n
       </button>
 
       <div className={`transition-all duration-300 ease-in-out origin-top ${isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-        <div className="p-4 bg-white">
+        <div className="p-4 bg-[#1a1d21]">
           {children}
         </div>
       </div>
@@ -427,7 +446,8 @@ export default function SstvManager() {
     setIsSavingSettings(true);
     try {
       // Save setting to DB
-      await fetch('/.netlify/functions/api/settings', {
+      // Save setting to DB
+      await fetchApi('/.netlify/functions/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -456,8 +476,8 @@ export default function SstvManager() {
       {/* HEADER & CONFIG */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">{managerTitle}</h2>
-          <p className="text-sm text-gray-500">Monitor status TV dan atur konten slideshow.</p>
+          <h2 className="text-xl font-bold text-[#E6E6E3]">{managerTitle}</h2>
+          <p className="text-sm text-[#a0a4ab]">Monitor status TV dan atur konten slideshow.</p>
         </div>
       </div>
 
@@ -465,27 +485,27 @@ export default function SstvManager() {
       <AccordionSection title="General & Slideshow Settings" activeCount="Config">
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="bg-gray-50 border border-gray-100 rounded p-4 space-y-4">
+            <div className="bg-[#0B0B0C] border border-[#8C7A3E]/10 rounded p-4 space-y-4">
               {/* Setting 1: Title */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Manager Page Title</label>
+                <label className="block text-sm font-bold text-[#E6E6E3] mb-2">Manager Page Title</label>
                 <input
                   type="text"
                   value={managerTitle}
                   onChange={(e) => setManagerTitle(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                  className="w-full text-sm border border-[#8C7A3E]/30 rounded px-3 py-2 bg-[#1a1d21] focus:ring-blue-500 focus:border-blue-500 shadow-2xl-sm"
                   placeholder="e.g. Siloam Hospitals TV Manager"
                 />
               </div>
 
               {/* Setting 2: Refresh Interval */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Auto Refresh Interval (Client)</label>
+                <label className="block text-sm font-bold text-[#E6E6E3] mb-2">Auto Refresh Interval (Client)</label>
                 <div className="flex gap-2">
                   <select
                     value={refreshIntervalHours}
                     onChange={(e) => setRefreshIntervalHours(e.target.value)}
-                    className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
+                    className="flex-1 text-sm border border-[#8C7A3E]/30 rounded px-3 py-2 bg-[#1a1d21] focus:ring-blue-500 focus:border-blue-500 shadow-2xl-sm transition-colors"
                   >
                     <option value="1">Setiap 1 Jam</option>
                     <option value="6">Setiap 6 Jam</option>
@@ -496,19 +516,19 @@ export default function SstvManager() {
                   <button
                     onClick={handleApplySettings}
                     disabled={isSavingSettings}
-                    className={`px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2 ${isSavingSettings ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    className={`px-4 py-2 bg-[#8C7A3E] text-white text-sm font-bold rounded shadow-2xl-sm hover:bg-[#a89150] transition-colors flex items-center gap-2 ${isSavingSettings ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     {isSavingSettings ? 'Saving...' : 'Apply'}
                   </button>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-[#a0a4ab]/60">
                 Pengaturan ini akan disimpan ke server dan dimuat ulang saat halaman dibuka.
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 rounded p-4 text-sm text-blue-800">
+            <div className="bg-blue-900/20 border border-blue-100 rounded p-4 text-sm text-blue-800">
               <h4 className="font-bold mb-1 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                 Info Konfigurasi
@@ -534,7 +554,7 @@ export default function SstvManager() {
               onDelete={handleDeleteDevice}
             />
           )) : (
-            <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center text-gray-500 col-span-full">
+            <div className="bg-[#0B0B0C] border border-[#8C7A3E]/20 p-6 rounded-lg text-center text-[#a0a4ab] col-span-full">
               No connected TV devices found. Open <b>/slideshow</b> on a device to start monitoring.
             </div>
           )}
@@ -544,21 +564,21 @@ export default function SstvManager() {
       {/* SECTION 2: TOOLS & TABLE */}
       <AccordionSection title="Slideshow Content Manager" activeCount={`${allDoctors.length} Doctors`}>
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-100 p-4 text-sm text-blue-800 rounded">
+          <div className="bg-blue-900/20 border border-blue-100 p-4 text-sm text-blue-800 rounded">
             <p>Upload photos here to be displayed on the TV Slideshow. These photos are separate from the public website profile photos.</p>
           </div>
 
-          <div className="overflow-x-auto border border-gray-200 rounded">
+          <div className="overflow-x-auto border border-[#8C7A3E]/20 rounded">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-[#f0f2f5]">
                 <tr>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Doctor Name</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">Specialty</th>
-                  <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider border-r border-gray-200">SSTV Preview</th>
-                  <th className="p-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Doctor Name</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Specialty</th>
+                  <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">SSTV Preview</th>
+                  <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
                 {allDoctors.map((doctor) => (
                   <DoctorSstvRow
                     key={doctor.id}

@@ -1,32 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Nephilim Design Tokens - Born from Knowledge */
+  --bg-0: #0B0B0C;
+  --bg-1: #12161D;
+  --bg-2: #1a1d21;
+  --bg-surface: #1f2329;
+  --text-0: #E6E6E3;
+  --text-1: #a0a4ab;
+  --border-0: rgba(230, 230, 227, 0.1);
+  --accent: #8C7A3E;
+  --accent-hover: #a89150;
+  --accent-active: #6e6131;
+}
 
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
-  
+
   .animate-slide-up {
     animation: slideUp 0.5s ease-out forwards;
   }
-  
+
   .animate-slide-right {
     animation: slideRight 0.3s ease-out forwards;
+  }
+
+  /* Nephilim Theme Utilities */
+  .nephilim-card {
+    @apply bg-[#1a1d21] border border-[#8C7A3E]/20 rounded-lg shadow-2xl;
+  }
+
+  .nephilim-card-header {
+    @apply bg-[#0B0B0C] px-4 py-2 border-b border-[#8C7A3E]/20 font-medium text-[#8C7A3E];
+  }
+
+  .nephilim-card-body {
+    @apply p-4 text-[#a0a4ab];
+  }
+
+  .nephilim-btn-primary {
+    @apply bg-[#8C7A3E] hover:bg-[#a89150] text-[#0B0B0C] px-4 py-2 rounded-lg font-semibold transition-colors;
+  }
+
+  .nephilim-btn-secondary {
+    @apply bg-[#1a1d21] hover:bg-[#0B0B0C] text-[#E6E6E3] border border-[#8C7A3E]/30 px-4 py-2 rounded-lg transition-colors;
+  }
+
+  .nephilim-input {
+    @apply bg-[#0B0B0C] border border-[#8C7A3E]/30 rounded text-[#E6E6E3] focus:outline-none focus:ring-1 focus:ring-[#8C7A3E] focus:border-[#8C7A3E];
+  }
+
+  .nephilim-table {
+    @apply w-full bg-[#0B0B0C] border border-[#8C7A3E]/20 rounded-lg overflow-hidden;
+  }
+
+  .nephilim-table-header {
+    @apply bg-[#1a1d21] border-b border-[#8C7A3E]/20 text-[#8C7A3E] font-semibold;
+  }
+
+  .nephilim-table-row {
+    @apply hover:bg-[#1a1d21] transition-colors text-[#E6E6E3];
+  }
+
+  .nephilim-text-primary {
+    @apply text-[#E6E6E3];
+  }
+
+  .nephilim-text-secondary {
+    @apply text-[#a0a4ab];
+  }
+
+  .nephilim-text-accent {
+    @apply text-[#8C7A3E];
   }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideRight {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

@@ -926,7 +926,10 @@ export async function handler(event, context) {
           statusCode: 200,
           headers: {
             ...headers,
-            'Set-Cookie': 'adminAuth=' + adminPassword + '; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000'
+            'Set-Cookie': [
+              'adminAuth=' + adminPassword + '; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000',
+              'adminSession=true; Path=/; Secure; SameSite=None; Max-Age=2592000'
+            ]
           },
           body: JSON.stringify({ message: 'Login successful' })
         };
@@ -941,7 +944,10 @@ export async function handler(event, context) {
         statusCode: 200,
         headers: {
           ...headers,
-          'Set-Cookie': 'adminAuth=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0'
+          'Set-Cookie': [
+            'adminAuth=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0',
+            'adminSession=; Path=/; Secure; SameSite=None; Max-Age=0'
+          ]
         },
         body: JSON.stringify({ message: 'Logged out' })
       };

@@ -7,8 +7,8 @@ import Cookies from 'js-cookie'; // <-- Impor js-cookie
 
 // Komponen untuk melindungi route
 function ProtectedRoute({ children }) {
-  // Cek apakah cookie 'nf_auth' (Netlify Auth) ada
-  const isAuthenticated = !!Cookies.get('nf_auth');
+  // Cek apakah cookie 'adminSession' ada (ditetapkan oleh api.js)
+  const isAuthenticated = !!Cookies.get('adminSession');
 
   // Jika sudah login, tampilkan halaman (children)
   // Jika belum, lempar ke halaman login

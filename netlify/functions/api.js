@@ -258,6 +258,36 @@ export async function handler(event, context) {
 
         return { statusCode: 200, headers, body: JSON.stringify({ stats, systemStatus: { online: true, lastSync: new Date().toISOString() } }) };
       }
+
+      // GET /analytics?action=monthly&month=YYYY-MM
+      if (action === 'monthly' && method === 'GET') {
+        const month = event.queryStringParameters?.month || new Date().toISOString().slice(0, 7);
+        const [year, monthStr] = month.split('-');
+
+        // Query daily stats for the selected month
+        const query = `
+          SELECT to_char(date, 'YYYY-MM-DD') as formattedDate,
+                 to_char(date, 'Day') as dayName,
+                 date,
+                 visitors,
+                 page_views as pageviews
+          FROM daily_stats
+          WHERE EXTRACT(YEAR FROM date) = $1 AND EXTRACT(MONTH FROM date) = $2
+          ORDER BY date ASC
+        `;
+
+        const rows = await sql.unsafe(query, [year, monthStr]);
+
+        const stats = rows.map(row => ({
+          formattedDate: row.formatteddate, // postgres returns lowercase keys often
+          dayName: row.dayname ? row.dayname.trim() : '',
+          date: row.date,
+          visitors: Number(row.visitors),
+          pageviews: Number(row.pageviews)
+        }));
+
+        return { statusCode: 200, headers, body: JSON.stringify({ stats }) };
+      }
     }
 
     // ==========================================

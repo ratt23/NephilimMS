@@ -244,7 +244,8 @@ export default function PostManager() {
     const loadPosts = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await fetchApi('/.netlify/functions/api/posts?limit=50'); // Simple pagination for now
+            // Add admin=true to bypass public filtering (is_active=true)
+            const data = await fetchApi('/.netlify/functions/api/posts?limit=50&admin=true');
             setPosts(data.posts || []);
         } catch (err) {
             setError(err.message);

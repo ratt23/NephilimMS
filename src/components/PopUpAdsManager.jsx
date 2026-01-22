@@ -19,9 +19,10 @@ export default function PopUpAdsManager() {
     const fetchAdConfig = async () => {
         try {
             const res = await fetch(`${getApiBaseUrl()}/popup-ad`, { credentials: 'include' });
-            const data = await res.json();
             if (res.ok) {
-                setAdConfig(data);
+                const data = await res.json();
+                // Map DB is_active to frontend active
+                setAdConfig({ ...data, active: data.is_active });
             }
         } catch (err) {
             console.error(err);
@@ -68,15 +69,29 @@ export default function PopUpAdsManager() {
         setIsSaving(true);
         setMsg(null);
         try {
+            // Prepare payload matching API expectation
+            const payload = {
+                ...adConfig,
+                is_active: adConfig.active,
+                title: adConfig.title || 'Popup Ad', // Ensure title is not empty
+                link_url: adConfig.link_url || ''
+            };
+
             const res = await fetch(`${getApiBaseUrl()}/popup-ad`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(adConfig),
+                body: JSON.stringify(payload),
                 credentials: 'include'
             });
 
-            if (!res.ok) throw new Error("Failed to save settings");
+            const data = await res.json();
 
+            if (!res.ok) {
+                // Show specific API error
+                throw new Error(data.message || data.error || "Failed to save settings");
+            }
+
+            setAdConfig(prev => ({ ...data, active: data.is_active }));
             setMsg({ type: 'success', text: 'Popup Ad Settings Saved Successfully!' });
             setTimeout(() => setMsg(null), 3000);
 

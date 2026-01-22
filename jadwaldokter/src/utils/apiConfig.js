@@ -3,7 +3,8 @@ const API_SERVERS = {
     local: '/.netlify/functions/api',
     dashdev1: 'https://dashdev1.netlify.app/.netlify/functions/api',
     dashdev2: 'https://dashdev2.netlify.app/.netlify/functions/api',
-    dashdev3: 'https://dashdev3.netlify.app/.netlify/functions/api'
+    dashdev3: 'https://dashdev3.netlify.app/.netlify/functions/api',
+    dashdev4: 'https://dashdev4.netlify.app/.netlify/functions/api'
 };
 
 /**
@@ -25,7 +26,7 @@ export function getApiBaseUrl() {
     }
 
     // Fallback
-    const url = import.meta.env.DEV ? API_SERVERS.local : API_SERVERS.dashdev3;
+    const url = import.meta.env.DEV ? API_SERVERS.local : API_SERVERS.dashdev4;
 
     // Ensure URL ends with /api
     if (!url.endsWith('/api') && !url.endsWith('/api/')) {

@@ -72,14 +72,18 @@ export async function handler(event, context) {
       if ((path === '/settings' || path === '/settings/') && method === 'GET') {
         // Use 'app_settings' because it contains the actual data
         const settings = await sql.unsafe('SELECT * FROM app_settings ORDER BY setting_key ASC');
-        // Map to standard key/value format for frontend compatibility
-        const mappedSettings = settings.map(s => ({
-          key: s.setting_key,
-          value: s.setting_value,
-          is_enabled: s.is_enabled,
-          updated_at: s.updated_at
-        }));
-        return { statusCode: 200, headers, body: JSON.stringify(mappedSettings) };
+
+        // Map to dictionary object format for frontend compatibility (ConfigContext.jsx expects object)
+        const settingsMap = {};
+        for (const s of settings) {
+          settingsMap[s.setting_key] = {
+            key: s.setting_key,
+            value: s.setting_value,
+            is_enabled: s.is_enabled,
+            updated_at: s.updated_at
+          };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(settingsMap) };
       }
 
       // GET /settings/:key
@@ -254,7 +258,8 @@ export async function handler(event, context) {
         for (const doc of doctors) {
           const specialtyKey = createKey(doc.specialty);
           if (!doctorsData[specialtyKey]) {
-            doctorsData[specialtyKey] = { specialty: doc.specialty, doctors: [] };
+            // Frontend expects 'title' property for the specialty name
+            doctorsData[specialtyKey] = { specialty: doc.specialty, title: doc.specialty, doctors: [] };
           }
           doctorsData[specialtyKey].doctors.push(doc);
         }
@@ -341,17 +346,28 @@ export async function handler(event, context) {
     }
 
     // ==========================================
+    // SPECIALTIES
+    // ==========================================
+    if ((path === '/specialties' || path === '/specialties/') && method === 'GET') {
+      const rows = await sql.unsafe('SELECT DISTINCT specialty FROM doctors WHERE specialty IS NOT NULL AND specialty != \'\' ORDER BY specialty ASC');
+      // Return simple array of strings
+      const list = rows.map(r => r.specialty);
+      return { statusCode: 200, headers, body: JSON.stringify(list) };
+    }
+
+    // ==========================================
     // LEAVE DATA
     // ==========================================
-    if (path.startsWith('/leave')) {
-      // GET /leave
-      if ((path === '/leave' || path === '/leave/') && method === 'GET') {
+    if (path.startsWith('/leave') || path.startsWith('/leaves')) {
+      // GET /leaves or /leave
+      if ((path === '/leave' || path === '/leaves' || path === '/leave/' || path === '/leaves/') && method === 'GET') {
+        // Return detailed list with doctor info
         const leave = await sql.unsafe('SELECT l.*, d.name AS doctor_name, d.specialty FROM leave_data l JOIN doctors d ON l.doctor_id = d.id ORDER BY l.start_date DESC');
         return { statusCode: 200, headers, body: JSON.stringify(leave) };
       }
 
-      // POST /leave
-      if ((path === '/leave' || path === '/leave/') && method === 'POST') {
+      // POST /leaves
+      if ((path === '/leave' || path === '/leaves' || path === '/leave/' || path === '/leaves/') && method === 'POST') {
         checkAuth();
         const { doctor_id, start_date, end_date, reason } = JSON.parse(event.body);
         if (!doctor_id || !start_date || !end_date) {
@@ -368,10 +384,21 @@ export async function handler(event, context) {
         return { statusCode: 201, headers, body: JSON.stringify(newLeave[0]) };
       }
 
-      // PUT /leave/:id
-      if (path.match(/^\/leave\/\d+$/) && method === 'PUT') {
+      // DELETE /leaves (Cleanup)
+      if ((path === '/leave' || path === '/leaves' || path === '/leave/' || path === '/leaves/') && method === 'DELETE') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+        if (event.queryStringParameters?.cleanup === 'true') {
+          // Delete past leaves
+          const result = await sql.unsafe('DELETE FROM leave_data WHERE end_date < CURRENT_DATE');
+          return { statusCode: 200, headers, body: JSON.stringify({ message: 'History cleanup success', deleted: result.count }) };
+        }
+        return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing id or cleanup param' }) };
+      }
+
+      // PUT /leaves/:id
+      if (path.match(/^\/leaves?\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/').pop()); // split by / and take last element which is ID
         const { doctor_id, start_date, end_date, reason } = JSON.parse(event.body);
         const updated = await sql.unsafe('UPDATE leave_data SET doctor_id = $1, start_date = $2, end_date = $3, reason = $4 WHERE id = $5 RETURNING *', [doctor_id, start_date, end_date, reason || '', id]);
         if (updated.length === 0) {
@@ -380,12 +407,75 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      // DELETE /leave/:id
-      if (path.match(/^\/leave\/\d+$/) && method === 'DELETE') {
+      // DELETE /leaves/:id
+      if (path.match(/^\/leaves?\/\d+$/) && method === 'DELETE') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+        const id = parseInt(path.split('/').pop());
         await sql.unsafe('DELETE FROM leave_data WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Leave deleted' }) };
+      }
+    }
+
+    // ==========================================
+    // MCU PACKAGES
+    // ==========================================
+    if (path.startsWith('/mcu-packages')) {
+      // GET /mcu-packages/all
+      if ((path === '/mcu-packages/all' || path === '/mcu-packages/all/') && method === 'GET') {
+        const pkgs = await sql.unsafe('SELECT * FROM mcu_packages ORDER BY display_order ASC, created_at DESC');
+        return { statusCode: 200, headers, body: JSON.stringify(pkgs) };
+      }
+
+      // POST /mcu-packages
+      if ((path === '/mcu-packages' || path === '/mcu-packages/') && method === 'POST') {
+        checkAuth();
+        const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, is_enabled = true, display_order = 0 } = JSON.parse(event.body);
+
+        await sql.unsafe(`
+          INSERT INTO mcu_packages (
+            package_id, name, price, base_price, image_url, 
+            is_pelaut, is_recommended, items, addons, 
+            is_enabled, display_order, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+        `, [
+          package_id, name, price, base_price || null, image_url || '',
+          is_pelaut || false, is_recommended || false,
+          JSON.stringify(items || []), addons ? JSON.stringify(addons) : null,
+          is_enabled, display_order
+        ]);
+
+        return { statusCode: 201, headers, body: JSON.stringify({ message: 'Package created' }) };
+      }
+
+      // PUT /mcu-packages/:id
+      if (path.match(/^\/mcu-packages\/\d+$/) && method === 'PUT') {
+        checkAuth();
+        const id = parseInt(path.split('/').pop());
+        const { package_id, name, price, base_price, image_url, is_pelaut, is_recommended, items, addons, is_enabled, display_order } = JSON.parse(event.body);
+
+        await sql.unsafe(`
+          UPDATE mcu_packages SET 
+            package_id = $1, name = $2, price = $3, base_price = $4, 
+            image_url = $5, is_pelaut = $6, is_recommended = $7, 
+            items = $8, addons = $9, is_enabled = $10, display_order = $11,
+            updated_at = NOW()
+          WHERE id = $12
+        `, [
+          package_id, name, price, base_price || null, image_url || '',
+          is_pelaut || false, is_recommended || false,
+          JSON.stringify(items || []), addons ? JSON.stringify(addons) : null,
+          is_enabled, display_order, id
+        ]);
+
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Package updated' }) };
+      }
+
+      // DELETE /mcu-packages/:id
+      if (path.match(/^\/mcu-packages\/\d+$/) && method === 'DELETE') {
+        checkAuth();
+        const id = parseInt(path.split('/').pop());
+        await sql.unsafe('DELETE FROM mcu_packages WHERE id = $1', [id]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Package deleted' }) };
       }
     }
 
@@ -435,9 +525,35 @@ export async function handler(event, context) {
     }
 
     // ==========================================
-    // SSTV IMAGES
+    // SSTV IMAGES (Compatible with SstvManager.jsx)
     // ==========================================
-    if (path.startsWith('/sstv')) {
+    if (path.startsWith('/sstv') || path.startsWith('/sstv_images')) {
+      // GET /sstv_images (Returns object map: { [doctor_id]: url, [promo_id]: url })
+      if ((path === '/sstv_images' || path === '/sstv_images/') && method === 'GET') {
+        const images = await sql.unsafe('SELECT * FROM sstv_images');
+        const map = {};
+        for (const img of images) {
+          if (img.doctor_id) map[img.doctor_id] = img.image_url;
+          if (img.promo_id) map[img.promo_id] = img.image_url;
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(map) };
+      }
+
+      // POST /sstv_images
+      if ((path === '/sstv_images' || path === '/sstv_images/') && method === 'POST') {
+        checkAuth();
+        const { doctor_id, promo_id, image_url } = JSON.parse(event.body);
+
+        if (doctor_id) {
+          await sql.unsafe('INSERT INTO sstv_images(doctor_id, image_url, uploaded_at) VALUES($1, $2, NOW()) ON CONFLICT (doctor_id) DO UPDATE SET image_url = $2, uploaded_at = NOW()', [doctor_id, image_url]);
+        } else if (promo_id) {
+          await sql.unsafe('INSERT INTO sstv_images(promo_id, image_url, uploaded_at) VALUES($1, $2, NOW()) ON CONFLICT (promo_id) DO UPDATE SET image_url = $2, uploaded_at = NOW()', [promo_id, image_url]);
+        }
+
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'SSTV image uploaded' }) };
+      }
+
+      // Legacy /sstv routes support ...
       // GET /sstv/doctors
       if (path === '/sstv/doctors' && method === 'GET') {
         const images = await sql.unsafe('SELECT * FROM sstv_images WHERE doctor_id IS NOT NULL ORDER BY doctor_id ASC');
@@ -594,6 +710,51 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(posts) };
       }
 
+      // GET /posts (with options)
+      if ((path === '/posts' || path === '/posts/') && method === 'GET') {
+        const { limit, category, status, admin } = event.queryStringParameters || {};
+        let query = 'SELECT * FROM posts';
+        const params = [];
+        const conditions = [];
+
+        // If admin=true, do NOT default to is_active=true
+        if (admin !== 'true') {
+          if (status) {
+            conditions.push('status = $' + (params.length + 1));
+            params.push(status);
+          } else {
+            conditions.push('is_active = true');
+          }
+        } else {
+          // Admin mode: if status is explicitly provided, use it, otherwise show all
+          if (status) {
+            conditions.push('status = $' + (params.length + 1));
+            params.push(status);
+          }
+        }
+
+        if (category) {
+          conditions.push('category = $' + (params.length + 1));
+          params.push(category);
+        }
+
+        if (conditions.length > 0) {
+          query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        if (limit) {
+          query += ' LIMIT $' + (params.length + 1);
+          params.push(parseInt(limit));
+        }
+
+        const posts = await sql.unsafe(query, params);
+        // Map old structure to support legacy
+        // But table should be fixed by repair_db
+        return { statusCode: 200, headers, body: JSON.stringify({ posts }) };
+      }
+
       // GET /posts/:id
       if (path.match(/^\/posts\/\d+$/) && method === 'GET') {
         const id = parseInt(path.split('/')[2]);
@@ -636,20 +797,120 @@ export async function handler(event, context) {
     // ==========================================
     // DEVICE HEARTBEAT
     // ==========================================
+    // ==========================================
+    // DEVICE HEARTBEAT
+    // ==========================================
     if (path === '/device-heartbeat' && method === 'POST') {
-      const { device_id, device_name, last_ip } = JSON.parse(event.body);
-      if (!device_id) {
-        return { statusCode: 400, headers, body: JSON.stringify({ message: 'device_id required' }) };
+      const body = JSON.parse(event.body);
+
+      // Action-based routing for cleaner logic
+      const action = body.action || 'heartbeat';
+
+      if (action === 'heartbeat') {
+        const { device_id, device_name, last_ip, friendly_name, browser_info, current_slide } = body;
+        if (!device_id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'device_id required' }) };
+
+        await sql.unsafe(`
+              INSERT INTO device_heartbeats (
+                  device_id, friendly_name, last_heartbeat, ip_address, browser_info, current_slide, status, last_seen, last_ip, device_name
+              ) VALUES ($1, $2, NOW(), $3, $4, $5, 'online', NOW(), $3, $2)
+              ON CONFLICT (device_id) DO UPDATE SET 
+                  last_heartbeat = NOW(),
+                  last_seen = NOW(), -- Legacy
+                  status = 'online',
+                  ip_address = $3,
+                  last_ip = $3, -- Legacy
+                  browser_info = COALESCE($4, device_heartbeats.browser_info),
+                  current_slide = COALESCE($5, device_heartbeats.current_slide)
+                  -- Don't overwrite friendly_name if null, but maybe device_name is sent?
+          `, [
+          device_id,
+          friendly_name || device_name || '',
+          last_ip || event.headers['client-ip'] || 'unknown',
+          browser_info,
+          current_slide
+        ]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Heartbeat recorded' }) };
       }
 
-      await sql.unsafe('INSERT INTO device_heartbeats(device_id, device_name, last_ip, last_seen) VALUES($1, $2, $3, NOW()) ON CONFLICT (device_id) DO UPDATE SET device_name = $2, last_ip = $3, last_seen = NOW()', [device_id, device_name || '', last_ip || '']);
-      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Heartbeat recorded' }) };
+      if (action === 'update_meta') {
+        checkAuth();
+        const { deviceId, friendlyName, isPinned } = body;
+
+        if (friendlyName !== undefined) {
+          await sql.unsafe('UPDATE device_heartbeats SET friendly_name = $1 WHERE device_id = $2', [friendlyName, deviceId]);
+        }
+        if (isPinned !== undefined) {
+          await sql.unsafe('UPDATE device_heartbeats SET is_pinned = $1 WHERE device_id = $2', [isPinned, deviceId]);
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Device meta updated' }) };
+      }
+
+      if (action === 'trigger_refresh') {
+        // This usually requires query param in GET, but let's support POST too
+        // Wait, SstvManager sends GET for trigger_refresh
+      }
+
+      if (action === 'delete') {
+        checkAuth();
+        const { deviceId } = body;
+        await sql.unsafe('DELETE FROM device_heartbeats WHERE device_id = $1', [deviceId]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Device deleted' }) };
+      }
     }
 
     // GET /device-heartbeat
     if ((path === '/device-heartbeat' || path === '/device-heartbeat/') && method === 'GET') {
-      const devices = await sql.unsafe('SELECT * FROM device_heartbeats ORDER BY last_seen DESC');
+      const action = event.queryStringParameters?.action;
+
+      if (action === 'trigger_refresh') {
+        const { deviceId } = event.queryStringParameters;
+        await sql.unsafe('UPDATE device_heartbeats SET refresh_trigger = true WHERE device_id = $1', [deviceId]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Refresh trigger set' }) };
+      }
+
+      // List all
+      const devices = await sql.unsafe('SELECT * FROM device_heartbeats ORDER BY last_heartbeat DESC');
       return { statusCode: 200, headers, body: JSON.stringify(devices) };
+    }
+
+    // ==========================================
+    // NEWSLETTER ARCHIVE
+    // ==========================================
+    if (path.startsWith('/newsletter-archive')) {
+      if (method === 'GET') {
+        const { limit = '20', page = '1', admin } = event.queryStringParameters || {};
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        let query = 'SELECT * FROM newsletters';
+        if (admin !== 'true') {
+          query += ' WHERE is_published = true';
+        }
+        query += ` ORDER BY year DESC, month DESC LIMIT ${parseInt(limit)} OFFSET ${offset}`;
+
+        const newsletters = await sql.unsafe(query);
+        return { statusCode: 200, headers, body: JSON.stringify(newsletters) };
+      }
+    }
+
+    // ==========================================
+    // CATALOG ITEMS (Alias for /ecatalog/items/all)
+    // ==========================================
+    if (path.startsWith('/catalog-items/all')) {
+      if (method === 'GET') {
+        const { category } = event.queryStringParameters || {};
+        // Reuse ecatalog logic
+        let query = 'SELECT * FROM ecatalog_items WHERE is_deleted = false';
+        const params = [];
+        if (category) {
+          query += ' AND category = $1';
+          params.push(category);
+        }
+        query += ' ORDER BY sort_order ASC';
+
+        const items = await sql.unsafe(query, params);
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
     }
 
     // ==========================================

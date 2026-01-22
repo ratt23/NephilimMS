@@ -2,13 +2,26 @@ import postgres from 'postgres';
 import { parse } from 'cookie';
 import { sendLeaveNotification } from './utils/notificationSender.js';
 
-const sql = postgres(process.env.NEON_DATABASE_URL, {
-  ssl: 'require',
-  idle_timeout: 5,
-  connect_timeout: 10,
-  max_lifetime: 60 * 30,
-  prepare: false,
-});
+// Database connection
+let sql;
+
+if (process.env.NEON_DATABASE_URL) {
+  sql = postgres(process.env.NEON_DATABASE_URL, {
+    ssl: 'require',
+    idle_timeout: 5,
+    connect_timeout: 10,
+    max_lifetime: 60 * 30,
+    prepare: false,
+  });
+} else {
+  console.warn('⚠️ NEON_DATABASE_URL is missing! Database features will not work.');
+  // Mock sql instance that throws error when used
+  sql = {
+    unsafe: async () => {
+      throw new Error('Database connection invalid. Please check NEON_DATABASE_URL environment variable.');
+    }
+  };
+}
 
 // Helper to create key from specialty name
 function createKey(name) {

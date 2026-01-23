@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useConfig } from '../context/ConfigContext';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 import McuPackageCard from '../components/McuPackageCard';
 import McuFormModal from '../components/McuFormModal';
@@ -15,7 +16,8 @@ const McuView = () => {
         const fetchPackages = async () => {
             try {
                 // Determine API base URL (using config logic or relative path)
-                const response = await fetch('/.netlify/functions/api/mcu-packages');
+                const apiBase = getApiBaseUrl();
+                const response = await fetch(`${apiBase}/mcu-packages`);
                 if (!response.ok) throw new Error('Failed to fetch packages');
                 const data = await response.json();
                 setPackages(data);

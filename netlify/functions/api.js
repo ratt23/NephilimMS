@@ -81,15 +81,18 @@ export async function handler(event, context) {
     // AUTHENTICATION
     // ==========================================
     if (path === '/login' && method === 'POST') {
-      const { password } = JSON.parse(event.body);
-      const adminPassword = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
+      const { password } = JSON.parse(event.body || '{}');
+      const envPass = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
 
-      if (password === adminPassword) {
+      const inputPass = String(password || '').trim();
+      const adminPass = String(envPass).trim();
+
+      if (inputPass && inputPass === adminPass) {
         // Set cookie 'adminAuth' with the password value (as expected by checkAuth)
-        const authCookie = serialize('adminAuth', String(password), {
+        const authCookie = serialize('adminAuth', inputPass, {
           httpOnly: true,
-          secure: true, // Auto-secure in production (Netlify handles this)
-          sameSite: 'Lax', // Changed from Strict to Lax for better redirect handling
+          secure: true,
+          sameSite: 'Lax',
           path: '/',
           maxAge: 60 * 60 * 24, // 1 day
         });
@@ -103,10 +106,15 @@ export async function handler(event, context) {
           body: JSON.stringify({ success: true, message: 'Login successful' })
         };
       } else {
+        console.warn(`Login failed. Input Matches: ${inputPass === adminPass}`);
         return {
           statusCode: 401,
           headers,
-          body: JSON.stringify({ success: false, message: 'Invalid password' })
+          body: JSON.stringify({
+            success: false,
+            message: 'Invalid password',
+            debug: `Input Length: ${inputPass.length}`
+          })
         };
       }
     }

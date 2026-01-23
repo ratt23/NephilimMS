@@ -71,7 +71,8 @@ export async function handler(event, context) {
     // Auth helper
     function checkAuth() {
       const cookies = parse(event.headers.cookie || '');
-      const adminPassword = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
+      // HARDCODED PASSWORD as requested
+      const adminPassword = 'admin123';
       if (cookies.adminAuth !== adminPassword) {
         throw new Error('Unauthorized');
       }
@@ -82,13 +83,12 @@ export async function handler(event, context) {
     // ==========================================
     if (path === '/login' && method === 'POST') {
       const { password } = JSON.parse(event.body || '{}');
-      const envPass = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
 
+      // HARDCODED PASSWORD as requested
+      const adminPass = 'admin123';
       const inputPass = String(password || '').trim();
-      const adminPass = String(envPass).trim();
 
-      // DEBUG/FALLBACK: Explicitly allow 'admin123' to bypass Env Var issues
-      if (inputPass && (inputPass === adminPass || inputPass === 'admin123')) {
+      if (inputPass === adminPass) {
         // Set cookie 'adminAuth' with the password value
         const authCookie = serialize('adminAuth', inputPass, {
           httpOnly: false,

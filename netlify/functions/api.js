@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { parse } from 'cookie';
+import { parse, serialize } from 'cookie';
 import { sendLeaveNotification } from './utils/notificationSender.js';
 
 // Database connection
@@ -71,10 +71,63 @@ export async function handler(event, context) {
     // Auth helper
     function checkAuth() {
       const cookies = parse(event.headers.cookie || '');
-      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+      const adminPassword = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
       if (cookies.adminAuth !== adminPassword) {
         throw new Error('Unauthorized');
       }
+    }
+
+    // ==========================================
+    // AUTHENTICATION
+    // ==========================================
+    if (path === '/login' && method === 'POST') {
+      const { password } = JSON.parse(event.body);
+      const adminPassword = process.env.DASHBOARD_PASS || process.env.ADMIN_PASSWORD || 'admin123';
+
+      if (password === adminPassword) {
+        // Set cookie 'adminAuth' with the password value (as expected by checkAuth)
+        const authCookie = serialize('adminAuth', String(password), {
+          httpOnly: true,
+          secure: true, // Auto-secure in production (Netlify handles this)
+          sameSite: 'Lax', // Changed from Strict to Lax for better redirect handling
+          path: '/',
+          maxAge: 60 * 60 * 24, // 1 day
+        });
+
+        return {
+          statusCode: 200,
+          headers: {
+            ...headers,
+            'Set-Cookie': authCookie
+          },
+          body: JSON.stringify({ success: true, message: 'Login successful' })
+        };
+      } else {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ success: false, message: 'Invalid password' })
+        };
+      }
+    }
+
+    if (path === '/logout' && method === 'POST') {
+      const authCookie = serialize('adminAuth', 'expired', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+        path: '/',
+        maxAge: -1,
+      });
+
+      return {
+        statusCode: 200,
+        headers: {
+          ...headers,
+          'Set-Cookie': authCookie
+        },
+        body: JSON.stringify({ success: true, message: 'Logged out' })
+      };
     }
 
     // ==========================================
@@ -217,8 +270,74 @@ export async function handler(event, context) {
 
       // GET /analytics?action=stats
       if (action === 'stats' && method === 'GET') {
+        const type = event.queryStringParameters?.type || 'basic';
         const period = event.queryStringParameters?.period || '7days';
 
+        // Handle advanced analytics
+        if (type === 'advanced') {
+          const daysLimit = period === '30days' ? 30 : 7;
+
+          // Device breakdown
+          const devices = await sql.unsafe(`
+            SELECT device_type as name, COUNT(*) as value
+            FROM analytics_events
+            WHERE date >= CURRENT_DATE - INTERVAL '${daysLimit} days' AND device_type IS NOT NULL
+            GROUP BY device_type
+            ORDER BY value DESC
+          `);
+
+          // Browser breakdown
+          const browsers = await sql.unsafe(`
+            SELECT browser as name, COUNT(*) as value
+            FROM analytics_events
+            WHERE date >= CURRENT_DATE - INTERVAL '${daysLimit} days' AND browser IS NOT NULL
+            GROUP BY browser
+            ORDER BY value DESC
+            LIMIT 5
+          `);
+
+          // Traffic sources
+          const sources = await sql.unsafe(`
+            SELECT traffic_source as name, COUNT(*) as value
+            FROM analytics_events
+            WHERE date >= CURRENT_DATE - INTERVAL '${daysLimit} days' AND traffic_source IS NOT NULL
+            GROUP BY traffic_source
+            ORDER BY value DESC
+          `);
+
+          // Top pages
+          const topPages = await sql.unsafe(`
+            SELECT path as name, COUNT(*) as value
+            FROM analytics_events
+            WHERE date >= CURRENT_DATE - INTERVAL '${daysLimit} days' AND path IS NOT NULL
+            GROUP BY path
+            ORDER BY value DESC
+            LIMIT 10
+          `);
+
+          // Conversion events
+          const conversions = await sql.unsafe(`
+            SELECT event_name as name, COUNT(*) as value
+            FROM analytics_events
+            WHERE date >= CURRENT_DATE - INTERVAL '${daysLimit} days' AND event_type = 'conversion' AND event_name IS NOT NULL
+            GROUP BY event_name
+            ORDER BY value DESC
+          `);
+
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+              devices: devices.map(d => ({ name: d.name, value: Number(d.value) })),
+              browsers: browsers.map(b => ({ name: b.name, value: Number(b.value) })),
+              sources: sources.map(s => ({ name: s.name, value: Number(s.value) })),
+              topPages: topPages.map(p => ({ name: p.name, value: Number(p.value) })),
+              conversions: conversions.map(c => ({ name: c.name, value: Number(c.value) }))
+            })
+          };
+        }
+
+        // Basic stats (existing logic)
         let query = '';
         let params = [];
 
@@ -367,10 +486,20 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(rows[0]) };
       }
 
-      // PUT /doctors/:id
-      if (path.match(/^\/doctors\/\d+$/) && method === 'PUT') {
+      // PUT /doctors/:id or /doctors?id=X
+      if ((path.match(/^\/doctors\/\d+$/) || (path === '/doctors' || path === '/doctors/')) && method === 'PUT') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/doctors\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing doctor ID' }) };
+        }
+
         const { name, specialty, image_url, schedule } = JSON.parse(event.body);
         const updated = await sql.unsafe('UPDATE doctors SET name = $1, specialty = $2, image_url = $3, schedule = $4, updated_at = NOW() WHERE id = $5 RETURNING *', [name, specialty, image_url || '', schedule || '{}', id]);
         if (updated.length === 0) {
@@ -379,10 +508,20 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      // DELETE /doctors/:id
-      if (path.match(/^\/doctors\/\d+$/) && method === 'DELETE') {
+      // DELETE /doctors/:id or /doctors?id=X
+      if ((path.match(/^\/doctors\/\d+$/) || (path === '/doctors' || path === '/doctors/')) && method === 'DELETE') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/doctors\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing doctor ID' }) };
+        }
+
         await sql.unsafe('DELETE FROM doctors WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Doctor deleted' }) };
       }
@@ -427,14 +566,23 @@ export async function handler(event, context) {
         return { statusCode: 201, headers, body: JSON.stringify(newLeave[0]) };
       }
 
-      // DELETE /leaves (Cleanup)
+      // DELETE /leaves (by ID or Cleanup)
       if ((path === '/leave' || path === '/leaves' || path === '/leave/' || path === '/leaves/') && method === 'DELETE') {
         checkAuth();
+
+        // Delete by ID (query param)
+        if (event.queryStringParameters?.id) {
+          const id = parseInt(event.queryStringParameters.id);
+          await sql.unsafe('DELETE FROM leave_data WHERE id = $1', [id]);
+          return { statusCode: 200, headers, body: JSON.stringify({ message: 'Leave deleted' }) };
+        }
+
+        // Cleanup old leaves
         if (event.queryStringParameters?.cleanup === 'true') {
-          // Delete past leaves
           const result = await sql.unsafe('DELETE FROM leave_data WHERE end_date < CURRENT_DATE');
           return { statusCode: 200, headers, body: JSON.stringify({ message: 'History cleanup success', deleted: result.count }) };
         }
+
         return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing id or cleanup param' }) };
       }
 
@@ -546,10 +694,20 @@ export async function handler(event, context) {
         return { statusCode: 201, headers, body: JSON.stringify(newPromo[0]) };
       }
 
-      // PUT /promos/:id
-      if (path.match(/^\/promos\/\d+$/) && method === 'PUT') {
+      // PUT /promos/:id or /promos?id=X
+      if ((path.match(/^\/promos\/\d+$/) || (path === '/promos' || path === '/promos/')) && method === 'PUT') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/promos\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing promo ID' }) };
+        }
+
         const { title, content, image_url, sort_order, is_active } = JSON.parse(event.body);
         const updated = await sql.unsafe('UPDATE promos SET title = $1, content = $2, image_url = $3, sort_order = $4, is_active = $5, updated_at = NOW() WHERE id = $6 RETURNING *', [title, content, image_url, sort_order, is_active, id]);
         if (updated.length === 0) {
@@ -558,10 +716,20 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      // DELETE /promos/:id
-      if (path.match(/^\/promos\/\d+$/) && method === 'DELETE') {
+      // DELETE /promos/:id or /promos?id=X
+      if ((path.match(/^\/promos\/\d+$/) || (path === '/promos' || path === '/promos/')) && method === 'DELETE') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/promos\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing promo ID' }) };
+        }
+
         await sql.unsafe('DELETE FROM promos WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Promo deleted' }) };
       }
@@ -738,6 +906,114 @@ export async function handler(event, context) {
     }
 
     // ==========================================
+    // E-NEWSLETTER
+    // ==========================================
+    // GET /newsletter-archive
+    if (path === '/newsletter-archive' && method === 'GET') {
+      const { page = 1, limit = 20, admin = 'false' } = event.queryStringParameters || {};
+      const offset = (page - 1) * limit;
+
+      let whereClause = 'WHERE 1=1';
+      const params = [limit, offset];
+
+      if (admin !== 'true') {
+        whereClause += ' AND is_published = true';
+      }
+
+      const newsletters = await sql.unsafe(`SELECT * FROM newsletters ${whereClause} ORDER BY year DESC, month DESC LIMIT $1 OFFSET $2`, params);
+      const count = await sql.unsafe(`SELECT count(*) FROM newsletters ${whereClause}`);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          newsletters,
+          total: parseInt(count[0].count),
+          page: parseInt(page),
+          limit: parseInt(limit)
+        })
+      };
+    }
+
+    // GET, PUT, DELETE /newsletter-issue
+    if (path === '/newsletter-issue') {
+      // GET (By Year/Month or ID)
+      if (method === 'GET') {
+        const { id, year, month } = event.queryStringParameters || {};
+        let result;
+
+        if (id) {
+          result = await sql.unsafe('SELECT * FROM newsletters WHERE id = $1', [id]);
+        } else if (year && month) {
+          result = await sql.unsafe('SELECT * FROM newsletters WHERE year = $1 AND month = $2', [year, month]);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing id or year/month' }) };
+        }
+
+        if (result.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Newsletter not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(result[0]) };
+      }
+
+      // PUT (Toggle Publish)
+      if (method === 'PUT') {
+        checkAuth();
+        const { id } = event.queryStringParameters || {};
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing ID' }) };
+
+        const current = await sql.unsafe('SELECT is_published FROM newsletters WHERE id = $1', [id]);
+        if (current.length === 0) return { statusCode: 404, headers, body: JSON.stringify({ message: 'Not found' }) };
+
+        const newStatus = !current[0].is_published;
+        await sql.unsafe('UPDATE newsletters SET is_published = $1 WHERE id = $2', [newStatus, id]);
+
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Status updated', is_published: newStatus }) };
+      }
+
+      // DELETE
+      if (method === 'DELETE') {
+        checkAuth();
+        const { id } = event.queryStringParameters || {};
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing ID' }) };
+
+        await sql.unsafe('DELETE FROM newsletters WHERE id = $1', [id]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Deleted' }) };
+      }
+    }
+
+    // POST /newsletter-upsert
+    if (path === '/newsletter-upsert' && method === 'POST') {
+      checkAuth();
+      const { id, year, month, title, description, pdf_url, cloudinary_public_id } = JSON.parse(event.body);
+
+      // Check existing (Prevent duplicate Year/Month unless editing same ID)
+      const existing = await sql.unsafe('SELECT id FROM newsletters WHERE year = $1 AND month = $2', [year, month]);
+      if (existing.length > 0 && (!id || existing[0].id != id)) {
+        return { statusCode: 409, headers, body: JSON.stringify({ message: `Newsletter for ${month}/${year} already exists` }) };
+      }
+
+      let result;
+      if (id) {
+        // Update
+        result = await sql.unsafe(
+          `UPDATE newsletters SET year=$1, month=$2, title=$3, description=$4, pdf_url=$5, cloudinary_public_id=$6, updated_at=NOW() WHERE id=$7 RETURNING *`,
+          [year, month, title, description, pdf_url, cloudinary_public_id, id]
+        );
+      } else {
+        // Insert
+        result = await sql.unsafe(
+          `INSERT INTO newsletters (year, month, title, description, pdf_url, cloudinary_public_id, is_published, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, $5, $6, false, NOW(), NOW()) RETURNING *`,
+          [year, month, title, description, pdf_url, cloudinary_public_id]
+        );
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify(result[0]) };
+    }
+
+
+    // ==========================================
     // POSTS (Articles)
     // ==========================================
     if (path.startsWith('/posts')) {
@@ -816,10 +1092,20 @@ export async function handler(event, context) {
         return { statusCode: 201, headers, body: JSON.stringify(newPost[0]) };
       }
 
-      // PUT /posts/:id
-      if (path.match(/^\/posts\/\d+$/) && method === 'PUT') {
+      // PUT /posts/:id or /posts?id=X
+      if ((path.match(/^\/posts\/\d+$/) || (path === '/posts' || path === '/posts/')) && method === 'PUT') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/posts\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing post ID' }) };
+        }
+
         const { title, content, image_url, is_active } = JSON.parse(event.body);
         const updated = await sql.unsafe('UPDATE posts SET title = $1, content = $2, image_url = $3, is_active = $4, updated_at = NOW() WHERE id = $5 RETURNING *', [title, content, image_url, is_active, id]);
         if (!updated) {
@@ -828,10 +1114,20 @@ export async function handler(event, context) {
         return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
       }
 
-      // DELETE /posts/:id
-      if (path.match(/^\/posts\/\d+$/) && method === 'DELETE') {
+      // DELETE /posts/:id or /posts?id=X
+      if ((path.match(/^\/posts\/\d+$/) || (path === '/posts' || path === '/posts/')) && method === 'DELETE') {
         checkAuth();
-        const id = parseInt(path.split('/')[2]);
+
+        // Get ID from path param or query param
+        let id;
+        if (path.match(/^\/posts\/\d+$/)) {
+          id = parseInt(path.split('/')[2]);
+        } else if (event.queryStringParameters?.id) {
+          id = parseInt(event.queryStringParameters.id);
+        } else {
+          return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing post ID' }) };
+        }
+
         await sql.unsafe('DELETE FROM posts WHERE id = $1', [id]);
         return { statusCode: 200, headers, body: JSON.stringify({ message: 'Post deleted' }) };
       }
@@ -937,12 +1233,67 @@ export async function handler(event, context) {
     }
 
     // ==========================================
-    // CATALOG ITEMS (Alias for /ecatalog/items/all)
+    // CATALOG ITEMS 
     // ==========================================
+    // GET /catalog-items (public, non-deleted items)
+    if (path === '/catalog-items' || path === '/catalog-items/') {
+      if (method === 'GET') {
+        const { category } = event.queryStringParameters || {};
+        let query = 'SELECT * FROM ecatalog_items WHERE is_deleted = false';
+        const params = [];
+        if (category) {
+          query += ' AND category = $1';
+          params.push(category);
+        }
+        query += ' ORDER BY sort_order ASC';
+
+        const items = await sql.unsafe(query, params);
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      }
+
+      // POST /catalog-items (create new item)
+      if (method === 'POST') {
+        checkAuth();
+        const { title, description, image_url, category, price, contact_person, sort_order = 0, features } = JSON.parse(event.body);
+        const newItem = await sql.unsafe(
+          'INSERT INTO ecatalog_items(title, description, image_url, category, price, contact_person, sort_order, is_deleted, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, false, NOW(), NOW()) RETURNING *',
+          [title, description || '', image_url || '', category, price || '', contact_person || '', sort_order]
+        );
+        return { statusCode: 201, headers, body: JSON.stringify(newItem[0]) };
+      }
+
+      // PUT /catalog-items?id=...
+      if (method === 'PUT') {
+        checkAuth();
+        const { id } = event.queryStringParameters || {};
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing ID' }) };
+
+        const { title, description, image_url, category, price, contact_person, sort_order, is_deleted } = JSON.parse(event.body);
+        const updated = await sql.unsafe(
+          'UPDATE ecatalog_items SET title = $1, description = $2, image_url = $3, category = $4, price = $5, contact_person = $6, sort_order = $7, is_deleted = $8, updated_at = NOW() WHERE id = $9 RETURNING *',
+          [title, description, image_url, category, price, contact_person, sort_order, is_deleted || false, parseInt(id)]
+        );
+        if (updated.length === 0) {
+          return { statusCode: 404, headers, body: JSON.stringify({ message: 'Item not found' }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify(updated[0]) };
+      }
+
+      // DELETE /catalog-items?id=...
+      if (method === 'DELETE') {
+        checkAuth();
+        const { id } = event.queryStringParameters || {};
+        if (!id) return { statusCode: 400, headers, body: JSON.stringify({ message: 'Missing ID' }) };
+
+        await sql.unsafe('UPDATE ecatalog_items SET is_deleted = true WHERE id = $1', [parseInt(id)]);
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Item deleted' }) };
+      }
+    }
+
+    // GET /catalog-items/all (includes deleted items for admin)
     if (path.startsWith('/catalog-items/all')) {
       if (method === 'GET') {
         const { category } = event.queryStringParameters || {};
-        // Reuse ecatalog logic
         let query = 'SELECT * FROM ecatalog_items WHERE is_deleted = false';
         const params = [];
         if (category) {
@@ -969,6 +1320,9 @@ export async function handler(event, context) {
           statusCode: 200,
           headers: {
             ...headers,
+            // 'Set-Cookie': ... (Moved to multiValueHeaders)
+          },
+          multiValueHeaders: {
             'Set-Cookie': [
               'adminAuth=' + adminPassword + '; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000',
               'adminSession=true; Path=/; Secure; SameSite=None; Max-Age=2592000'
@@ -976,7 +1330,6 @@ export async function handler(event, context) {
           },
           body: JSON.stringify({ message: 'Login successful' })
         };
-      } else {
         return { statusCode: 401, headers, body: JSON.stringify({ message: 'Invalid password' }) };
       }
     }
@@ -987,6 +1340,8 @@ export async function handler(event, context) {
         statusCode: 200,
         headers: {
           ...headers,
+        },
+        multiValueHeaders: {
           'Set-Cookie': [
             'adminAuth=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0',
             'adminSession=; Path=/; Secure; SameSite=None; Max-Age=0'
@@ -994,6 +1349,29 @@ export async function handler(event, context) {
         },
         body: JSON.stringify({ message: 'Logged out' })
       };
+    }
+
+    // DEBUG ECATALOG
+    if (path === '/debug-ecatalog' && method === 'GET') {
+      try {
+        // Test 1: Check DB Connection via app_settings
+        await sql.unsafe('SELECT 1 FROM app_settings LIMIT 1');
+
+        // Test 2: Check ecatalog_items
+        const count = await sql.unsafe('SELECT count(*) FROM ecatalog_items');
+        return { statusCode: 200, headers, body: JSON.stringify({ message: 'Table exists', count: count[0].count }) };
+      } catch (err) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            message: 'Check failed',
+            error: err.message,
+            stack: err.stack,
+            db_url_exists: !!process.env.NEON_DATABASE_URL
+          })
+        };
+      }
     }
 
     // ==========================================

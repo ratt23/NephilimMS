@@ -2,6 +2,16 @@ import React from 'react';
 
 const CHANGELOG_DATA = [
     {
+        version: 'v3.0.1',
+        date: '2026-01-22',
+        changes: [
+            { type: 'fix', text: 'Production Login: Resolved cookie handling issue for Netlify functions (multiValueHeaders)' },
+            { type: 'fix', text: 'Traffic Report: Added missing monthly analytics endpoint (Fixes zero data)' },
+            { type: 'fix', text: 'eCatalog: Fixed 500 Error by creating missing database tables' },
+            { type: 'improvement', text: 'Database: Increased connection timeout tolerance for better stability' },
+        ]
+    },
+    {
         version: 'v3.0.0',
         date: '2026-01-21',
         changes: [

@@ -41,7 +41,7 @@ const SitemapRoute = () => {
                 // Fetch articles
                 try {
                     const apiBase = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
-                    const response = await fetch(`${apiBase}/api/posts?status=published`);
+                    const response = await fetch(`${apiBase}/posts?status=published`);
 
                     if (response.ok) {
                         const data = await response.json();

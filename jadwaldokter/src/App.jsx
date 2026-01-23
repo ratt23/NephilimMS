@@ -8,7 +8,7 @@ import HomeCareView from './views/HomeCareView';
 import ArticleView from './views/ArticleView';
 import ArticleDetailView from './views/ArticleDetailView';
 import SitemapView from './views/SitemapView';
-import SlideshowView from './views/SlideshowView';
+
 import HealthPopup from './components/HealthPopup';
 import GmbWidget from './components/GmbWidget';
 import CategoryNav from './components/CategoryNav';
@@ -48,7 +48,7 @@ const AppContent = () => {
           <Route path="/article" element={<ArticleView />} />
           <Route path="/article/:slug" element={<ArticleDetailView />} />
           <Route path="/sitemap.xml" element={<SitemapView />} />
-          <Route path="/slideshow" element={<SlideshowView />} />
+          <Route path="/slideshow" element={<Navigate to="/slideshow/" replace />} />
         </Routes>
       </main>
 

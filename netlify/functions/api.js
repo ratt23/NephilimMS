@@ -1343,6 +1343,19 @@ export async function handler(event, context) {
       }
     }
 
+
+    // GET /mcu-packages (Public for Client)
+    if (path === '/mcu-packages' && method === 'GET') {
+      try {
+        // Query DB
+        const items = await sql.unsafe('SELECT * FROM mcu_packages ORDER BY id ASC');
+        return { statusCode: 200, headers, body: JSON.stringify(items) };
+      } catch (err) {
+        console.error('Failed to fetch mcu packages:', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+      }
+    }
+
     // GET /admin/logout
     if (path === '/admin/logout' && method === 'GET') {
       return {

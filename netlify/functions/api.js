@@ -90,7 +90,7 @@ export async function handler(event, context) {
       if (inputPass && inputPass === adminPass) {
         // Set cookie 'adminAuth' with the password value (as expected by checkAuth)
         const authCookie = serialize('adminAuth', inputPass, {
-          httpOnly: true,
+          httpOnly: false,
           secure: true,
           sameSite: 'Lax',
           path: '/',

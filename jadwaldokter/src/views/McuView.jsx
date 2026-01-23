@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useConfig } from '../context/ConfigContext';
-import { mcuPackages } from '../data/mcuPackages';
+
 import McuPackageCard from '../components/McuPackageCard';
 import McuFormModal from '../components/McuFormModal';
 

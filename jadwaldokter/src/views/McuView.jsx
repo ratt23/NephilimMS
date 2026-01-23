@@ -7,6 +7,29 @@ import McuFormModal from '../components/McuFormModal';
 const McuView = () => {
     const config = useConfig();
     const [selectedPkg, setSelectedPkg] = useState(null);
+    const [packages, setPackages] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch packages from API
+    React.useEffect(() => {
+        const fetchPackages = async () => {
+            try {
+                // Determine API base URL (using config logic or relative path)
+                const response = await fetch('/.netlify/functions/api/mcu-packages');
+                if (!response.ok) throw new Error('Failed to fetch packages');
+                const data = await response.json();
+                setPackages(data);
+            } catch (err) {
+                console.error("Failed to load MCU packages", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPackages();
+    }, []);
+
+    if (loading) return <div className="p-10 text-center text-slate-500">Loading packages...</div>;
 
     return (
         <div className="pb-10">
@@ -24,11 +47,17 @@ const McuView = () => {
 
             {/* MCU Packages Grid */}
             <div className="px-4 md:px-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {mcuPackages.map(pkg => (
-                        <McuPackageCard key={pkg.id} pkg={pkg} onSelect={setSelectedPkg} />
-                    ))}
-                </div>
+                {packages.length === 0 ? (
+                    <div className="text-center py-10 text-slate-500 bg-white rounded-lg shadow-sm border border-slate-200">
+                        <p>Belum ada paket MCU yang tersedia saat ini.</p>
+                    </div>
+                ) : (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {packages.map(pkg => (
+                            <McuPackageCard key={pkg.id} pkg={pkg} onSelect={setSelectedPkg} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {selectedPkg && (

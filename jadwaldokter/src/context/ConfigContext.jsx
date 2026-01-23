@@ -270,7 +270,7 @@ export const ConfigProvider = ({ children }) => {
             const features = {
                 polyclinicToday: (data.feature_polyclinic_today?.is_enabled ?? data.feature_polyclinic_today?.enabled) ?? true,
                 doctorLeave: (data.feature_doctor_leave?.is_enabled ?? data.feature_doctor_leave?.enabled) ?? true,
-                googleReview: (data.feature_google_review?.is_enabled ?? data.feature_google_review?.enabled) ?? true,
+                googleReview: (data.feature_google_review?.is_enabled ?? data.feature_google_review?.enabled) ?? false,
                 headerSlider: (data.feature_header_slider?.is_enabled ?? data.feature_header_slider?.enabled) ?? true,
                 scheduleUpdate: (data.feature_schedule_update?.is_enabled ?? data.feature_schedule_update?.enabled) ?? true
             };

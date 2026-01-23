@@ -7,8 +7,8 @@ import Cookies from 'js-cookie'; // <-- Impor js-cookie
 
 // Komponen untuk melindungi route
 function ProtectedRoute({ children }) {
-  // Cek apakah cookie 'adminSession' ada (ditetapkan oleh api.js)
-  const isAuthenticated = !!Cookies.get('adminSession');
+  // Cek apakah cookie 'adminAuth' ada (ditetapkan oleh api.js)
+  const isAuthenticated = !!Cookies.get('adminAuth');
 
   // Jika sudah login, tampilkan halaman (children)
   // Jika belum, lempar ke halaman login

@@ -1,0 +1,5 @@
+# Cloudinary Proxy Rewrite (Fixes CORS & SSL/Network blocks)
+/cloudinary-proxy/*  https://res.cloudinary.com/:splat  200!
+
+# SPA Fallback (Must be last)
+/*  /index.html  200

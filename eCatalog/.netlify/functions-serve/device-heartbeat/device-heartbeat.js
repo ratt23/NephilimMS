@@ -1,0 +1,1 @@
+module.exports = require('./schedule-project-main/netlify/functions/device-heartbeat.js')

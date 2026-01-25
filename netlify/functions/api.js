@@ -566,10 +566,14 @@ export async function handler(event, context) {
         }
         const newLeave = await sql.unsafe('INSERT INTO leave_data(doctor_id, start_date, end_date, reason, created_at) VALUES($1, $2, $3, $4, NOW()) RETURNING *', [doctor_id, start_date, end_date, reason || '']);
 
-        // Send notification
-        const doctorResult = await sql.unsafe('SELECT * FROM doctors WHERE id = $1', [doctor_id]);
-        if (doctorResult.length > 0) {
-          await sendLeaveNotification(doctorResult[0], start_date, end_date, reason);
+        // Send notification (Fire and Forget - Don't block response)
+        try {
+          const doctorResult = await sql.unsafe('SELECT * FROM doctors WHERE id = $1', [doctor_id]);
+          if (doctorResult.length > 0) {
+            await sendLeaveNotification(doctorResult[0], start_date, end_date, reason);
+          }
+        } catch (noteErr) {
+          console.error("Notification Error (Non-fatal):", noteErr);
         }
 
         return { statusCode: 201, headers, body: JSON.stringify(newLeave[0]) };

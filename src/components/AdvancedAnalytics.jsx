@@ -49,11 +49,11 @@ export default function AdvancedAnalytics() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-[#E6E6E3]">Detailed Traffic Analysis</h3>
+                <h3 className="text-lg font-semibold text-sanctum-text-curr">Detailed Traffic Analysis</h3>
                 <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
-                    className="border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm bg-[#0B0B0C] text-[#E6E6E3]"
+                    className="border border-sanctum-border rounded px-2 py-1 text-sm bg-sanctum-bg text-sanctum-text-curr"
                 >
                     <option value="7days">Last 7 Days</option>
                     <option value="30days">Last 30 Days</option>
@@ -62,8 +62,8 @@ export default function AdvancedAnalytics() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Traffic Sources */}
-                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
-                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Traffic Sources</h4>
+                <div className="bg-sanctum-surface p-4 rounded shadow-2xl border border-sanctum-border">
+                    <h4 className="text-sm font-bold text-sanctum-accent mb-4">Traffic Sources</h4>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -88,8 +88,8 @@ export default function AdvancedAnalytics() {
                 </div>
 
                 {/* Device Breakdown */}
-                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
-                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Device Usage</h4>
+                <div className="bg-sanctum-surface p-4 rounded shadow-2xl border border-sanctum-border">
+                    <h4 className="text-sm font-bold text-sanctum-accent mb-4">Device Usage</h4>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.devices} layout="vertical">
@@ -107,11 +107,11 @@ export default function AdvancedAnalytics() {
                 </div>
 
                 {/* Top Pages Table */}
-                <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20 md:col-span-2">
-                    <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Top Visited Pages</h4>
+                <div className="bg-sanctum-surface p-4 rounded shadow-2xl border border-sanctum-border md:col-span-2">
+                    <h4 className="text-sm font-bold text-sanctum-accent mb-4">Top Visited Pages</h4>
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm text-left">
-                            <thead className="bg-[#0B0B0C] text-[#8C7A3E] font-medium border-b border-[#8C7A3E]/20">
+                            <thead className="bg-sanctum-bg text-sanctum-accent font-medium border-b border-sanctum-border">
                                 <tr>
                                     <th className="py-2 px-3">Page URL</th>
                                     <th className="py-2 px-3 text-right">Views</th>
@@ -135,8 +135,8 @@ export default function AdvancedAnalytics() {
             </div>
 
             {/* Conversion Events Table */}
-            <div className="bg-[#1a1d21] p-4 rounded shadow-2xl border border-[#8C7A3E]/20">
-                <h4 className="text-sm font-bold text-[#8C7A3E] mb-4">Conversion Events</h4>
+            <div className="bg-sanctum-surface p-4 rounded shadow-2xl border border-sanctum-border">
+                <h4 className="text-sm font-bold text-sanctum-accent mb-4">Conversion Events</h4>
                 {data.conversions && data.conversions.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm text-left">

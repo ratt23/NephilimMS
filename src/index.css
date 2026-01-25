@@ -5,17 +5,29 @@
 @tailwind utilities;
 
 :root {
-  /* Nephilim Design Tokens - Born from Knowledge */
-  --bg-0: #0B0B0C;
-  --bg-1: #12161D;
-  --bg-2: #1a1d21;
-  --bg-surface: #1f2329;
-  --text-0: #E6E6E3;
-  --text-1: #a0a4ab;
-  --border-0: rgba(230, 230, 227, 0.1);
-  --accent: #8C7A3E;
-  --accent-hover: #a89150;
-  --accent-active: #6e6131;
+  /* Sanctum Design Tokens - Obsidian Core */
+  --sanctum-primary: #002360;
+  --sanctum-bg: #0A0F1C;
+  --sanctum-sidebar: #0F1B2D;
+  --sanctum-surface: #13233A;
+  --sanctum-accent: #1F6AFF;
+  --sanctum-text-primary: #EAF2FF;
+  --sanctum-text-secondary: #9FB0CC;
+  --sanctum-border: rgba(255, 255, 255, 0.08);
+
+  /* Mapping old Nephilim vars to new Sanctum theme for compatibility */
+  --bg-0: var(--sanctum-bg);
+  --bg-1: var(--sanctum-sidebar);
+  --bg-2: var(--sanctum-surface);
+  --bg-surface: var(--sanctum-surface);
+  --text-0: var(--sanctum-text-primary);
+  --text-1: var(--sanctum-text-secondary);
+  --border-0: var(--sanctum-border);
+  --accent: var(--sanctum-accent);
+  --accent-hover: #337EFF;
+  /* Lighter version of accent */
+  --accent-active: #004BC4;
+  /* Darker version of accent */
 }
 
 @layer utilities {
@@ -31,53 +43,53 @@
     animation: slideRight 0.3s ease-out forwards;
   }
 
-  /* Nephilim Theme Utilities */
+  /* Sanctum Theme Utilities (Aliases for legacy 'nephilim-' classes to ensure immediate overlap) */
   .nephilim-card {
-    @apply bg-[#1a1d21] border border-[#8C7A3E]/20 rounded-lg shadow-2xl;
+    @apply bg-[var(--sanctum-surface)] border border-[var(--sanctum-border)] rounded-lg shadow-2xl;
   }
 
   .nephilim-card-header {
-    @apply bg-[#0B0B0C] px-4 py-2 border-b border-[#8C7A3E]/20 font-medium text-[#8C7A3E];
+    @apply bg-[var(--sanctum-primary)]/20 px-4 py-3 border-b border-[var(--sanctum-border)] font-semibold text-[var(--sanctum-text-primary)] uppercase tracking-wider;
   }
 
   .nephilim-card-body {
-    @apply p-4 text-[#a0a4ab];
+    @apply p-5 text-[var(--sanctum-text-secondary)];
   }
 
   .nephilim-btn-primary {
-    @apply bg-[#8C7A3E] hover:bg-[#a89150] text-[#0B0B0C] px-4 py-2 rounded-lg font-semibold transition-colors;
+    @apply bg-[var(--sanctum-accent)] hover:bg-[#337EFF] text-white px-5 py-2 rounded font-semibold transition-colors shadow-lg shadow-blue-900/20;
   }
 
   .nephilim-btn-secondary {
-    @apply bg-[#1a1d21] hover:bg-[#0B0B0C] text-[#E6E6E3] border border-[#8C7A3E]/30 px-4 py-2 rounded-lg transition-colors;
+    @apply bg-[var(--sanctum-surface)] hover:bg-[var(--sanctum-sidebar)] text-[var(--sanctum-text-primary)] border border-[var(--sanctum-border)] px-4 py-2 rounded transition-colors;
   }
 
   .nephilim-input {
-    @apply bg-[#0B0B0C] border border-[#8C7A3E]/30 rounded text-[#E6E6E3] focus:outline-none focus:ring-1 focus:ring-[#8C7A3E] focus:border-[#8C7A3E];
+    @apply bg-[var(--sanctum-bg)] border border-[var(--sanctum-border)] rounded text-[var(--sanctum-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--sanctum-accent)] focus:border-[var(--sanctum-accent)] placeholder-[var(--sanctum-text-secondary)]/50;
   }
 
   .nephilim-table {
-    @apply w-full bg-[#0B0B0C] border border-[#8C7A3E]/20 rounded-lg overflow-hidden;
+    @apply w-full bg-[var(--sanctum-surface)] border border-[var(--sanctum-border)] rounded-lg overflow-hidden;
   }
 
   .nephilim-table-header {
-    @apply bg-[#1a1d21] border-b border-[#8C7A3E]/20 text-[#8C7A3E] font-semibold;
+    @apply bg-[var(--sanctum-sidebar)] border-b border-[var(--sanctum-border)] text-[var(--sanctum-text-secondary)] font-bold uppercase text-xs tracking-wider;
   }
 
   .nephilim-table-row {
-    @apply hover:bg-[#1a1d21] transition-colors text-[#E6E6E3];
+    @apply hover:bg-[var(--sanctum-primary)]/30 transition-colors text-[var(--sanctum-text-primary)] border-b border-[var(--sanctum-border)] last:border-0;
   }
 
   .nephilim-text-primary {
-    @apply text-[#E6E6E3];
+    @apply text-[var(--sanctum-text-primary)];
   }
 
   .nephilim-text-secondary {
-    @apply text-[#a0a4ab];
+    @apply text-[var(--sanctum-text-secondary)];
   }
 
   .nephilim-text-accent {
-    @apply text-[#8C7A3E];
+    @apply text-[var(--sanctum-accent)];
   }
 }
 

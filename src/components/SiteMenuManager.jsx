@@ -105,13 +105,13 @@ export default function SiteMenuManager() {
         <div className="p-6 max-w-4xl mx-auto animate-fade-in font-sans">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border-b pb-4">
                 <div>
-                    <h2 className="text-xl font-bold text-[#E6E6E3]">Site Menu Manager</h2>
-                    <p className="text-[#a0a4ab] text-sm">Configure the navigation menu appearing on the client site (Footer/Header).</p>
+                    <h2 className="text-xl font-bold text-sanctum-text-curr">Site Menu Manager</h2>
+                    <p className="text-sanctum-text-muted text-sm">Configure the navigation menu appearing on the client site (Footer/Header).</p>
                 </div>
                 <button
                     onClick={handleSave}
                     disabled={isLoading}
-                    className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-6 py-2 rounded shadow-2xl-sm font-bold flex items-center gap-2"
+                    className="bg-sanctum-accent hover:bg-blue-600 text-white px-6 py-2 rounded shadow-2xl-sm font-bold flex items-center gap-2"
                 >
                     {isLoading ? <LoadingSpinner size="sm" /> : null}
                     Save Changes
@@ -126,21 +126,21 @@ export default function SiteMenuManager() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* LIST / PREVIEW */}
-                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 rounded shadow-2xl-sm p-4">
-                    <h3 className="text-sm font-bold text-[#a0a4ab] uppercase tracking-wider mb-4">Current Menu Structure</h3>
+                <div className="bg-sanctum-surface border border-sanctum-border rounded shadow-2xl-sm p-4">
+                    <h3 className="text-sm font-bold text-sanctum-text-muted uppercase tracking-wider mb-4">Current Menu Structure</h3>
 
                     <div className="space-y-3">
-                        {menuItems.length === 0 && <p className="text-[#a0a4ab]/60 italic text-sm text-center py-4">No menu items defined.</p>}
+                        {menuItems.length === 0 && <p className="text-sanctum-text-muted/60 italic text-sm text-center py-4">No menu items defined.</p>}
 
                         {menuItems.map((item, index) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-[#0B0B0C] border border-[#8C7A3E]/10 rounded group hover:border-blue-200 transition-colors">
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-sanctum-bg border border-sanctum-border rounded group hover:border-sanctum-accent transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-blue-100 text-blue-600 flex items-center justify-center rounded text-xs font-bold font-mono">
+                                    <div className="w-8 h-8 bg-sanctum-primary text-white flex items-center justify-center rounded text-xs font-bold font-mono">
                                         {index + 1}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-[#E6E6E3]">{item.label}</div>
-                                        <div className="text-xs text-[#a0a4ab] font-mono">{item.url}</div>
+                                        <div className="font-bold text-sanctum-text-curr">{item.label}</div>
+                                        <div className="text-xs text-sanctum-text-muted font-mono">{item.url}</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100">
@@ -154,43 +154,43 @@ export default function SiteMenuManager() {
                 </div>
 
                 {/* ADD NEW */}
-                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 rounded shadow-2xl-sm p-6 h-fit">
-                    <h3 className="text-sm font-bold text-[#a0a4ab] uppercase tracking-wider mb-4">Add New Item</h3>
+                <div className="bg-sanctum-surface border border-sanctum-border rounded shadow-2xl-sm p-6 h-fit">
+                    <h3 className="text-sm font-bold text-sanctum-text-muted uppercase tracking-wider mb-4">Add New Item</h3>
                     <form onSubmit={handleAddItem} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><Type size={12} /> Label</label>
+                            <label className="block text-xs font-bold text-sanctum-text-curr mb-1 flex items-center gap-1"><Type size={12} /> Label</label>
                             <input
                                 type="text"
                                 value={newItem.label}
                                 onChange={e => setNewItem({ ...newItem, label: e.target.value })}
-                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-sanctum-border rounded text-sm focus:ring-sanctum-accent focus:border-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
                                 placeholder="e.g. Home"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><IconLink size={12} /> URL</label>
+                            <label className="block text-xs font-bold text-sanctum-text-curr mb-1 flex items-center gap-1"><IconLink size={12} /> URL</label>
                             <input
                                 type="text"
                                 value={newItem.url}
                                 onChange={e => setNewItem({ ...newItem, url: e.target.value })}
-                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-sanctum-border rounded text-sm focus:ring-sanctum-accent focus:border-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
                                 placeholder="e.g. /home or https://..."
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-[#E6E6E3] mb-1 flex items-center gap-1"><Square size={12} /> Icon Code (Optional)</label>
+                            <label className="block text-xs font-bold text-sanctum-text-curr mb-1 flex items-center gap-1"><Square size={12} /> Icon Code (Optional)</label>
                             <input
                                 type="text"
                                 value={newItem.icon}
                                 onChange={e => setNewItem({ ...newItem, icon: e.target.value })}
-                                className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-sanctum-border rounded text-sm focus:ring-sanctum-accent focus:border-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
                                 placeholder="e.g. home, user, phone"
                             />
-                            <p className="text-[10px] text-[#a0a4ab]/60 mt-1">Refers to icon names used in the client app.</p>
+                            <p className="text-[10px] text-sanctum-text-muted/60 mt-1">Refers to icon names used in the client app.</p>
                         </div>
                         <button
                             type="submit"
-                            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 rounded flex items-center justify-center gap-2 text-sm"
+                            className="w-full bg-sanctum-sidebar hover:bg-sanctum-bg text-sanctum-text-curr font-bold py-2 rounded flex items-center justify-center gap-2 text-sm border border-sanctum-border"
                         >
                             <Plus size={16} /> Add to Menu
                         </button>

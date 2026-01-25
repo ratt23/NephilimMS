@@ -135,28 +135,28 @@ export default function NewsletterForm() {
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">
+                <h1 className="text-2xl font-bold text-sanctum-text-curr">
                     {isEdit ? '✏️ Edit Newsletter' : '➕ New Newsletter'}
                 </h1>
                 <button
                     onClick={() => navigate('/admin/newsletter')}
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-sanctum-text-muted hover:text-white"
                 >
                     ← Back to List
                 </button>
             </div>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <div className="bg-red-900/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-4">
                     {error}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="bg-sanctum-surface rounded-lg shadow-lg p-6 space-y-6 border border-sanctum-border">
                 {/* Year & Month */}
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-sanctum-text-muted mb-2">
                             Year <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -167,12 +167,12 @@ export default function NewsletterForm() {
                             min="2000"
                             max="2100"
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-sanctum-border rounded-lg focus:ring-2 focus:ring-sanctum-accent focus:border-transparent bg-sanctum-bg text-sanctum-text-curr"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-sanctum-text-muted mb-2">
                             Month <span className="text-red-500">*</span>
                         </label>
                         <select
@@ -180,7 +180,7 @@ export default function NewsletterForm() {
                             value={formData.month}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-sanctum-border rounded-lg focus:ring-2 focus:ring-sanctum-accent focus:border-transparent bg-sanctum-bg text-sanctum-text-curr"
                         >
                             {MONTHS.map((monthName, idx) => (
                                 <option key={idx} value={idx + 1}>
@@ -193,7 +193,7 @@ export default function NewsletterForm() {
 
                 {/* Title */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-sanctum-text-muted mb-2">
                         Title <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -203,13 +203,13 @@ export default function NewsletterForm() {
                         onChange={handleChange}
                         required
                         placeholder="e.g. Newsletter Desember 2024"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-sanctum-border rounded-lg focus:ring-2 focus:ring-sanctum-accent focus:border-transparent bg-sanctum-bg text-sanctum-text-curr"
                     />
                 </div>
 
                 {/* Description */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-sanctum-text-muted mb-2">
                         Description (Optional)
                     </label>
                     <textarea
@@ -218,13 +218,13 @@ export default function NewsletterForm() {
                         onChange={handleChange}
                         rows="3"
                         placeholder="Brief description..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-sanctum-border rounded-lg focus:ring-2 focus:ring-sanctum-accent focus:border-transparent bg-sanctum-bg text-sanctum-text-curr"
                     />
                 </div>
 
                 {/* PDF Upload */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="border-2 border-dashed border-sanctum-border rounded-lg p-6 bg-sanctum-bg/50">
+                    <label className="block text-sm font-medium text-sanctum-text-muted mb-2">
                         PDF File <span className="text-red-500">*</span>
                     </label>
 
@@ -234,11 +234,11 @@ export default function NewsletterForm() {
                             accept=".pdf,application/pdf"
                             onChange={handleFileSelect}
                             disabled={uploading}
-                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                            className="w-full text-sm text-sanctum-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-900/20 file:text-blue-400 hover:file:bg-blue-900/30 disabled:opacity-50"
                         />
 
                         {uploadProgress && (
-                            <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
+                            <div className="text-sm text-sanctum-text-muted bg-sanctum-sidebar px-3 py-2 rounded">
                                 {uploadProgress}
                             </div>
                         )}
@@ -255,14 +255,14 @@ export default function NewsletterForm() {
                         )}
 
                         {formData.pdf_url && (
-                            <div className="bg-green-50 border border-green-200 rounded p-3">
+                            <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-green-700">✅ PDF Uploaded</span>
+                                    <span className="text-sm text-green-400">✅ PDF Uploaded</span>
                                     <a
                                         href={formData.pdf_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800 text-sm"
+                                        className="text-blue-400 hover:text-blue-300 text-sm"
                                     >
                                         View PDF →
                                     </a>
@@ -277,7 +277,7 @@ export default function NewsletterForm() {
                     <button
                         type="submit"
                         disabled={saving || !formData.pdf_url}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-sanctum-accent hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {saving ? 'Saving...' : (isEdit ? 'Update Newsletter' : 'Create Newsletter')}
                     </button>
@@ -285,7 +285,7 @@ export default function NewsletterForm() {
                     <button
                         type="button"
                         onClick={() => navigate('/admin/newsletter')}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition"
+                        className="bg-sanctum-sidebar hover:bg-sanctum-bg text-sanctum-text-muted hover:text-white px-6 py-2 rounded-lg font-medium transition border border-sanctum-border"
                     >
                         Cancel
                     </button>

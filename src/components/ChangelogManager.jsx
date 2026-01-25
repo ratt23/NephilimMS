@@ -15,13 +15,13 @@ const CHANGELOG_DATA = [
         version: 'v3.0.0',
         date: '2026-01-21',
         changes: [
-            { type: 'feature', text: 'Rebranding: Complete rebrand to "NephilimMS - Born from Knowledge"' },
-            { type: 'feature', text: 'Dark Theme: Nephilim theme with dark backgrounds and brass accents (#8C7A3E)' },
+            { type: 'feature', text: 'Rebranding: Complete rebrand to "Sanctum - Obsidian Core"' },
+            { type: 'feature', text: 'Dark Theme: Sanctum theme with deep navy backgrounds and blue accents' },
             { type: 'feature', text: 'Typography: Cinzel font for headings, Inter for body text' },
             { type: 'feature', text: 'UI: Joomla 5 Atum-inspired accordion sidebar navigation' },
-            { type: 'improvement', text: 'Dashboard: All manager components updated to dark theme' },
-            { type: 'improvement', text: 'Analytics: Traffic charts with dark theme and brass UI elements' },
-            { type: 'improvement', text: 'Login: Complete dark theme with brass button accents' },
+            { type: 'improvement', text: 'Dashboard: All manager components updated to Sanctum dark theme' },
+            { type: 'improvement', text: 'Analytics: Traffic charts with Sanctum dark theme and blue UI elements' },
+            { type: 'improvement', text: 'Login: Complete dark theme with blue button accents' },
             { type: 'fix', text: 'eCatalog: Added getValidImageUrl export to imageUtils.js' },
             { type: 'fix', text: 'Theme: Fixed boxShadow syntax errors from batch update' },
         ]

@@ -26,7 +26,7 @@ const MenuBar = ({ editor, addImage }) => {
     }, [editor]);
 
     return (
-        <div className="border-b border-[#8C7A3E]/20 p-2 flex flex-wrap gap-1 bg-[#0B0B0C] sticky top-0 z-10">
+        <div className="border-b border-sanctum-border p-2 flex flex-wrap gap-1 bg-sanctum-sidebar sticky top-0 z-10">
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -395,15 +395,15 @@ export default function PostManager() {
     if (view === 'list') {
         return (
             <div className="space-y-6 animate-fade-in font-sans">
-                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
-                    <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex justify-between items-center">
-                        <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide">
+                <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
+                    <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex justify-between items-center">
+                        <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide">
                             Post Manager
                             <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{posts.length}</span>
                         </h2>
                         <button
                             onClick={handleCreate}
-                            className="py-1.5 px-4 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-green-700 transition-colors flex items-center gap-2"
+                            className="py-1.5 px-4 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-blue-600 transition-colors flex items-center gap-2"
                         >
                             <span>+ New Post</span>
                         </button>
@@ -413,30 +413,30 @@ export default function PostManager() {
                         <div className="p-12"><LoadingSpinner /></div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-[#f0f2f5]">
+                            <table className="min-w-full divide-y divide-sanctum-border">
+                                <thead className="bg-sanctum-sidebar">
                                     <tr>
-                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Title</th>
-                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Status</th>
-                                        <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Date</th>
-                                        <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Title</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Status</th>
+                                        <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Date</th>
+                                        <th className="p-3 text-center text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
+                                <tbody className="bg-sanctum-surface divide-y divide-sanctum-border">
                                     {posts.length === 0 && (
                                         <tr><td colSpan="4" className="p-8 text-center text-[#a0a4ab] italic">No posts found.</td></tr>
                                     )}
                                     {posts.map(post => (
-                                        <tr key={post.id} className="hover:bg-blue-900/20 transition-colors">
-                                            <td className="p-3 text-sm font-medium text-[#E6E6E3] border-r border-[#8C7A3E]/10">{post.title}</td>
-                                            <td className="p-3 text-sm border-r border-[#8C7A3E]/10">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-[#0B0B0C] text-[#E6E6E3]'}`}>
+                                        <tr key={post.id} className="hover:bg-sanctum-primary/20 transition-colors">
+                                            <td className="p-3 text-sm font-medium text-sanctum-text-curr border-r border-sanctum-border">{post.title}</td>
+                                            <td className="p-3 text-sm border-r border-sanctum-border">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-sanctum-bg text-sanctum-text-curr'}`}>
                                                     {post.status}
                                                 </span>
                                             </td>
-                                            <td className="p-3 text-xs text-[#a0a4ab] border-r border-[#8C7A3E]/10">
+                                            <td className="p-3 text-xs text-sanctum-text-muted border-r border-sanctum-border">
                                                 {new Date(post.created_at).toLocaleDateString()}
-                                                <div className="text-[10px] text-[#a0a4ab]/60 mt-1">{post.category}</div>
+                                                <div className="text-[10px] text-sanctum-text-muted/60 mt-1">{post.category}</div>
                                             </td>
                                             <td className="p-3 text-sm text-center">
                                                 <div className="flex justify-center items-center gap-2">
@@ -458,24 +458,24 @@ export default function PostManager() {
     // Edit / Create View
     return (
         <div className="space-y-6 animate-fade-in font-sans">
-            <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+            <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
 
                 {/* Header */}
-                <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex justify-between items-center sticky top-0 z-20">
-                    <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide">
+                <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex justify-between items-center sticky top-0 z-20">
+                    <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide">
                         {view === 'create' ? 'Create New Post' : 'Edit Post'}
                     </h2>
                     <div className="flex gap-3">
                         <button
                             onClick={() => setView('list')}
-                            className="py-1.5 px-4 bg-[#0B0B0C] text-[#a0a4ab] font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-gray-200 transition-colors"
+                            className="py-1.5 px-4 bg-sanctum-bg text-sanctum-text-muted font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-sanctum-sidebar transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSubmit}
                             disabled={isSaving}
-                            className="py-1.5 px-4 bg-[#8C7A3E] text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-[#a89150] transition-colors disabled:opacity-50"
+                            className="py-1.5 px-4 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-blue-600 transition-colors disabled:opacity-50"
                         >
                             {isSaving ? 'Saving...' : 'Save Post'}
                         </button>
@@ -487,22 +487,22 @@ export default function PostManager() {
                     {/* Title & Slug */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Title</label>
+                            <label className="block text-sm font-bold text-sanctum-text-curr uppercase mb-1">Title</label>
                             <input
                                 type="text"
                                 value={formData.title}
                                 onChange={handleTitleChange}
-                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full px-3 py-2 border border-sanctum-border rounded-sm focus:ring-sanctum-accent focus:border-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
                                 placeholder="Post Title..."
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Slug (URL)</label>
+                            <label className="block text-sm font-bold text-sanctum-text-curr uppercase mb-1">Slug (URL)</label>
                             <input
                                 type="text"
                                 value={formData.slug}
                                 onChange={(e) => setFormData(p => ({ ...p, slug: e.target.value }))}
-                                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm bg-[#0B0B0C] text-[#a0a4ab] focus:ring-blue-500 focus:border-blue-500"
+                                className="block w-full px-3 py-2 border border-sanctum-border rounded-sm bg-sanctum-bg text-sanctum-text-muted focus:ring-sanctum-accent focus:border-sanctum-accent"
                             />
                         </div>
                     </div>
@@ -574,12 +574,12 @@ export default function PostManager() {
                     </div>
 
                     {/* Tiptap Editor */}
-                    <div className="border border-[#8C7A3E]/20 rounded-sm overflow-hidden bg-[#1a1d21] min-h-[400px] flex flex-col">
-                        <div className="bg-[#0B0B0C] border-b border-[#8C7A3E]/20 px-4 py-2 text-xs font-bold uppercase text-[#a0a4ab]">
+                    <div className="border border-sanctum-border rounded-sm overflow-hidden bg-sanctum-surface min-h-[400px] flex flex-col">
+                        <div className="bg-sanctum-sidebar border-b border-sanctum-border px-4 py-2 text-xs font-bold uppercase text-sanctum-text-muted">
                             Post Content
                         </div>
                         <MenuBar editor={editor} addImage={addImageToEditor} />
-                        <div className="flex-1 bg-[#1a1d21]">
+                        <div className="flex-1 bg-sanctum-bg text-sanctum-text-curr">
                             <EditorContent editor={editor} />
                         </div>
                     </div>

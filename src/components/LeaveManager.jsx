@@ -212,7 +212,7 @@ export default function LeaveManager() {
             Confirm Action
           </h2>
         </div>
-        <div className="p-6 bg-[#1a1d21]">
+        <div className="p-6 bg-sanctum-surface">
           <p className="text-[#E6E6E3] mb-6 font-medium">
             {deleteModal.type === 'single'
               ? 'Are you sure you want to delete this leave record?'
@@ -221,7 +221,7 @@ export default function LeaveManager() {
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setDeleteModal({ ...deleteModal, isOpen: false })}
-              className="px-4 py-2 bg-[#0B0B0C] text-[#E6E6E3] rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              className="px-4 py-2 bg-sanctum-bg text-sanctum-text-curr rounded-lg hover:bg-sanctum-sidebar font-medium transition-colors"
             >
               Cancel
             </button>
@@ -238,13 +238,13 @@ export default function LeaveManager() {
 
       {/* Toolbar ... */}
 
-      <div className="bg-[#1a1d21] p-4 rounded shadow-2xl-sm border border-[#8C7A3E]/20 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <h2 className="text-xl font-light text-[#E6E6E3] flex items-center gap-2">
+      <div className="bg-sanctum-surface p-4 rounded shadow-2xl-sm border border-sanctum-border flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+        <h2 className="text-xl font-light text-sanctum-text-curr flex items-center gap-2">
           Leave Management
         </h2>
         <div className="w-full md:w-auto flex flex-col md:flex-row gap-2">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#a0a4ab]/60">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sanctum-text-muted/60">
               <IconSearch />
             </div>
             <input
@@ -252,7 +252,7 @@ export default function LeaveManager() {
               placeholder="Search doctor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-3 py-1.5 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500 w-full"
+              className="pl-9 pr-3 py-1.5 border border-sanctum-border rounded text-sm focus:outline-none focus:border-sanctum-accent w-full bg-sanctum-bg text-sanctum-text-curr"
             />
           </div>
         </div>
@@ -261,9 +261,9 @@ export default function LeaveManager() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* --- LEFT: Add Form --- */}
         <div className="lg:col-span-1">
-          <div className="bg-[#1a1d21] rounded shadow-2xl-sm border border-[#8C7A3E]/20 overflow-hidden">
-            <div className="bg-[#0B0B0C] px-4 py-3 border-b border-[#8C7A3E]/20 flex justify-between items-center">
-              <h3 className="font-semibold text-[#E6E6E3] text-sm">Add New Leave</h3>
+          <div className="bg-sanctum-surface rounded shadow-2xl-sm border border-sanctum-border overflow-hidden">
+            <div className="bg-sanctum-sidebar px-4 py-3 border-b border-sanctum-border flex justify-between items-center">
+              <h3 className="font-semibold text-sanctum-text-curr text-sm">Add New Leave</h3>
             </div>
             <div className="p-4">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -278,13 +278,13 @@ export default function LeaveManager() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-bold text-[#a0a4ab] uppercase mb-1">Start</label>
+                    <label className="block text-xs font-bold text-sanctum-text-muted uppercase mb-1">Start</label>
                     <input
                       type="date"
                       name="start_date"
                       value={formData.start_date}
                       onChange={handleChange}
-                      className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500"
+                      className="block w-full px-3 py-2 border border-sanctum-border rounded text-sm focus:outline-none focus:border-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
                       required
                     />
                   </div>
@@ -315,22 +315,22 @@ export default function LeaveManager() {
         {/* --- RIGHT: List --- */}
         <div className="lg:col-span-2 space-y-6">
           {/* Active Leaves */}
-          <div className="bg-[#1a1d21] rounded shadow-2xl-sm border border-[#8C7A3E]/20 overflow-hidden">
-            <div className="bg-blue-900/20 px-4 py-3 border-b border-blue-100 flex justify-between items-center">
-              <h3 className="font-semibold text-blue-800 text-sm">Active & Upcoming Leaves</h3>
-              <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">{activeFiltered.length}</span>
+          <div className="bg-sanctum-surface rounded shadow-2xl-sm border border-sanctum-border overflow-hidden">
+            <div className="bg-blue-900/20 px-4 py-3 border-b border-blue-100/20 flex justify-between items-center">
+              <h3 className="font-semibold text-blue-400 text-sm">Active & Upcoming Leaves</h3>
+              <span className="text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full">{activeFiltered.length}</span>
             </div>
             {/* Scrollable Table Container */}
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-100 relative">
-                <thead className="bg-[#0B0B0C] text-[#a0a4ab] text-xs uppercase font-medium sticky top-0 z-10 shadow-2xl-sm">
+              <table className="min-w-full divide-y divide-sanctum-border relative">
+                <thead className="bg-sanctum-sidebar text-sanctum-text-muted text-xs uppercase font-medium sticky top-0 z-10 shadow-2xl-sm">
                   <tr>
-                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Doctor Name</th>
-                    <th className="px-4 py-3 text-left bg-[#0B0B0C]">Period</th>
-                    <th className="px-4 py-3 text-right bg-[#0B0B0C]">Action</th>
+                    <th className="px-4 py-3 text-left bg-sanctum-sidebar">Doctor Name</th>
+                    <th className="px-4 py-3 text-left bg-sanctum-sidebar">Period</th>
+                    <th className="px-4 py-3 text-right bg-sanctum-sidebar">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-sanctum-border">
                   {activeFiltered.length === 0 ? (
                     <tr>
                       <td colSpan="3" className="px-4 py-8 text-center text-[#a0a4ab]/60 text-sm italic">
@@ -341,12 +341,12 @@ export default function LeaveManager() {
                     activeFiltered.map((leave, index) => {
                       const isSameDoc = index > 0 && activeFiltered[index - 1].doctor_name === leave.doctor_name;
                       return (
-                        <tr key={leave.id} className="hover:bg-[#0B0B0C] transition-colors">
-                          <td className="px-4 py-3 text-sm text-[#E6E6E3] font-medium">
+                        <tr key={leave.id} className="hover:bg-sanctum-bg transition-colors">
+                          <td className="px-4 py-3 text-sm text-sanctum-text-curr font-medium">
                             {!isSameDoc && leave.doctor_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[#a0a4ab]">
-                            <span className="bg-blue-900/20 text-blue-700 px-2 py-1 rounded text-xs border border-blue-100">
+                          <td className="px-4 py-3 text-sm text-sanctum-text-muted">
+                            <span className="bg-blue-900/40 text-blue-300 px-2 py-1 rounded text-xs border border-blue-500/30">
                               {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
                             </span>
                           </td>
@@ -391,16 +391,16 @@ export default function LeaveManager() {
                     <th className="px-4 py-3 text-right bg-[#0B0B0C]">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-[#0B0B0C]/30">
+                <tbody className="divide-y divide-sanctum-border bg-sanctum-sidebar/30">
                   {historyFiltered.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="px-4 py-6 text-center text-[#a0a4ab]/60 text-xs italic">
+                      <td colSpan="3" className="px-4 py-6 text-center text-sanctum-text-muted/60 text-xs italic">
                         No history data.
                       </td>
                     </tr>
                   ) : (
                     historyFiltered.map((leave) => (
-                      <tr key={leave.id} className="text-[#a0a4ab]">
+                      <tr key={leave.id} className="text-sanctum-text-muted">
                         <td className="px-4 py-2 text-sm">{leave.doctor_name}</td>
                         <td className="px-4 py-2 text-xs">
                           {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
@@ -477,27 +477,27 @@ const SearchableSelect = ({ options, value, onChange, placeholder = "Select..." 
       <div className="relative">
         <input
           type="text"
-          className="w-full px-3 py-2 border border-[#8C7A3E]/30 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-sanctum-border rounded text-sm focus:outline-none focus:border-sanctum-accent focus:ring-1 focus:ring-sanctum-accent bg-sanctum-bg text-sanctum-text-curr"
           placeholder={placeholder}
           value={inputValue}
           onChange={handleInputChange}
           onClick={() => setIsOpen(true)}
         />
-        <div className="absolute inset-y-0 right-0 top-0 flex items-center pr-3 pointer-events-none text-[#a0a4ab]/60">
+        <div className="absolute inset-y-0 right-0 top-0 flex items-center pr-3 pointer-events-none text-sanctum-text-muted/60">
           <IconChevronDown />
         </div>
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-[#1a1d21] border border-[#8C7A3E]/30 rounded shadow-2xl-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-sanctum-surface border border-sanctum-border rounded shadow-2xl-lg max-h-60 overflow-y-auto">
           {filteredOptions.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-[#a0a4ab]">No doctors found.</div>
+            <div className="px-3 py-2 text-xs text-sanctum-text-muted">No doctors found.</div>
           ) : (
             filteredOptions.map(opt => (
               <div
                 key={opt.id}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-900/20 ${opt.id === value ? 'bg-blue-900/20 text-blue-700 font-medium' : 'text-[#E6E6E3]'}`}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-sanctum-primary/40 ${opt.id === value ? 'bg-sanctum-primary/60 text-white font-medium' : 'text-sanctum-text-curr'}`}
                 onClick={() => handleSelect(opt)}
               >
                 {opt.name}

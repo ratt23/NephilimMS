@@ -44,10 +44,10 @@ function EditModal({ item, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1a1d21] rounded-lg shadow-2xl-xl w-full max-w-md overflow-hidden">
-        <div className="bg-[#1a3e6e] px-4 py-3 border-b border-[#8C7A3E]/20 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-white uppercase tracking-wide">Edit Description</h3>
-          <button onClick={onClose} className="text-white hover:text-gray-300 text-xl">&times;</button>
+      <div className="bg-sanctum-surface rounded-lg shadow-2xl-xl w-full max-w-md overflow-hidden border border-sanctum-border">
+        <div className="bg-sanctum-sidebar px-4 py-3 border-b border-sanctum-border flex justify-between items-center">
+          <h3 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide">Edit Description</h3>
+          <button onClick={onClose} className="text-sanctum-text-muted hover:text-white text-xl">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
@@ -55,7 +55,7 @@ function EditModal({ item, onClose, onSave }) {
             <img src={item.image_url} alt="Preview" className="w-full h-48 object-cover rounded border border-[#8C7A3E]/20" />
           </div>
           <div className="mb-6">
-            <label htmlFor="alt_text" className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">
+            <label htmlFor="alt_text" className="block text-sm font-bold text-sanctum-text-curr uppercase mb-1">
               Alt Text (Description)
             </label>
             <input
@@ -63,22 +63,22 @@ function EditModal({ item, onClose, onSave }) {
               id="alt_text"
               value={altText}
               onChange={(e) => setAltText(e.target.value)}
-              className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="block w-full px-3 py-2 border border-sanctum-border rounded-sm focus:ring-sanctum-accent focus:border-sanctum-accent text-sm bg-sanctum-bg text-sanctum-text-curr"
               placeholder="e.g., Medical Check Up Promo"
             />
           </div>
-          <div className="flex justify-end space-x-3 pt-4 border-t border-[#8C7A3E]/10">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-sanctum-border">
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-[#0B0B0C] text-[#E6E6E3] font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-gray-200 border border-[#8C7A3E]/30"
+              className="py-2 px-4 bg-sanctum-bg text-sanctum-text-muted font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-sanctum-sidebar border border-sanctum-border"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="py-2 px-4 bg-[#8C7A3E] text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-[#a89150] disabled:opacity-50"
+              className="py-2 px-4 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-blue-600 disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save"}
             </button>
@@ -235,16 +235,16 @@ export default function PromoManager() {
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-      <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+      <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
 
         {/* TOLBAR */}
-        <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
-          <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
+        <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex flex-col md:flex-row justify-between items-center gap-4">
+          <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide flex items-center gap-2">
             <span>Promo Manager (SSTV)</span>
             <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{promos.length}</span>
           </h2>
           <div className="flex items-center gap-3">
-            <label className="cursor-pointer flex items-center gap-1 py-1.5 px-3 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-green-700 transition-colors">
+            <label className="cursor-pointer flex items-center gap-1 py-1.5 px-3 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-blue-600 transition-colors">
               {isUploading ? "Uploading..." : (
                 <>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
@@ -276,20 +276,20 @@ export default function PromoManager() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#f0f2f5]">
+            <table className="min-w-full divide-y divide-sanctum-border">
+              <thead className="bg-sanctum-sidebar">
                 <tr>
-                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20 w-16 text-center">Order</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Preview</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Description (Alt Text)</th>
-                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20">Date Uploaded</th>
-                  <th className="p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Actions</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border w-16 text-center">Order</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Preview</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Description (Alt Text)</th>
+                  <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border">Date Uploaded</th>
+                  <th className="p-3 text-center text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
+              <tbody className="bg-sanctum-surface divide-y divide-sanctum-border">
                 {promos.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-[#a0a4ab] italic">No promos uploaded yet.</td>
+                    <td colSpan="5" className="p-8 text-center text-sanctum-text-muted italic">No promos uploaded yet.</td>
                   </tr>
                 )}
                 {promos.map((promo, index) => (
@@ -314,11 +314,11 @@ export default function PromoManager() {
                         </button>
                       </div>
                     </td>
-                    <td className="p-3 text-sm text-[#a0a4ab] border-r border-[#8C7A3E]/10">
-                      <img src={promo.image_url} alt={promo.alt_text} className="h-16 w-auto object-cover rounded border border-[#8C7A3E]/20 shadow-2xl-sm" />
+                    <td className="p-3 text-sm text-sanctum-text-muted border-r border-sanctum-border">
+                      <img src={promo.image_url} alt={promo.alt_text} className="h-16 w-auto object-cover rounded border border-sanctum-border shadow-2xl-sm" />
                     </td>
-                    <td className="p-3 text-sm text-[#E6E6E3] font-medium border-r border-[#8C7A3E]/10">{promo.alt_text || "-"}</td>
-                    <td className="p-3 text-xs text-[#a0a4ab] border-r border-[#8C7A3E]/10">{formatDate(promo.uploaded_at)}</td>
+                    <td className="p-3 text-sm text-sanctum-text-curr font-medium border-r border-sanctum-border">{promo.alt_text || "-"}</td>
+                    <td className="p-3 text-xs text-sanctum-text-muted border-r border-sanctum-border">{formatDate(promo.uploaded_at)}</td>
                     <td className="p-3 text-sm text-center">
                       <div className="flex justify-center items-center gap-2">
                         <button

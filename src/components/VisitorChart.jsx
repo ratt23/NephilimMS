@@ -49,22 +49,22 @@ export default function VisitorChart() {
     };
 
     return (
-        <div className="bg-[#1a1d21] p-6 rounded-lg shadow-2xl border border-[#8C7A3E]/20 mb-6 font-sans relative">
+        <div className="bg-sanctum-surface p-6 rounded-lg shadow-2xl border border-sanctum-border mb-6 font-sans relative">
             {/* Header Section with Controls */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h3 className="text-lg font-bold text-[#E6E6E3] flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8C7A3E]"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                <h3 className="text-lg font-bold text-sanctum-text-curr flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sanctum-accent"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
                     Site Traffic
                 </h3>
 
-                <div className="flex items-center space-x-2 bg-[#0B0B0C] p-1 rounded-lg border border-[#8C7A3E]/30">
+                <div className="flex items-center space-x-2 bg-sanctum-bg p-1 rounded-lg border border-sanctum-border">
                     {['7days', '30days', 'year'].map((p) => (
                         <button
                             key={p}
                             onClick={() => setPeriod(p)}
                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
-                                ? 'bg-[#8C7A3E] text-[#0B0B0C] shadow-xl'
-                                : 'text-[#a0a4ab] hover:text-[#E6E6E3]'
+                                ? 'bg-sanctum-accent text-white shadow-xl'
+                                : 'text-sanctum-text-muted hover:text-sanctum-text-curr'
                                 }`}
                         >
                             {p === '7days' ? 'Daily' : p === '30days' ? 'Monthly' : 'Yearly'}
@@ -107,7 +107,7 @@ export default function VisitorChart() {
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className={`text-[#8C7A3E] group-hover:text-[#a89150] ${loading ? 'animate-spin' : ''}`}
+                            className={`text-sanctum-accent group-hover:text-blue-400 ${loading ? 'animate-spin' : ''}`}
                         >
                             <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                             <path d="M21 3v5h-5" />
@@ -117,7 +117,7 @@ export default function VisitorChart() {
             </div>
 
             {loading ? (
-                <div className="h-[300px] w-full bg-[#0B0B0C] animate-pulse rounded-lg flex items-center justify-center text-[#a0a4ab] text-sm border border-[#8C7A3E]/20">
+                <div className="h-[300px] w-full bg-sanctum-bg animate-pulse rounded-lg flex items-center justify-center text-sanctum-text-muted text-sm border border-sanctum-border">
                     Updating Chart...
                 </div>
             ) : (
@@ -151,8 +151,8 @@ export default function VisitorChart() {
                                 tick={{ fill: '#a0a4ab', fontSize: 12 }}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: '#1a1d21', borderRadius: '8px', border: '1px solid #8C7A3E', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)', color: '#E6E6E3' }}
-                                itemStyle={{ fontSize: '12px', fontWeight: '600', color: '#E6E6E3' }}
+                                contentStyle={{ backgroundColor: '#13233A', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)', color: '#EAF2FF' }}
+                                itemStyle={{ fontSize: '12px', fontWeight: '600', color: '#EAF2FF' }}
                             />
                             <Legend wrapperStyle={{ paddingTop: '20px' }} />
                             <Area
@@ -178,22 +178,22 @@ export default function VisitorChart() {
                 </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-[#8C7A3E]/20 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-sanctum-border pt-4">
                 <div className="text-center">
-                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Today</div>
+                    <div className="text-xs text-sanctum-text-muted uppercase tracking-wide font-semibold">Today</div>
                     <div className="text-2xl font-bold text-blue-400">{summary.todayVisitors.toLocaleString()}</div>
-                    <div className="text-xs text-[#a0a4ab]/60 mt-1">{summary.todayPageviews.toLocaleString()} views</div>
+                    <div className="text-xs text-sanctum-text-muted/60 mt-1">{summary.todayPageviews.toLocaleString()} views</div>
                 </div>
-                <div className="text-center border-l border-[#8C7A3E]/20">
-                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Total Visitors</div>
-                    <div className="text-2xl font-bold text-[#E6E6E3]">{summary.visitors.toLocaleString()}</div>
+                <div className="text-center border-l border-sanctum-border">
+                    <div className="text-xs text-sanctum-text-muted uppercase tracking-wide font-semibold">Total Visitors</div>
+                    <div className="text-2xl font-bold text-sanctum-text-curr">{summary.visitors.toLocaleString()}</div>
                 </div>
-                <div className="text-center border-l border-[#8C7A3E]/20">
-                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Page Views</div>
-                    <div className="text-2xl font-bold text-[#E6E6E3]">{summary.pageviews.toLocaleString()}</div>
+                <div className="text-center border-l border-sanctum-border">
+                    <div className="text-xs text-sanctum-text-muted uppercase tracking-wide font-semibold">Page Views</div>
+                    <div className="text-2xl font-bold text-sanctum-text-curr">{summary.pageviews.toLocaleString()}</div>
                 </div>
-                <div className="text-center border-l border-[#8C7A3E]/20">
-                    <div className="text-xs text-[#a0a4ab] uppercase tracking-wide font-semibold">Avg. Views/Visitor</div>
+                <div className="text-center border-l border-sanctum-border">
+                    <div className="text-xs text-sanctum-text-muted uppercase tracking-wide font-semibold">Avg. Views/Visitor</div>
                     <div className="text-2xl font-bold text-[#E6E6E3]">
                         {(summary.visitors ? (summary.pageviews / summary.visitors).toFixed(1) : 0)}
                     </div>

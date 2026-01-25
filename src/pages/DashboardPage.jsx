@@ -16,8 +16,11 @@ import AdvancedAnalytics from '../components/AdvancedAnalytics.jsx';
 import ChangelogManager from '../components/ChangelogManager.jsx';
 import NewsletterManager from '../modules/newsletter/pages/NewsletterManager.jsx';
 import ECatalogItemsManager from '../components/ECatalogItemsManager.jsx';
+import RadiologyManager from '../components/RadiologyManager.jsx';
 import TrafficReport from '../components/TrafficReport.jsx';
+
 import ManualUpdateManager from '../components/ManualUpdateManager.jsx';
+import SanctumHeaderParticles from '../components/SanctumHeaderParticles.jsx';
 
 // --- Icons (Inline SVGs for lightweight dependency) ---
 const IconUsers = () => (
@@ -101,6 +104,7 @@ const MENU_GROUPS = [
       { id: 'posts', label: 'News / Blog', icon: IconFileText },
       { id: 'newsletter', label: 'e-Newsletter', icon: IconNewspaper },
       { id: 'ecatalog_items', label: 'E-Catalog', icon: IconGrid },
+      { id: 'radiology', label: 'Radiology Prices', icon: IconList },
       { id: 'promos', label: 'Promos', icon: IconTag },
     ]
   },
@@ -136,6 +140,7 @@ const ROUTE_MAP = {
   'posts': '#posts',
   'newsletter': '#newsletter',
   'ecatalog_items': '#ecatalog',
+  'radiology': '#radiology',
   'promos': '#promos',
   'ads': '#adsense',
   'popup': '#popup',
@@ -157,8 +162,8 @@ const SidebarItem = ({ active, onClick, icon: Icon, label }) => (
     onClick={onClick}
     className={`w-full flex items-center space-x-3 px-10 py-2.5 text-sm font-medium transition-all duration-200 border-l-4
       ${active
-        ? 'bg-[#1a1d21] text-[#E6E6E3] border-[#8C7A3E] shadow-inner'
-        : 'text-[#a0a4ab] hover:text-[#E6E6E3] hover:bg-[#1a1d21]/50 border-transparent'
+        ? 'bg-sanctum-surface text-sanctum-text-curr border-sanctum-accent shadow-inner'
+        : 'text-sanctum-text-muted hover:text-sanctum-text-curr hover:bg-sanctum-surface/50 border-transparent'
       } `}
   >
     <Icon />
@@ -175,14 +180,14 @@ const SidebarGroup = ({ group, activeTab, toggleGroup, isExpanded, onTabChange }
       <button
         onClick={() => toggleGroup(group.id)}
         className={`w-full flex items-center justify-between px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200
-                    ${hasActiveChild || isExpanded ? 'text-[#8C7A3E] bg-[#0B0B0C]' : 'text-[#a0a4ab] hover:bg-[#1a1d21] hover:text-[#8C7A3E]'}
+                    ${hasActiveChild || isExpanded ? 'text-sanctum-accent bg-sanctum-bg' : 'text-sanctum-text-muted hover:bg-sanctum-surface hover:text-sanctum-accent'}
                 `}
       >
         <span>{group.title}</span>
         <IconChevronDown className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="bg-[#0B0B0C] py-1 border-b border-[#8C7A3E]/10">
+        <div className="bg-sanctum-bg py-1 border-b border-sanctum-border">
           {group.items.map(item => (
             <SidebarItem
               key={item.id}
@@ -198,15 +203,15 @@ const SidebarGroup = ({ group, activeTab, toggleGroup, isExpanded, onTabChange }
   );
 };
 
-const QuickIcon = ({ onClick, icon: Icon, label, colorClass = "text-[#8C7A3E] hover:text-[#a89150]" }) => (
+const QuickIcon = ({ onClick, icon: Icon, label, colorClass = "text-sanctum-accent hover:text-blue-400" }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-6 rounded-lg shadow-2xl border border-[#8C7A3E]/20 transition-all hover:shadow-xl hover:-translate-y-1 ${colorClass} bg-[#1a1d21] hover:bg-[#0B0B0C]`}
+    className={`flex flex-col items-center justify-center p-6 rounded-lg shadow-2xl border border-sanctum-border transition-all hover:shadow-xl hover:-translate-y-1 ${colorClass} bg-sanctum-surface hover:bg-sanctum-bg`}
   >
     <div className="mb-3 transform scale-150">
       <Icon />
     </div>
-    <span className="font-semibold text-[#E6E6E3]">{label}</span>
+    <span className="font-semibold text-sanctum-text-curr">{label}</span>
   </button>
 );
 
@@ -285,7 +290,7 @@ export default function DashboardPage() {
       case 'dashboard':
         return (
           <div className="p-6">
-            <h2 className="text-2xl font-light text-[#E6E6E3] mb-6 border-b border-[#8C7A3E]/20 pb-2">Control Panel</h2>
+            <h2 className="text-2xl font-light text-sanctum-text-curr mb-6 border-b border-sanctum-border pb-2">Control Panel</h2>
             <VisitorChart />
             <div className="mb-8">
               <AdvancedAnalytics />
@@ -300,14 +305,14 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 rounded-md shadow-2xl">
-                <div className="bg-[#0B0B0C] px-4 py-2 border-b border-[#8C7A3E]/20 font-medium text-[#8C7A3E]">
+              <div className="bg-sanctum-surface border border-sanctum-border rounded-md shadow-2xl">
+                <div className="bg-sanctum-bg px-4 py-2 border-b border-sanctum-border font-medium text-sanctum-accent">
                   System Information
                 </div>
-                <div className="p-4 text-sm text-[#a0a4ab] space-y-2">
+                <div className="p-4 text-sm text-sanctum-text-muted space-y-2">
                   <div className="flex justify-between">
                     <span>Logged in as:</span>
-                    <span className="font-semibold text-[#E6E6E3]">Administrator</span>
+                    <span className="font-semibold text-sanctum-text-curr">Administrator</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
@@ -324,6 +329,7 @@ export default function DashboardPage() {
       case 'posts': return <PostManager />;
       case 'newsletter': return <NewsletterManager />;
       case 'ecatalog_items': return <ECatalogItemsManager />;
+      case 'radiology': return <RadiologyManager />;
       case 'ads': return <AdSenseManager />;
       case 'popup': return <PopUpAdsManager />;
       case 'site_menu': return <SiteMenuManager />;
@@ -339,34 +345,40 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] font-sans">
+    <div className="min-h-screen bg-sanctum-bg font-sans">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-[#1a1d21] text-[#E6E6E3] flex items-center justify-between px-4 shadow-2xl border-b border-[#8C7A3E]/20 z-50">
-        <div className="flex items-center space-x-3">
-          {/* Mobile Hamburger / X Toggle */}
-          <button
-            className="md:hidden p-1 hover:bg-[#8C7A3E]/20 rounded focus:outline-none"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <IconX /> : <IconMenu />}
-          </button>
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-sanctum-sidebar text-sanctum-text-curr shadow-2xl border-b border-sanctum-border z-50 overflow-hidden">
+        {/* Particle Background */}
+        <SanctumHeaderParticles />
 
-          <div className="font-bold text-xl tracking-wide flex items-center gap-2">
-            <img src="/CMS.png" alt="NephilimMS Logo" className="h-8 w-8" />
-            <div className="flex flex-col leading-tight">
-              <span style={{ fontFamily: 'Cinzel, serif' }}>NephilimMS</span>
-              <span className="text-[8px] uppercase font-normal text-[#8C7A3E] tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>Born from Knowledge</span>
+        <div className="relative z-10 flex items-center justify-between px-4 h-full">
+          <div className="flex items-center space-x-3">
+            {/* Mobile Hamburger / X Toggle */}
+            <button
+              className="md:hidden p-1 hover:bg-[#8C7A3E]/20 rounded focus:outline-none"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <IconX /> : <IconMenu />}
+            </button>
+
+            <div className="font-bold text-xl tracking-wide flex items-center gap-2">
+              <img src="/CMS.png" alt="SanctumDB Logo" className="h-8 w-8" />
+              <div className="flex flex-col leading-tight">
+                <span style={{ fontFamily: 'Cinzel, serif' }}>SanctumDB</span>
+                <span className="text-[8px] uppercase font-normal text-sanctum-accent tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>Guarded Data Space</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-1 text-sm bg-[#8C7A3E] hover:bg-[#a89150] text-[#0B0B0C] px-3 py-1 rounded transition-colors font-semibold"
-          >
-            <IconLogOut />
-            <span className="hidden md:inline">Logout</span>
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-1 text-sm bg-sanctum-accent hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors font-semibold"
+            >
+              <IconLogOut />
+              <span className="hidden md:inline">Logout</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -384,14 +396,14 @@ export default function DashboardPage() {
         {/* Sidebar - Fixed */}
         <aside
           className={`
-                bg-[#12161D] text-[#E6E6E3] flex-col shadow-2xl
+                bg-sanctum-sidebar text-sanctum-text-curr flex-col shadow-2xl
                 fixed top-14 bottom-0 left-0 w-64 z-40 overflow-y-auto
                 transform transition-transform duration-300 ease-in-out
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
                 md:translate-x-0
             `}
         >
-          <div className="py-4 px-6 bg-[#0B0B0C] text-xs font-bold text-[#8C7A3E] uppercase tracking-wider border-b border-[#8C7A3E]/20">
+          <div className="py-4 px-6 bg-sanctum-bg text-xs font-bold text-sanctum-accent uppercase tracking-wider border-b border-sanctum-border">
             Main Navigation
           </div>
           <nav className="flex-1 overflow-y-auto custom-scrollbar pb-20">
@@ -406,28 +418,28 @@ export default function DashboardPage() {
               />
             ))}
           </nav>
-          <div className="p-4 text-xs text-[#a0a4ab] text-center border-t border-[#8C7A3E]/20 mt-auto bg-[#0B0B0C]">
-            &copy; {new Date().getFullYear()} NephilimMS
+          <div className="p-4 text-xs text-sanctum-text-muted text-center border-t border-sanctum-border mt-auto bg-sanctum-bg">
+            &copy; {new Date().getFullYear()} SanctumDB
           </div>
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 md:p-8 w-full min-w-0 md:ml-64 bg-[#0B0B0C]">
-          <div className="bg-[#12161D] rounded shadow-2xl min-h-[500px] border border-[#8C7A3E]/20 p-1 mb-16">
+        <main className="flex-1 p-4 md:p-8 w-full min-w-0 md:ml-64 bg-sanctum-bg">
+          <div className="bg-sanctum-surface rounded shadow-2xl min-h-[500px] border border-sanctum-border p-1 mb-16">
             <div key={activeTab} className="animate-fade-in h-full">
               {renderContent()}
             </div>
           </div>
 
           {/* Dashboard Footer */}
-          <footer className="fixed bottom-0 left-0 right-0 md:left-64 bg-[#0B0B0C] text-[#E6E6E3] py-2 px-4 z-50 border-t border-[#8C7A3E]/20 shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
+          <footer className="fixed bottom-0 left-0 right-0 md:left-64 bg-sanctum-bg text-sanctum-text-curr py-2 px-4 z-50 border-t border-sanctum-border shadow-[0_-2px_10px_rgba(0,0,0,0.3)]">
             <div className="flex justify-between items-center flex-wrap gap-2 text-xs">
               <div className="opacity-90">
-                <span>&copy; {new Date().getFullYear()} <b style={{ fontFamily: 'Cinzel, serif' }} className="text-[#8C7A3E]">NephilimMS</b> - Born from Knowledge</span>
+                <span>&copy; {new Date().getFullYear()} <b style={{ fontFamily: 'Cinzel, serif' }} className="text-sanctum-accent">SanctumDB</b> - Guarded Data Space</span>
               </div>
-              <div className="flex items-center gap-3 bg-[#1a1d21] px-4 py-1.5 rounded-full border border-[#8C7A3E]/30">
-                <span className="text-[11px]">Designed & Developed by <b className="text-[#8C7A3E]">Marcomm SHAB</b></span>
-                <a href="https://www.linkedin.com/in/raditya-putra-titapasanea-a250a616a/" target="_blank" rel="noopener noreferrer" className="text-[#E6E6E3] flex items-center transition-transform hover:text-[#0077B5] hover:scale-125">
+              <div className="flex items-center gap-3 bg-sanctum-surface px-4 py-1.5 rounded-full border border-sanctum-border">
+                <span className="text-[11px]">Designed & Developed by <b className="text-sanctum-accent">Marcomm SHAB</b></span>
+                <a href="https://www.linkedin.com/in/raditya-putra-titapasanea-a250a616a/" target="_blank" rel="noopener noreferrer" className="text-sanctum-text-curr flex items-center transition-transform hover:text-[#0077B5] hover:scale-125">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                   </svg>

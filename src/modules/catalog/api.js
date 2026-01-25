@@ -14,7 +14,7 @@ export const catalogAPI = {
     // Get ALL items (admin)
     async getAllItems(category) {
         const query = category ? `?category=${category}` : '';
-        const response = await fetch(`${getApiBase()}/catalog-items/all${query}`, {
+        const response = await fetch(`${getApiBase()}/catalog-items${query}`, {
             credentials: 'include'
         });
         if (!response.ok) throw new Error('Failed to fetch catalog (admin)');

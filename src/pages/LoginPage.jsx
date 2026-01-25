@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { getApiBaseUrl } from '../utils/apiConfig';
+import SanctumHeaderParticles from '../components/SanctumHeaderParticles.jsx';
 
 // Inline Icon for Login
 const IconLock = () => (
@@ -42,34 +43,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-[#12161D] rounded-lg shadow-2xl overflow-hidden border-t-4 border-[#8C7A3E] animate-slide-up">
+    <div className="min-h-screen bg-sanctum-bg flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      {/* Particle Background */}
+      <SanctumHeaderParticles />
+
+      <div className="relative z-10 w-full max-w-md bg-sanctum-surface rounded-lg shadow-2xl overflow-hidden border-t-4 border-sanctum-accent animate-slide-up">
         {/* Header Branding */}
-        <div className="bg-[#1a1d21] p-6 text-center border-b border-[#8C7A3E]/20">
-          <div className="inline-flex items-center gap-2 text-[#E6E6E3] font-bold text-xl tracking-wide">
+        <div className="bg-sanctum-surface p-6 text-center border-b border-sanctum-border">
+          <div className="inline-flex items-center gap-2 text-sanctum-text-curr font-bold text-xl tracking-wide">
             <img src="/CMS.png" alt="NephilimMS Logo" className="h-8 w-8" />
             <div className="flex flex-col leading-tight text-left">
-              <span style={{ fontFamily: 'Cinzel, serif' }} className="text-2xl">NephilimMS</span>
-              <span className="text-[10px] uppercase font-normal text-[#8C7A3E] tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>Born from Knowledge</span>
+              <span style={{ fontFamily: 'Cinzel, serif' }} className="text-2xl">SanctumDB</span>
+              <span className="text-[10px] uppercase font-normal text-sanctum-accent tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>Guarded Data Space</span>
             </div>
           </div>
-          <p className="text-[#a0a4ab] text-sm mt-3">Administrator Access</p>
+          <p className="text-sanctum-text-muted text-sm mt-3">Administrator Access</p>
         </div>
 
         {/* Login Form */}
         <div className="p-8">
-          <h2 className="text-xl text-[#E6E6E3] font-light mb-6 text-center">Please Login</h2>
+          <h2 className="text-xl text-sanctum-text-curr font-light mb-6 text-center">Please Login</h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[#a0a4ab] mb-2"
+                className="block text-sm font-medium text-sanctum-text-muted mb-2"
               >
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#a0a4ab]">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sanctum-text-muted">
                   <IconLock />
                 </div>
                 <input
@@ -77,7 +81,7 @@ export default function LoginPage() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 bg-[#1a1d21] border border-[#8C7A3E]/30 rounded text-[#E6E6E3] focus:outline-none focus:ring-1 focus:ring-[#8C7A3E] focus:border-[#8C7A3E] transition-colors placeholder-[#a0a4ab]/50"
+                  className="w-full pl-10 pr-3 py-2 bg-sanctum-bg border border-sanctum-border rounded text-sanctum-text-curr focus:outline-none focus:ring-1 focus:ring-sanctum-accent focus:border-sanctum-accent transition-colors placeholder-sanctum-text-muted/50"
                   placeholder="Enter your password"
                   required
                 />
@@ -93,7 +97,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center py-2 px-4 bg-[#8C7A3E] hover:bg-[#a89150] text-[#0B0B0C] font-semibold rounded transition-colors disabled:opacity-70"
+              className="w-full flex items-center justify-center py-2 px-4 bg-sanctum-accent hover:bg-blue-600 text-white font-semibold rounded transition-colors disabled:opacity-70"
             >
               {loading ? 'Logging in...' : 'Log in'}
             </button>
@@ -101,8 +105,8 @@ export default function LoginPage() {
         </div>
 
         {/* Simple Footer */}
-        <div className="bg-[#0B0B0C] p-4 text-center border-t border-[#8C7A3E]/20">
-          <a href="/" className="text-xs text-[#a0a4ab] hover:text-[#8C7A3E] transition-colors">
+        <div className="bg-sanctum-bg p-4 text-center border-t border-sanctum-border">
+          <a href="/" className="text-xs text-sanctum-text-muted hover:text-sanctum-accent transition-colors">
             &larr; Return to Site Home
           </a>
         </div>

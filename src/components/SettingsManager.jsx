@@ -52,16 +52,16 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
     ];
 
     return (
-        <div className="border border-[#8C7A3E]/30 rounded-lg overflow-hidden shadow-2xl-lg bg-[#0B0B0C] max-w-sm mx-auto transform scale-95 origin-top">
+        <div className="border border-sanctum-border rounded-lg overflow-hidden shadow-2xl-lg bg-sanctum-bg max-w-sm mx-auto transform scale-95 origin-top">
             {/* Header Mock (RSU Siloam Style) */}
-            <div className="bg-[#1a1d21] p-3 pb-0 sticky top-0 z-10">
+            <div className="bg-sanctum-sidebar p-3 pb-0 sticky top-0 z-10">
                 {/* Top Row: Logo & Emergency */}
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
                         {logoUrl ? (
                             <img src={logoUrl} alt="Site Logo" className="object-contain h-8 w-auto" />
                         ) : (
-                            <div className="text-xl font-bold text-blue-900 leading-none tracking-tight font-sans">RSU Siloam</div>
+                            <div className="text-xl font-bold text-sanctum-accent leading-none tracking-tight font-sans">RSU Siloam</div>
                         )}
                     </div>
                     <div className="text-right overflow-hidden h-10 flex items-center justify-end relative w-48">
@@ -78,9 +78,9 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="flex space-x-4 border-b border-[#8C7A3E]/10 mb-3 overflow-x-auto">
+                <div className="flex space-x-4 border-b border-sanctum-border mb-3 overflow-x-auto">
                     {['Home', 'MCU', 'Home Care', 'Article'].map((tab, idx) => (
-                        <div key={tab} className={`text-[10px] font-bold pb-2 ${idx === 0 ? 'text-blue-900 border-b-2 border-blue-900' : 'text-[#a0a4ab]'}`}>
+                        <div key={tab} className={`text-[10px] font-bold pb-2 ${idx === 0 ? 'text-sanctum-accent border-b-2 border-sanctum-accent' : 'text-sanctum-text-muted'}`}>
                             {tab}
                         </div>
                     ))}
@@ -89,8 +89,8 @@ const LivePreview = ({ logoUrl, themeColor, siteName = "RSU Siloam Ambon", featu
 
             {/* Grid Content Mock */}
             <div className="p-4 space-y-4">
-                <div className="h-8 w-full bg-[#1a1d21] rounded-full shadow-2xl-sm border border-[#8C7A3E]/20 flex items-center px-3">
-                    <span className="text-xs text-[#a0a4ab]/60">Cari Dokter...</span>
+                <div className="h-8 w-full bg-sanctum-surface rounded-full shadow-2xl-sm border border-sanctum-border flex items-center px-3">
+                    <span className="text-xs text-sanctum-text-muted/60">Cari Dokter...</span>
                 </div>
 
                 {/* Dynamic Content Grid */}
@@ -220,14 +220,14 @@ const AccordionSection = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-md overflow-hidden mb-4 transition-all duration-200 hover:shadow-2xl-md">
+        <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-md overflow-hidden mb-4 transition-all duration-200 hover:shadow-2xl-md">
             <button
                 type="button" // Important in form
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#0B0B0C] border-b border-[#8C7A3E]/20 hover:bg-[#0B0B0C] transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3 bg-sanctum-sidebar border-b border-sanctum-border hover:bg-sanctum-bg transition-colors cursor-pointer"
             >
                 <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-sanctum-text-curr uppercase tracking-wide flex items-center gap-2">
                         {title}
                     </h2>
                 </div>
@@ -237,7 +237,7 @@ const AccordionSection = ({ title, children, defaultOpen = false }) => {
             </button>
 
             <div className={`transition-all duration-300 ease-in-out origin-top ${isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                <div className="p-4 bg-[#1a1d21]">
+                <div className="p-4 bg-sanctum-surface">
                     {children}
                 </div>
             </div>
@@ -248,6 +248,7 @@ const AccordionSection = ({ title, children, defaultOpen = false }) => {
 const DEFAULT_CATEGORIES = [
     { id: 'tarif-kamar', label: 'Tarif Kamar' },
     { id: 'fasilitas', label: 'Fasilitas' },
+    { id: 'radiology', label: 'Cek Harga Radiologi' },
     { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
     { id: 'contact-person', label: 'Contact Person' }
 ];
@@ -293,6 +294,7 @@ export default function SettingsManager() {
         category_covers: {
             'tarif-kamar': '/asset/categories/placeholder.svg',
             'fasilitas': '/asset/categories/placeholder.svg',
+            'radiology': '/asset/categories/placeholder.svg',
             'layanan-unggulan': '/asset/categories/placeholder.svg',
             'contact-person': '/asset/categories/placeholder.svg'
         },
@@ -301,6 +303,7 @@ export default function SettingsManager() {
         category_visibility: {
             'tarif-kamar': true,
             'fasilitas': true,
+            'radiology': true,
             'layanan-unggulan': true,
             'contact-person': true
         },
@@ -378,19 +381,6 @@ export default function SettingsManager() {
                 feature_google_review: getVal('feature_google_review') !== 'false', // Default true
 
                 doctor_priority: safeParse('doctor_priority', getVal('doctor_priority'), { 'umum': [] }),
-                category_covers: safeParse('category_covers', getVal('category_covers'), {
-                    'tarif-kamar': '/asset/categories/placeholder.svg',
-                    'fasilitas': '/asset/categories/placeholder.svg',
-                    'layanan-unggulan': '/asset/categories/placeholder.svg',
-                    'contact-person': '/asset/categories/placeholder.svg'
-                }),
-                category_visibility: safeParse('category_visibility', getVal('category_visibility'), {
-                    'tarif-kamar': true,
-                    'fasilitas': true,
-                    'layanan-unggulan': true,
-                    'contact-person': true
-                }),
-                ecatalog_categories: safeParse('ecatalog_categories', getVal('ecatalog_categories'), DEFAULT_CATEGORIES),
                 cors_allowed_origins: getVal('cors_allowed_origins') || '*'
             });
         } catch (err) {
@@ -423,12 +413,6 @@ export default function SettingsManager() {
                 feature_header_slider: true,
                 feature_schedule_update: true,
                 feature_google_review: true,
-                category_visibility: {
-                    'tarif-kamar': true,
-                    'fasilitas': true,
-                    'layanan-unggulan': true,
-                    'contact-person': true
-                },
                 cors_allowed_origins: '*'
             });
             setMessage({ type: 'info', text: 'Settings reset to defaults. Click Save to apply.' });
@@ -543,18 +527,21 @@ export default function SettingsManager() {
             feature_google_review: { value: "true", enabled: config.feature_google_review },
 
             doctor_priority: { value: JSON.stringify(config.doctor_priority), enabled: true },
-            category_covers: { value: JSON.stringify(config.category_covers), enabled: true },
-            category_visibility: { value: JSON.stringify(config.category_visibility), enabled: true },
-            ecatalog_categories: { value: JSON.stringify(config.ecatalog_categories), enabled: true },
             cors_allowed_origins: { value: config.cors_allowed_origins, enabled: true }
         };
 
         try {
+            // Convert object to array of {key, value} for API
+            const arrayPayload = Object.entries(payload).map(([key, data]) => ({
+                key,
+                value: data.value
+            }));
+
             // Save setting to DB
             const res = await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(arrayPayload),
                 credentials: 'include'
             });
 
@@ -575,12 +562,12 @@ export default function SettingsManager() {
         <div className="flex flex-col lg:flex-row gap-6 animate-fade-in font-sans pb-10">
             {/* LEFT COLUMN: EDITOR */}
             <div className="flex-1 space-y-6">
-                <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+                <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
                     {/* TOOLBAR */}
-                    <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
+                    <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide flex items-center gap-2">
                             <span>System Settings</span>
-                            <span className="bg-[#0B0B0C] text-[#a0a4ab] text-xs font-semibold px-2 py-0.5 rounded-full">Global Configuration</span>
+                            <span className="bg-sanctum-bg text-sanctum-text-muted text-xs font-semibold px-2 py-0.5 rounded-full">Global Configuration</span>
                         </h2>
                     </div>
 
@@ -599,13 +586,13 @@ export default function SettingsManager() {
                                     {/* Identity Basics */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-[#E6E6E3] mb-2">Hospital Full Name</label>
+                                            <label className="block text-sm font-bold text-sanctum-text-curr mb-2">Hospital Full Name</label>
                                             <input
                                                 type="text"
                                                 name="hospital_name"
                                                 value={config.hospital_name}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm font-bold text-[#E6E6E3]"
+                                                className="w-full px-4 py-2 border border-sanctum-border bg-sanctum-bg rounded-sm focus:ring-sanctum-accent focus:border-sanctum-accent text-sm font-bold text-sanctum-text-curr"
                                                 placeholder="e.g. RSU Siloam Ambon"
                                             />
                                         </div>
@@ -833,114 +820,6 @@ export default function SettingsManager() {
                                 </div>
                             </AccordionSection>
 
-                            {/* SECTION: eCatalog Category Covers */}
-                            <AccordionSection title="eCatalog Category Covers">
-                                <div className="space-y-4">
-                                    <p className="text-xs text-[#a0a4ab]">Customize background images for eCatalog category cards. Recommended: 1200x600px (2:1 ratio), Max 2MB.</p>
-
-                                    {[
-                                        { id: 'tarif-kamar', label: 'Tarif Kamar' },
-                                        { id: 'fasilitas', label: 'Fasilitas' },
-                                        { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
-                                        { id: 'contact-person', label: 'Contact Person' }
-                                    ].map(category => (
-                                        <div key={category.id} className="border border-[#8C7A3E]/20 rounded p-3 bg-[#0B0B0C]">
-                                            <label className="block text-sm font-bold text-[#E6E6E3] mb-2">{category.label}</label>
-                                            <div className="flex gap-3 items-start">
-                                                {/* Image Preview */}
-                                                {config.category_covers[category.id] && (
-                                                    <div className="flex-shrink-0">
-                                                        <img
-                                                            src={config.category_covers[category.id]}
-                                                            alt={category.label}
-                                                            className="w-24 h-12 object-cover rounded border border-[#8C7A3E]/30"
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                {/* URL Input & Upload Button */}
-                                                <div className="flex-1 flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={config.category_covers[category.id] || ''}
-                                                        onChange={(e) => setConfig(prev => ({
-                                                            ...prev,
-                                                            category_covers: {
-                                                                ...prev.category_covers,
-                                                                [category.id]: e.target.value
-                                                            }
-                                                        }))}
-                                                        className="flex-1 px-3 py-1.5 text-xs border border-[#8C7A3E]/30 rounded font-mono"
-                                                        placeholder={`/asset/categories/${category.id.replace('-', '_')}.png`}
-                                                    />
-                                                    <label className="cursor-pointer bg-blue-900/20 hover:bg-blue-100 border border-blue-200 rounded px-3 py-1.5 flex items-center justify-center transition-colors">
-                                                        {isUploading === `category-${category.id}` ? <LoadingSpinner size="sm" /> : (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                                                        )}
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            className="hidden"
-                                                            onChange={(e) => handleImageUpload(e, `category-${category.id}`)}
-                                                            disabled={!!isUploading}
-                                                        />
-                                                    </label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setConfig(prev => ({
-                                                            ...prev,
-                                                            category_covers: {
-                                                                ...prev.category_covers,
-                                                                [category.id]: `/asset/categories/${category.id.replace('-', '_')}.png`
-                                                            }
-                                                        }))}
-                                                        className="px-3 py-1.5 text-xs bg-[#0B0B0C] hover:bg-gray-200 border border-[#8C7A3E]/30 rounded transition-colors"
-                                                        title="Reset to default"
-                                                    >
-                                                        Reset
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </AccordionSection>
-
-                            {/* SECTION: Category Visibility */}
-                            <AccordionSection title="Category Visibility">
-                                <div className="space-y-4">
-                                    <p className="text-xs text-[#a0a4ab]">Atur visibilitas kategori di halaman eCatalog visitor.</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {[
-                                            { id: 'tarif-kamar', label: 'Tarif Kamar' },
-                                            { id: 'fasilitas', label: 'Fasilitas' },
-                                            { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
-                                            { id: 'contact-person', label: 'Contact Person' }
-                                        ].map(cat => (
-                                            <div key={cat.id} className="flex items-center justify-between p-3 border border-[#8C7A3E]/10 rounded hover:bg-[#0B0B0C] transition-colors">
-                                                <span className="font-bold text-[#E6E6E3] text-sm">{cat.label}</span>
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="sr-only peer"
-                                                        checked={config.category_visibility?.[cat.id] ?? true}
-                                                        onChange={(e) => {
-                                                            setConfig(prev => ({
-                                                                ...prev,
-                                                                category_visibility: {
-                                                                    ...prev.category_visibility,
-                                                                    [cat.id]: e.target.checked
-                                                                }
-                                                            }));
-                                                        }}
-                                                    />
-                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1a1d21] after:border-[#8C7A3E]/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8C7A3E]"></div>
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </AccordionSection>
 
                             {/* SECTION: FEATURE TOGGLES */}
                             <AccordionSection title="Feature Management">

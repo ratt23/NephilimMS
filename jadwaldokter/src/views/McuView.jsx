@@ -15,11 +15,18 @@ const McuView = () => {
     React.useEffect(() => {
         const fetchPackages = async () => {
             try {
-                // Determine API base URL (using config logic or relative path)
                 const apiBase = getApiBaseUrl();
                 const response = await fetch(`${apiBase}/mcu-packages`);
                 if (!response.ok) throw new Error('Failed to fetch packages');
-                const data = await response.json();
+                const rawData = await response.json();
+
+                // Parse JSON strings if necessary (Backend returns stringified JSON for text columns)
+                const data = rawData.map(pkg => ({
+                    ...pkg,
+                    items: typeof pkg.items === 'string' ? JSON.parse(pkg.items) : pkg.items,
+                    addons: (pkg.addons && typeof pkg.addons === 'string') ? JSON.parse(pkg.addons) : (pkg.addons || [])
+                }));
+
                 setPackages(data);
             } catch (err) {
                 console.error("Failed to load MCU packages", err);

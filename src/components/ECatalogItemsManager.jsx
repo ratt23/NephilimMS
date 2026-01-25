@@ -7,6 +7,7 @@ import { getApiBaseUrl } from '../utils/apiConfig';
 const DEFAULT_CATEGORIES = [
     { id: 'tarif-kamar', label: 'Tarif Kamar' },
     { id: 'fasilitas', label: 'Fasilitas' },
+    { id: 'radiology', label: 'Cek Harga Radiologi' },
     { id: 'layanan-unggulan', label: 'Layanan Unggulan' },
     { id: 'contact-person', label: 'Contact Person' }
 ];
@@ -38,6 +39,7 @@ export default function ECatalogItemsManager() {
     const [categoryVisibility, setCategoryVisibility] = useState({
         'tarif-kamar': true,
         'fasilitas': true,
+        'radiology': true,
         'layanan-unggulan': true,
         'contact-person': true
     });
@@ -65,12 +67,17 @@ export default function ECatalogItemsManager() {
                 try {
                     const parsedCats = JSON.parse(catVal);
                     if (Array.isArray(parsedCats) && parsedCats.length > 0) {
-                        setCategories(parsedCats);
+                        // Smart Merge: Ensure defaults exist
+                        const loadedIds = new Set(parsedCats.map(c => c.id));
+                        const missingDefaults = DEFAULT_CATEGORIES.filter(d => !loadedIds.has(d.id));
+                        const mergedCats = [...parsedCats, ...missingDefaults];
+
+                        setCategories(mergedCats);
 
                         // If current selected category is not in the new list, switch to the first one
-                        const currentExists = parsedCats.find(c => c.id === selectedCategory);
+                        const currentExists = mergedCats.find(c => c.id === selectedCategory);
                         if (!currentExists) {
-                            setSelectedCategory(parsedCats[0].id);
+                            setSelectedCategory(mergedCats[0].id);
                         }
                     }
                 } catch (e) {
@@ -118,12 +125,9 @@ export default function ECatalogItemsManager() {
             await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category_covers: {
-                        value: JSON.stringify(newCovers),
-                        enabled: true
-                    }
-                }),
+                body: JSON.stringify([
+                    { key: 'category_covers', value: JSON.stringify(newCovers) }
+                ]),
                 credentials: 'include'
             });
 
@@ -144,12 +148,9 @@ export default function ECatalogItemsManager() {
             await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ecatalog_enabled: {
-                        value: newValue.toString(),
-                        enabled: true
-                    }
-                }),
+                body: JSON.stringify([
+                    { key: 'ecatalog_enabled', value: newValue.toString() }
+                ]),
                 credentials: 'include'
             });
 
@@ -175,12 +176,9 @@ export default function ECatalogItemsManager() {
             await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category_visibility: {
-                        value: JSON.stringify(categoryVisibility),
-                        enabled: true
-                    }
-                }),
+                body: JSON.stringify([
+                    { key: 'category_visibility', value: JSON.stringify(categoryVisibility) }
+                ]),
                 credentials: 'include'
             });
             alert('Settings saved successfully!');
@@ -196,7 +194,7 @@ export default function ECatalogItemsManager() {
     async function loadItems() {
         try {
             setLoading(true);
-            const response = await fetch(`${getApiBaseUrl()}/catalog-items/all?category=${selectedCategory}`, { credentials: 'include' });
+            const response = await fetch(`${getApiBaseUrl()}/catalog-items?category=${selectedCategory}`, { credentials: 'include' });
             const data = await response.json();
 
             // Parse features if they are JSON strings
@@ -415,12 +413,9 @@ export default function ECatalogItemsManager() {
             await fetch(`${getApiBaseUrl()}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category_covers: {
-                        value: JSON.stringify(newCovers),
-                        enabled: true
-                    }
-                }),
+                body: JSON.stringify([
+                    { key: 'category_covers', value: JSON.stringify(newCovers) }
+                ]),
                 credentials: 'include'
             });
         } catch (err) {
@@ -433,21 +428,133 @@ export default function ECatalogItemsManager() {
         <div className="p-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-white mb-2">E-Catalog Management</h1>
-                <p className="text-[#a0a4ab]/60">Kelola kategori cover dan items E-Catalog</p>
+                <p className="text-gray-200">Kelola kategori cover dan items E-Catalog</p>
+            </div>
+
+            {/* Category Management */}
+            <div className="bg-sanctum-surface rounded-lg p-6 mb-6 border border-sanctum-border">
+                <h3 className="text-lg font-bold text-white mb-4">Manage Categories</h3>
+                <p className="text-sm text-gray-200 mb-4">Tambah, hapus, atau atur urutan kategori menu utama.</p>
+
+                <div className="space-y-2 mb-4">
+                    {categories.map((cat, index) => (
+                        <div key={cat.id} className="flex items-center gap-3 bg-sanctum-sidebar p-3 rounded border border-sanctum-border">
+                            <span className="text-gray-400 font-mono text-xs w-6">{index + 1}</span>
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    value={cat.label}
+                                    onChange={(e) => {
+                                        const newCats = [...categories];
+                                        newCats[index].label = e.target.value;
+                                        setCategories(newCats);
+                                    }}
+                                    className="bg-transparent text-white font-medium border-none focus:ring-0 p-0 w-full"
+                                />
+                                <span className="text-xs text-gray-500 font-mono">id: {cat.id}</span>
+                            </div>
+
+                            {/* Reorder Buttons */}
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => {
+                                        if (index === 0) return;
+                                        const newCats = [...categories];
+                                        [newCats[index], newCats[index - 1]] = [newCats[index - 1], newCats[index]];
+                                        setCategories(newCats);
+                                    }}
+                                    disabled={index === 0}
+                                    className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white disabled:opacity-30"
+                                >
+                                    <ArrowUp size={14} />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (index === categories.length - 1) return;
+                                        const newCats = [...categories];
+                                        [newCats[index], newCats[index + 1]] = [newCats[index + 1], newCats[index]];
+                                        setCategories(newCats);
+                                    }}
+                                    disabled={index === categories.length - 1}
+                                    className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white disabled:opacity-30"
+                                >
+                                    <ArrowDown size={14} />
+                                </button>
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => {
+                                    if (confirm(`Hapus kategori "${cat.label}"?`)) {
+                                        setCategories(categories.filter((_, i) => i !== index));
+                                    }
+                                }}
+                                className="p-2 hover:bg-red-900/50 rounded text-red-500 hover:text-red-400 ml-2"
+                                title="Hapus Kategori"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Add New Category */}
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => {
+                            const label = prompt("Nama Kategori Baru:");
+                            if (label) {
+                                const id = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                                setCategories([...categories, { id, label }]);
+                            }
+                        }}
+                        className="bg-sanctum-sidebar hover:bg-sanctum-bg border border-sanctum-border text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                        <Plus size={16} />
+                        Tambah Kategori Baru
+                    </button>
+
+                    <button
+                        onClick={async () => {
+                            try {
+                                setSavingSettings(true);
+                                await fetch(`${getApiBaseUrl()}/settings`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify([
+                                        { key: 'ecatalog_categories', value: JSON.stringify(categories) }
+                                    ]),
+                                    credentials: 'include'
+                                });
+                                alert('Urutan & Kategori berhasil disimpan!');
+                            } catch (err) {
+                                console.error(err);
+                                alert('Gagal menyimpan kategori.');
+                            } finally {
+                                setSavingSettings(false);
+                            }
+                        }}
+                        disabled={savingSettings}
+                        className="bg-sanctum-accent hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors flex items-center gap-2 ml-auto"
+                    >
+                        <Save size={16} />
+                        {savingSettings ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                </div>
             </div>
 
             {/* Category Covers Management */}
-            <div className="bg-zinc-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <div className="bg-sanctum-surface rounded-lg p-6 mb-6 border border-sanctum-border">
                 <h3 className="text-lg font-bold text-white mb-4">Category Cover Images</h3>
-                <p className="text-sm text-[#a0a4ab]/60 mb-4">Upload gambar cover untuk setiap kategori</p>
+                <p className="text-sm text-gray-200 mb-4">Upload gambar cover untuk setiap kategori</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {categories.map(category => (
-                        <div key={category.id} className="bg-zinc-900 rounded-lg p-4 border border-gray-700">
+                        <div key={category.id} className="bg-sanctum-sidebar rounded-lg p-4 border border-sanctum-border">
                             <h4 className="text-white font-medium mb-3">{category.label}</h4>
 
                             {/* Preview */}
-                            <div className="aspect-video bg-gray-800 rounded-lg mb-3 overflow-hidden relative group">
+                            <div className="aspect-video bg-sanctum-bg rounded-lg mb-3 overflow-hidden relative group">
                                 {categoryCovers[category.id] ? (
                                     <>
                                         <img
@@ -472,7 +579,7 @@ export default function ECatalogItemsManager() {
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[#a0a4ab]">
+                                    <div className="w-full h-full flex items-center justify-center text-sanctum-text-muted">
                                         <ImageIcon size={32} />
                                     </div>
                                 )}
@@ -491,7 +598,7 @@ export default function ECatalogItemsManager() {
                                     }}
                                     disabled={uploadingCovers[category.id]}
                                 />
-                                <div className={`text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2 ${uploadingCovers[category.id] ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#8C7A3E] hover:bg-[#a89150]'} text-white`}>
+                                <div className={`text-center py-2 rounded cursor-pointer transition-colors text-sm font-medium flex items-center justify-center gap-2 ${uploadingCovers[category.id] ? 'bg-gray-600 cursor-not-allowed' : 'bg-sanctum-accent hover:bg-blue-600'} text-white`}>
                                     {uploadingCovers[category.id] ? (
                                         <>
                                             <Loader2 size={16} className="animate-spin" />
@@ -511,16 +618,16 @@ export default function ECatalogItemsManager() {
             </div>
 
             {/* Category Visibility Management */}
-            <div className="bg-zinc-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <div className="bg-sanctum-surface rounded-lg p-6 mb-6 border border-sanctum-border">
                 <h3 className="text-lg font-bold text-white mb-4">Category Visibility</h3>
-                <p className="text-sm text-[#a0a4ab]/60 mb-4">Tampilkan atau sembunyikan kategori di eCatalog visitor</p>
+                <p className="text-sm text-gray-200 mb-4">Tampilkan atau sembunyikan kategori di eCatalog visitor</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {categories.map(category => (
-                        <div key={category.id} className="bg-zinc-900 rounded-lg p-4 border border-gray-700 flex items-center justify-between">
+                        <div key={category.id} className="bg-sanctum-sidebar rounded-lg p-4 border border-sanctum-border flex items-center justify-between">
                             <div>
                                 <h4 className="text-white font-medium">{category.label}</h4>
-                                <p className="text-xs text-[#a0a4ab] mt-1">
+                                <p className="text-xs text-sanctum-text-muted mt-1">
                                     {categoryVisibility[category.id] !== false ? 'Visible' : 'Hidden (Coming Soon)'}
                                 </p>
                             </div>
@@ -532,7 +639,7 @@ export default function ECatalogItemsManager() {
                                     }`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-[#1a1d21] transition-transform ${categoryVisibility[category.id] !== false ? 'translate-x-8' : 'translate-x-1'
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-sanctum-surface transition-transform ${categoryVisibility[category.id] !== false ? 'translate-x-8' : 'translate-x-1'
                                         }`}
                                 />
                             </button>
@@ -544,7 +651,7 @@ export default function ECatalogItemsManager() {
                     <button
                         onClick={saveCategoryVisibility}
                         disabled={savingSettings}
-                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-sanctum-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save size={20} />
                         {savingSettings ? 'Menyimpan...' : 'Simpan Visibility'}
@@ -559,8 +666,8 @@ export default function ECatalogItemsManager() {
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${selectedCategory === cat.id
-                            ? 'bg-[#8C7A3E] text-white'
-                            : 'bg-zinc-800 text-[#a0a4ab]/60 hover:text-white border border-gray-700 hover:border-gray-600'
+                            ? 'bg-sanctum-accent text-white'
+                            : 'bg-sanctum-surface text-gray-400 hover:text-white border border-sanctum-border hover:border-sanctum-accent'
                             }`}
                     >
                         {cat.label}
@@ -575,7 +682,7 @@ export default function ECatalogItemsManager() {
             <div className="mb-6">
                 <button
                     onClick={() => openForm()}
-                    className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="bg-sanctum-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 >
                     <Plus size={20} />
                     Tambah Item
@@ -584,18 +691,18 @@ export default function ECatalogItemsManager() {
 
             {/* Items List */}
             {loading ? (
-                <div className="text-center py-8 text-[#a0a4ab]/60">Loading...</div>
+                <div className="text-center py-8 text-gray-400">Loading...</div>
             ) : items.length === 0 ? (
-                <div className="bg-zinc-800 rounded-lg p-8 text-center">
-                    <ImageIcon className="mx-auto mb-4 text-[#a0a4ab]" size={48} />
-                    <p className="text-[#a0a4ab]/60">Belum ada item di kategori ini</p>
+                <div className="bg-sanctum-surface rounded-lg p-8 text-center">
+                    <ImageIcon className="mx-auto mb-4 text-gray-500" size={48} />
+                    <p className="text-gray-400">Belum ada item di kategori ini</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map(item => (
-                        <div key={item.id} className={`bg-zinc-800 rounded-lg overflow-hidden border transition-colors ${item.is_active === false ? 'border-red-900/50 opacity-75' : 'border-gray-700 hover:border-gray-600'}`}>
+                        <div key={item.id} className={`bg-sanctum-surface rounded-lg overflow-hidden border transition-colors ${item.is_active === false ? 'border-red-900/50 opacity-75' : 'border-sanctum-border hover:border-sanctum-accent'}`}>
                             {item.image_url && (
-                                <div className="h-48 bg-gray-900 overflow-hidden relative">
+                                <div className="h-48 bg-sanctum-bg overflow-hidden relative">
                                     <img
                                         src={item.image_url.includes('res.cloudinary.com') ? item.image_url.replace('https://res.cloudinary.com', '/cloudinary-proxy') : item.image_url}
                                         alt={item.title}
@@ -614,15 +721,15 @@ export default function ECatalogItemsManager() {
                                 </div>
                             )}
                             <div className="p-4">
-                                <h3 className={`text-lg font-bold text-white mb-1 ${item.is_active === false ? 'line-through text-[#a0a4ab]' : ''}`}>{item.title}</h3>
+                                <h3 className={`text-lg font-bold text-white mb-1 ${item.is_active === false ? 'line-through text-gray-500' : ''}`}>{item.title}</h3>
                                 {item.price && (
                                     <p className="text-blue-400 font-semibold mb-2">{item.price}</p>
                                 )}
                                 {item.description && (
-                                    <p className="text-[#a0a4ab]/60 text-sm mb-3 line-clamp-2">{item.description}</p>
+                                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">{item.description}</p>
                                 )}
                                 {item.features && item.features.length > 0 && (
-                                    <ul className="text-xs text-[#a0a4ab] mb-3 space-y-1">
+                                    <ul className="text-xs text-gray-400 mb-3 space-y-1">
                                         {item.features.slice(0, 3).map((feature, idx) => (
                                             <li key={idx}>• {feature}</li>
                                         ))}
@@ -631,7 +738,7 @@ export default function ECatalogItemsManager() {
                                         )}
                                     </ul>
                                 )}
-                                <div className="flex gap-2 pt-3 border-t border-gray-700">
+                                <div className="flex gap-2 pt-3 border-t border-sanctum-border">
                                     {/* Order Controls */}
                                     <div className="flex gap-1">
                                         <button
@@ -687,23 +794,23 @@ export default function ECatalogItemsManager() {
             {/* Form Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-1 overflow-y-auto">
-                    <div className="bg-zinc-800 rounded max-w-sm w-full mx-1 my-1">
-                        <div className="p-2 border-b border-gray-700 flex justify-between items-center">
+                    <div className="bg-sanctum-surface rounded max-w-sm w-full mx-1 my-1">
+                        <div className="p-2 border-b border-sanctum-border flex justify-between items-center">
                             <h2 className="text-xs font-bold text-white">
                                 {editItem ? 'Edit' : 'Tambah'}
                             </h2>
-                            <button onClick={closeForm} className="text-[#a0a4ab]/60 hover:text-white">
+                            <button onClick={closeForm} className="text-sanctum-text-muted/60 hover:text-white">
                                 <X size={16} />
                             </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-2 space-y-2">
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Kategori</label>
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Kategori</label>
                                 <select
                                     value={formData.category}
                                     onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                                    className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
+                                    className="w-full bg-sanctum-bg text-white border border-sanctum-border rounded px-1.5 py-1 text-xs"
                                     required
                                 >
                                     {categories.map(cat => (
@@ -713,50 +820,50 @@ export default function ECatalogItemsManager() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Judul</label>
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Judul</label>
                                 <input
                                     type="text"
                                     value={formData.title}
                                     onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                    className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
+                                    className="w-full bg-sanctum-bg text-white border border-sanctum-border rounded px-1.5 py-1 text-xs"
                                     required
                                     placeholder="Nama item"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
                                     {formData.category === 'contact-person' ? 'Nomor WhatsApp' : 'Harga'}
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.price}
                                     onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                                    className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
+                                    className="w-full bg-sanctum-bg text-white border border-sanctum-border rounded px-1.5 py-1 text-xs"
                                     placeholder={formData.category === 'contact-person' ? '08123456789' : 'Rp 600.000'}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
                                     {formData.category === 'contact-person' ? 'Jabatan / Role' : 'Deskripsi'}
                                 </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 h-12 text-xs"
+                                    className="w-full bg-sanctum-bg text-white border border-sanctum-border rounded px-1.5 py-1 h-12 text-xs"
                                     placeholder={formData.category === 'contact-person' ? 'Contoh: Kepala Ruangan / Admin IGD' : 'Singkat...'}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Gambar</label>
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Gambar</label>
                                 {formData.image_url && (
                                     <div className="mb-0.5">
                                         <img src={formData.image_url} alt="Preview" className="h-16 max-w-full rounded object-cover" />
                                     </div>
                                 )}
-                                <label className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-600 rounded bg-gray-700 hover:bg-gray-600 text-white transition-colors text-xs">
+                                <label className="cursor-pointer inline-flex items-center px-2 py-1 border border-sanctum-border rounded bg-sanctum-sidebar hover:bg-sanctum-bg text-white transition-colors text-xs">
                                     <Upload size={12} className="mr-1" />
                                     {uploading ? 'Uploading...' : formData.image_url ? 'Ganti' : 'Upload'}
                                     <input
@@ -774,20 +881,20 @@ export default function ECatalogItemsManager() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Fitur</label>
+                                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Fitur</label>
                                 <div className="flex gap-1 mb-1">
                                     <input
                                         type="text"
                                         value={featureInput}
                                         onChange={e => setFeatureInput(e.target.value)}
                                         onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                                        className="flex-1 bg-gray-700 text-white border border-gray-600 rounded px-1.5 py-1 text-xs"
+                                        className="flex-1 bg-sanctum-bg text-white border border-sanctum-border rounded px-1.5 py-1 text-xs"
                                         placeholder="AC, TV, dll"
                                     />
                                     <button
                                         type="button"
                                         onClick={addFeature}
-                                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-2 py-1 rounded text-xs"
+                                        className="bg-sanctum-accent hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
                                     >
                                         +
                                     </button>
@@ -795,7 +902,7 @@ export default function ECatalogItemsManager() {
                                 {formData.features.length > 0 && (
                                     <ul className="space-y-0.5">
                                         {formData.features.map((feature, idx) => (
-                                            <li key={idx} className="flex items-center justify-between bg-gray-700 px-1.5 py-1 rounded gap-1">
+                                            <li key={idx} className="flex items-center justify-between bg-sanctum-bg px-1.5 py-1 rounded gap-1">
                                                 <span className="text-white text-[10px] break-words flex-1">{feature}</span>
                                                 <button
                                                     type="button"

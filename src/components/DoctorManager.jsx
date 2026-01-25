@@ -82,9 +82,9 @@ function SearchInput({ value, onChange }) {
         type="text" value={internalValue}
         onChange={(e) => setInternalValue(e.target.value)}
         placeholder="Search..."
-        className="pl-10 pr-4 py-2 border border-[#8C7A3E]/30 rounded-sm shadow-2xl-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64 text-sm"
+        className="pl-10 pr-4 py-2 border border-sanctum-border rounded-sm shadow-2xl-sm focus:outline-none focus:ring-1 focus:ring-sanctum-accent focus:border-sanctum-accent w-full md:w-64 text-sm bg-sanctum-bg text-sanctum-text-curr"
       />
-      <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-2.5 h-4 w-4 text-[#a0a4ab]/60" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-2.5 h-4 w-4 text-sanctum-text-muted/60" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
     </div>
   );
 }
@@ -350,26 +350,26 @@ export default function DoctorManager() {
 
       {/* --- MODAL --- */}
       <Modal isOpen={isModalOpen} onRequestClose={closeModal} style={customModalStyles} contentLabel="Doctor Form">
-        <div className="bg-[#1a3e6e] text-white px-6 py-4 flex justify-between items-center rounded-t">
+        <div className="bg-sanctum-primary text-white px-6 py-4 flex justify-between items-center rounded-t border-b border-sanctum-border">
           <h2 className="text-xl font-bold uppercase tracking-wide">{editMode ? 'Edit Doctor' : 'New Doctor'}</h2>
           <button onClick={closeModal} className="text-white hover:text-gray-300 text-2xl">&times;</button>
         </div>
 
-        <div className="p-6 bg-[#1a1d21] overflow-y-auto max-h-[75vh]">
+        <div className="p-6 bg-sanctum-surface overflow-y-auto max-h-[75vh]">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Doctor Name</label>
-              <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm" required />
+              <label htmlFor="name" className="block text-sm font-bold text-sanctum-text-curr uppercase mb-1">Doctor Name</label>
+              <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="block w-full px-3 py-2 border border-sanctum-border bg-sanctum-bg text-sanctum-text-curr rounded-sm focus:ring-sanctum-accent focus:border-sanctum-accent text-sm" required />
             </div>
             <div>
-              <label htmlFor="specialty" className="block text-sm font-bold text-[#E6E6E3] uppercase mb-1">Specialty</label>
+              <label htmlFor="specialty" className="block text-sm font-bold text-sanctum-text-curr uppercase mb-1">Specialty</label>
               <input
                 type="text"
                 name="specialty"
                 id="specialty"
                 value={formData.specialty}
                 onChange={handleChange}
-                className="block w-full px-3 py-2 border border-[#8C7A3E]/30 rounded-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="block w-full px-3 py-2 border border-sanctum-border bg-sanctum-bg text-sanctum-text-curr rounded-sm focus:ring-sanctum-accent focus:border-sanctum-accent text-sm"
                 required
                 list="specialties-list"
               />
@@ -432,14 +432,14 @@ export default function DoctorManager() {
             {error && <p className="text-red-600 text-sm bg-red-900/20 p-2 rounded border border-red-200">{error}</p>}
 
             {/* --- Form Buttons --- */}
-            <div className="flex justify-end space-x-3 pt-4 border-t mt-4">
-              <button type="button" onClick={closeModal} className="py-2 px-4 bg-[#0B0B0C] text-[#E6E6E3] font-bold uppercase text-xs rounded-sm hover:bg-gray-200 border border-[#8C7A3E]/30">
+            <div className="flex justify-end space-x-3 pt-4 border-t border-sanctum-border mt-4">
+              <button type="button" onClick={closeModal} className="py-2 px-4 bg-sanctum-bg text-sanctum-text-curr font-bold uppercase text-xs rounded-sm hover:bg-sanctum-sidebar border border-sanctum-border">
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="py-2 px-4 bg-green-600 text-white font-bold uppercase text-xs rounded-sm hover:bg-green-700 shadow-2xl-sm"
+                className="py-2 px-4 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm hover:bg-blue-600 shadow-2xl-sm"
               >
                 {editMode ? 'Update' : 'Save'}
               </button>
@@ -469,7 +469,7 @@ export default function DoctorManager() {
             Confirm Delete
           </h2>
         </div>
-        <div className="p-6 bg-[#1a1d21]">
+        <div className="p-6 bg-sanctum-surface">
           <p className="text-[#E6E6E3] mb-6 font-medium">
             Are you sure you want to delete <span className="font-bold text-red-600">{doctorToDelete?.name}</span>?
             <br /><span className="text-sm text-[#a0a4ab] font-normal">This action cannot be undone.</span>
@@ -492,12 +492,12 @@ export default function DoctorManager() {
       </Modal>
 
       {/* --- DOCTOR MANAGER MAIN CONTENT --- */}
-      <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+      <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
 
         {/* TOLBAR */}
-        <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex flex-col">
-            <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
+            <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide flex items-center gap-2">
               <span>Doctor Manager</span>
               <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{totalDoctors}</span>
             </h2>
@@ -508,7 +508,7 @@ export default function DoctorManager() {
           <div className="flex items-center gap-3">
             <button
               onClick={openAddNewModal}
-              className="flex items-center gap-1 py-1.5 px-3 bg-green-600 text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-green-700 transition-colors"
+              className="flex items-center gap-1 py-1.5 px-3 bg-sanctum-accent text-white font-bold uppercase text-xs rounded-sm shadow-2xl-sm hover:bg-blue-600 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
               New
@@ -517,7 +517,7 @@ export default function DoctorManager() {
         </div>
 
         {/* SEARCH & PAGINATION BAR */}
-        <div className="bg-[#0B0B0C] p-3 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="bg-sanctum-bg p-3 border-b border-sanctum-border flex flex-col md:flex-row justify-between items-center gap-4">
           <SearchInput value={searchQuery} onChange={handleSearchChange} />
 
           <div className="flex items-center gap-2 text-xs text-[#a0a4ab] font-medium">
@@ -544,18 +544,18 @@ export default function DoctorManager() {
           <p className="p-6 text-red-600">Error: {error}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-[#f0f2f5]">
+            <table className="min-w-full divide-y divide-sanctum-border">
+              <thead className="bg-sanctum-sidebar">
                 <tr>
-                  <th className="sticky left-0 z-10 bg-[#f0f2f5] p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-r border-[#8C7A3E]/20"><span className="pl-2">Name</span></th>
-                  <th className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">Specialty</th>
+                  <th className="sticky left-0 z-10 bg-sanctum-sidebar p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-r border-sanctum-border"><span className="pl-2">Name</span></th>
+                  <th className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider">Specialty</th>
                   {dbDays.map((day) => (
-                    <th key={day} className="p-3 text-left text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider">{dayLabels[day]}</th>
+                    <th key={day} className="p-3 text-left text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider">{dayLabels[day]}</th>
                   ))}
-                  <th className="sticky right-0 z-10 bg-[#f0f2f5] p-3 text-center text-[11px] font-bold text-[#a0a4ab] uppercase tracking-wider border-l border-[#8C7A3E]/20">Actions</th>
+                  <th className="sticky right-0 z-10 bg-sanctum-sidebar p-3 text-center text-[11px] font-bold text-sanctum-text-muted uppercase tracking-wider border-l border-sanctum-border">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-[#1a1d21] divide-y divide-gray-200">
+              <tbody className="bg-sanctum-surface divide-y divide-sanctum-border">
                 {doctors.length === 0 && !isLoading && (
                   <tr>
                     <td colSpan={dbDays.length + 3} className="p-8 text-center text-[#a0a4ab] italic">
@@ -565,11 +565,11 @@ export default function DoctorManager() {
                 )}
                 {doctors.map((doctor) => {
                   return (
-                    <tr key={doctor.id} className="hover:bg-blue-900/20 transition-colors group">
-                      <td className="sticky left-0 z-10 bg-[#1a1d21] group-hover:bg-blue-900/20 p-3 whitespace-nowrap text-sm font-semibold text-[#E6E6E3] border-r border-[#8C7A3E]/10">
+                    <tr key={doctor.id} className="hover:bg-sanctum-primary/30 transition-colors group">
+                      <td className="sticky left-0 z-10 bg-sanctum-surface group-hover:bg-[#002360] p-3 whitespace-nowrap text-sm font-semibold text-sanctum-text-curr border-r border-sanctum-border">
                         <span className="pl-2">{doctor.name}</span>
                       </td>
-                      <td className="p-3 whitespace-nowrap text-sm text-[#a0a4ab]">{doctor.specialty}</td>
+                      <td className="p-3 whitespace-nowrap text-sm text-sanctum-text-muted">{doctor.specialty}</td>
                       {dbDays.map((day) => {
                         const scheduleData = doctor.schedule?.[day];
                         let displayTime = '-';
@@ -579,12 +579,12 @@ export default function DoctorManager() {
                           displayTime = scheduleData.jam;
                         }
                         return (
-                          <td key={day} className="p-3 whitespace-nowrap text-xs text-[#a0a4ab]">
+                          <td key={day} className="p-3 whitespace-nowrap text-xs text-sanctum-text-muted">
                             {displayTime}
                           </td>
                         );
                       })}
-                      <td className="sticky right-0 z-10 bg-[#1a1d21] group-hover:bg-blue-900/20 p-2 whitespace-nowrap text-center text-sm border-l border-[#8C7A3E]/10">
+                      <td className="sticky right-0 z-10 bg-sanctum-surface group-hover:bg-[#002360] p-2 whitespace-nowrap text-center text-sm border-l border-sanctum-border">
                         <div className="flex justify-center items-center gap-2">
                           <button onClick={() => openEditModal(doctor)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 transition-colors" title="Edit">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>

@@ -84,16 +84,16 @@ export default function McuManager() {
 
     return (
         <div className="space-y-6 animate-fade-in font-sans">
-            <div className="bg-[#1a1d21] border border-[#8C7A3E]/20 shadow-2xl-sm rounded-none">
+            <div className="bg-sanctum-surface border border-sanctum-border shadow-2xl-sm rounded-none">
                 {/* TOOLBAR */}
-                <div className="bg-[#1a1d21] p-4 border-b border-[#8C7A3E]/20 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 className="text-lg font-bold text-[#E6E6E3] uppercase tracking-wide flex items-center gap-2">
+                <div className="bg-sanctum-surface p-4 border-b border-sanctum-border flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h2 className="text-lg font-bold text-sanctum-text-curr uppercase tracking-wide flex items-center gap-2">
                         <span>MCU Package Manager</span>
                         <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">{packages.length}</span>
                     </h2>
                     <button
                         onClick={openAddModal}
-                        className="bg-[#8C7A3E] hover:bg-[#a89150] text-white px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2"
+                        className="bg-sanctum-accent hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold transition-colors flex items-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
@@ -142,8 +142,8 @@ export default function McuManager() {
                                                 )
                                             )}
                                             <div>
-                                                <div className="font-semibold text-[#E6E6E3]">{pkg.name}</div>
-                                                <div className="text-xs text-[#a0a4ab]">{pkg.package_id}</div>
+                                                <div className="font-semibold text-sanctum-text-curr">{pkg.name}</div>
+                                                <div className="text-xs text-sanctum-text-muted">{pkg.package_id}</div>
                                                 {pkg.is_recommended && (
                                                     <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Recommended</span>
                                                 )}
@@ -157,7 +157,7 @@ export default function McuManager() {
                                         {pkg.is_pelaut ? (
                                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Pelaut</span>
                                         ) : (
-                                            <span className="bg-[#0B0B0C] text-[#E6E6E3] px-2 py-1 rounded text-xs font-semibold">Regular</span>
+                                            <span className="bg-sanctum-bg text-sanctum-text-curr px-2 py-1 rounded text-xs font-semibold">Regular</span>
                                         )}
                                     </td>
                                     <td className="p-3 text-center">
@@ -168,7 +168,7 @@ export default function McuManager() {
                                                 onChange={() => handleToggleEnabled(pkg)}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1a1d21] after:border-[#8C7A3E]/30 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8C7A3E]"></div>
+                                            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-sanctum-surface after:border-sanctum-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sanctum-accent"></div>
                                         </label>
                                     </td>
                                     <td className="p-3 text-center">
@@ -388,7 +388,7 @@ function McuPackageModal({ package: pkg, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-[#1a1d21] rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-sanctum-surface rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-sanctum-border text-sanctum-text-curr">
                 <h3 className="text-2xl font-bold mb-6">{pkg ? 'Edit Package' : 'Add New Package'}</h3>
 
                 <div className="space-y-6">
@@ -582,7 +582,7 @@ function McuPackageModal({ package: pkg, onClose }) {
                                     value={addon.price}
                                     onChange={(e) => updateAddon(idx, 'price', parseInt(e.target.value) || 0)}
                                     placeholder="Price"
-                                    className="w-1/4 border border-[#8C7A3E]/30 rounded px-2 py-1 text-sm"
+                                    className="w-1/4 border border-sanctum-border bg-sanctum-bg text-sanctum-text-curr rounded px-2 py-1 text-sm"
                                 />
                                 <button
                                     onClick={() => removeAddon(idx)}

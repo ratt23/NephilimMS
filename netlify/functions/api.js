@@ -38,6 +38,7 @@ function createKey(name) {
 export async function handler(event, context) {
   const origin = event.headers.origin || event.headers.Origin || '';
   const allowedOrigins = [
+    'https://ecatalog.shab.web.id',
     'https://shab.web.id',
     'https://jadwaldoktershab.netlify.app',
     'https://dashdev1.netlify.app',

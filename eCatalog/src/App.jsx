@@ -64,33 +64,7 @@ function App() {
         );
     }
 
-    // Maintenance mode
-    if (!whiteLabel?.ecatalogEnabled) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-6">
-                <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-                    <div className="bg-blue-900 p-8 text-center">
-                        <img src={getProxiedImageUrl(whiteLabel?.logoUrl || '/asset/logo/logo.png')} alt="Logo" className="h-20 mx-auto mb-4" />
-                        <h1 className="text-3xl font-bold text-white">{whiteLabel?.hospitalName || 'RSU Siloam Ambon'}</h1>
-                    </div>
-                    <div className="p-12 text-center">
-                        <div className="bg-orange-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                            <Shield size={48} className="text-orange-500" />
-                        </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Sedang dalam Perbaikan</h2>
-                        <p className="text-lg text-gray-600 mb-8">Mohon maaf, E-Catalog sedang dalam pemeliharaan. Silakan coba lagi nanti.</p>
-                        <div className="bg-gray-50 rounded-xl p-6 space-y-4">
-                            <p className="text-sm font-semibold text-gray-700 uppercase">Hubungi Kami:</p>
-                            <div className="flex items-center justify-center gap-3">
-                                <Phone size={20} className="text-blue-600" />
-                                <span className="font-medium">{whiteLabel?.hospitalPhone || '1-500-911'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // Maintenance mode logic removed by user request
 
     // Prepare Categories
     let displayCategories = whiteLabel?.ecatalogCategories || [];
@@ -118,7 +92,7 @@ function App() {
     // Also inject cover image if needed (locally, since we can't edit DB easily)
     const categoryCovers = {
         ...whiteLabel?.categoryCovers,
-        'radiology': whiteLabel?.categoryCovers?.['radiology'] || '/asset/categories/radiology.jpg' // You might need to add this asset or use a placeholder
+        'radiology': whiteLabel?.categoryCovers?.['radiology'] || '/asset/categories/radiology.png' // Use the png we just created
     };
 
     return (

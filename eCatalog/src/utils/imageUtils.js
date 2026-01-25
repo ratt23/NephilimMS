@@ -13,8 +13,10 @@ export const getProxiedImageUrl = (url) => {
 
     // Check if Cloudinary or External URL that might have CORS issues
     if (url.includes('cloudinary.com')) {
-        // Use /.netlify/functions/imageProxy endpoint
-        return `/.netlify/functions/imageProxy?url=${encodeURIComponent(url)}`;
+        // Use Netlify Rewrite (faster than function)
+        // URL format: https://res.cloudinary.com/cloud/image/type/v123/id
+        // Rewrite expects: /cloudinary-proxy/cloud/image/type/v123/id
+        return url.replace('https://res.cloudinary.com', '/cloudinary-proxy');
     }
 
     return url;

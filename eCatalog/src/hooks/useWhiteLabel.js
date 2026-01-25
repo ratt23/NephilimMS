@@ -86,11 +86,11 @@ export function useWhiteLabel() {
                     logoUrl: '/asset/logo/logo.png',
                     themeColor: '#0047AB',
                     categoryCovers: {
-                        'tarif-kamar': '/asset/categories/placeholder.svg',
-                        'fasilitas': '/asset/categories/placeholder.svg',
-                        'radiology': '/asset/categories/placeholder.svg',
-                        'layanan-unggulan': '/asset/categories/placeholder.svg',
-                        'contact-person': '/asset/categories/placeholder.svg'
+                        'tarif-kamar': '/asset/categories/tarif_kamar.png',
+                        'fasilitas': '/asset/categories/fasilitas.png',
+                        'radiology': '/asset/categories/radiology.png',
+                        'layanan-unggulan': '/asset/categories/layanan_unggulan.png',
+                        'contact-person': '/asset/categories/contact_person.png'
                     },
                     contactEmergency: '(0911) 344 8888',
                     contactCs: '(0911) 351 000',

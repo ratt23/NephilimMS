@@ -87,12 +87,12 @@ export default function ManualUpdateManager() {
             await fetchApi('/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    manual_update_list: {
-                        value: JSON.stringify(selectedIds),
-                        enabled: true
+                body: JSON.stringify([
+                    {
+                        key: 'manual_update_list',
+                        value: JSON.stringify(selectedIds)
                     }
-                })
+                ])
             });
 
             alert("Manual list saved successfully!");

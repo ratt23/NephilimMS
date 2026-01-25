@@ -1,17 +1,17 @@
 export async function handler(event, context) {
     const origin = event.headers.origin || event.headers.Origin || '';
-  const allowedOrigins = [
-    'https://shab.web.id',
-    'https://jadwaldoktershab.netlify.app',
-    'https://dashdev1.netlify.app',
-    'https://dashdev2.netlify.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173'
-  ];
+    const allowedOrigins = [
+        'https://ecatalog.shab.web.id',
+        'https://shab.web.id',
+        'https://jadwaldoktershab.netlify.app',
+        'https://dashdev1.netlify.app',
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:5173'
+    ];
 
-  const headers = {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '*',
+    const headers = {
+        'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '*',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
     };

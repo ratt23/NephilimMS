@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
     plugins: [react()],
-    base: '/ecatalog/',  // Set base path for deployed version
+    base: '/',  // Set base path for deployed version
     server: {
         port: 3003,
         proxy: {

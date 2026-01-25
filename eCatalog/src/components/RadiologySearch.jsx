@@ -1,37 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Search, AlertCircle, ChevronDown } from 'lucide-react';
-import { getProxiedImageUrl } from '../utils/imageUtils';
+import { getApiBaseUrl } from '../utils/apiConfig';
 
 const ITEMS_PER_PAGE = 20;
 
 export default function RadiologySearch() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [page, setPage] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-
-    // Debounce search term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-            setPage(0); // Reset page on new search
-            setItems([]); // Clear items on new search
-            setHasMore(true);
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
-
+    // ... hooks
+    // inside fetchPrices:
     const fetchPrices = async (isLoadMore = false) => {
         if (!hasMore && isLoadMore) return;
 
         setLoading(true);
         setError(null);
         try {
-            const baseUrl = window.location.hostname === 'localhost' ? '/.netlify/functions/api' : '/api';
+            const baseUrl = getApiBaseUrl();
             const offset = (isLoadMore ? page : 0) * ITEMS_PER_PAGE;
             const url = `${baseUrl}/radiology?search=${encodeURIComponent(debouncedSearch)}&limit=${ITEMS_PER_PAGE}&offset=${offset}`;
 
